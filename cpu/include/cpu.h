@@ -1,8 +1,10 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include "CPU_gestor.h"
+#include "c_gestor.h"
 #include "inicializar_cpu.h"
+#include "comunicaciones.h"
+#include <utils/include/shared.h>
 
 // VARIABLES GLOBALES
 t_log* cpu_logger;
@@ -27,6 +29,6 @@ int fd_kernel_dispatch;
 int fd_kernel_interrupt;
 int fd_memoria;
 
- 
+
 
 #endif

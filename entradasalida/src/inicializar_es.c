@@ -1,15 +1,10 @@
-#include "/home/utnso/Documents/tp-2024-1c-ubuntunel/entradasalida/include/entradasalida.h"
-#include "/home/utnso/Documents/tp-2024-1c-ubuntunel/entradasalida/include/inicializar_es.h"
-
-char* path_config_ES = "/home/utnso/Documents/tp-2024-1c-ubuntunel/entradasalida/ES.config";
+#include "../include/inicializar_es.h"
 
 void inicializar_es(){
     inicializar_logs();
     iniciar_config();
     imprimir_config();
 }
-
-
 
 void inicializar_logs(){
 
@@ -30,7 +25,7 @@ void inicializar_logs(){
 
 void iniciar_config(){
 
-    es_config = config_create(path_config_ES);
+    es_config = config_create("/home/utnso/Documents/tp-2024-1c-ubuntunel/entradasalida/ES.config");
 	if (es_config == NULL) {
         perror ("No se pudo crear el config para el módulo E/S");
 		exit(EXIT_FAILURE);

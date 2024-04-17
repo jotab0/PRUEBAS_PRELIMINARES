@@ -1,7 +1,4 @@
-#include "/home/utnso/Documents/tp-2024-1c-ubuntunel/memoria/include/memoria.h"
-#include "/home/utnso/Documents/tp-2024-1c-ubuntunel/memoria/include/inicializar_memoria.h"
-
-char* path_config_Memoria = "/home/utnso/Documents/tp-2024-1c-ubuntunel/memoria/Memoria.config";
+# include "../include/inicializar_memoria.h"
 
 void inicializar_memoria(){
     inicializar_logs();
@@ -10,9 +7,8 @@ void inicializar_memoria(){
 }
 
 void inicializar_logs(){
-
     // INCIA MEMORIA
-    memoria_logger = log_create("Memoria.log", "Memoria_log", true, LOG_LEVEL_INFO);
+    memoria_logger = log_create("Memoria.log", "Memoria_log", 1, LOG_LEVEL_TRACE);
     if (memoria_logger == NULL){
         perror ("Error: No se pudo crear log para la memoria");
         exit(EXIT_FAILURE);
@@ -28,7 +24,7 @@ void inicializar_logs(){
 
 void iniciar_config(){
 
-    memoria_config = config_create(path_config_Memoria);
+    memoria_config = config_create("/home/utnso/Documents/tp-2024-1c-ubuntunel/memoria/Memoria.config");
     if (memoria_config == NULL) {
         perror ("Error: No se pudo crear el config para la memoria");
 		exit(EXIT_FAILURE);
@@ -43,6 +39,5 @@ void iniciar_config(){
 }
 
 void imprimir_config(){
-
-    log_info(memoria_logger,"PATH INSTRUCCIONES: %s",PATH_INSTRUCCIONES);
+    log_info(memoria_logger,"PUERTO ESCUCHA: %s",PUERTO_ESCUCHA);
 }

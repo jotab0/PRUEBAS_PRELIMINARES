@@ -7,22 +7,20 @@ RESERVADA extern. */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-#include <../src/utils/include/shared.h>
+#include "../src/utils/include/shared.h"
 
-#include <../commons/log.h>
-#include <../commons/config.h>
+#include <commons/log.h>
+#include <commons/config.h>
 
 //Variables globales
 
 extern t_log* kernel_logger;
-extern t_log* kernel_log_debug;
+extern t_log* kernel_logger_extra;
 extern t_config* kernel_config;
 
-extern int fd_memoria;
-extern int fd_entradasalida;
-extern int fd_cpu_dispatch;
-extern int fd_cpu_interrupt;
+extern char* path_config_Kernel;
 
 // Variables de config
 
@@ -43,5 +41,10 @@ extern int QUANTUM;
 extern char** RECURSOS;
 extern char** INSTANCIAS_RECURSOS;
 extern int GRADO_MULTIPROGRAMACION;
+
+extern int fd_memoria;
+extern int fd_entradasalida;
+extern int fd_cpu_dispatch;
+extern int fd_cpu_interrupt;
 
 #endif

@@ -3,18 +3,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include <utils/include/shared.h> 
 
 
 // VARIABLES GLOBALES
+
+// LOGS Y CONFIGS
 extern t_log* es_logger;
 extern t_log* es_logger_extra;
 
 extern t_config* es_config;
-
-extern int fd_kernel;
-extern int fd_memoria;
 
 // Variables de config
 extern char* TIPO_INTERFAZ;
@@ -29,5 +29,9 @@ extern char* PUERTO_MEMORIA;
 extern char* PATH_BASE_DIALFS;
 extern int BLOCK_SIZE;
 extern int BLOCK_COUNT;
+
+// FILE DESCRIPTORS
+extern int fd_kernel;
+extern int fd_memoria;
 
 #endif

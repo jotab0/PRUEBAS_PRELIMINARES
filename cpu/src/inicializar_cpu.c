@@ -1,4 +1,4 @@
-#include "inicializar_cpu.h"
+#include "../include/inicializar_cpu.h"
 
 // iniciar estructuras
 void inicializar_cpu() {
@@ -8,7 +8,7 @@ void inicializar_cpu() {
 }
 
 void iniciar_logs(){
-    cpu_logger = log_create("CPU.log", "CPU_log", true, LOG_LEVEL_INFO);
+    cpu_logger = log_create("CPU.log", "CPU_log", true, LOG_LEVEL_TRACE);
     if (cpu_logger == NULL){
         perror ("No se pudo crear log para CPU");
         exit(EXIT_FAILURE);
@@ -39,6 +39,8 @@ void iniciar_config(){
 
 void imprimir_config(){
     log_info(cpu_logger,"IP MEMORIA: %s",IP_MEMORIA);
+    log_info(cpu_logger,"PUERTO MEMORIA: %s",PUERTO_MEMORIA);
+    // Agregar los para debugear
 }
 
    

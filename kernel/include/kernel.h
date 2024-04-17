@@ -6,23 +6,18 @@ EN kernel.h Y SE HACE UNA COPIA EN k_gestor.h CON LA PALABRA
 RESERVADA extern. */
 
 #include "k_gestor.h"
-#include "inicializar_kernel.h"
 
+#include "inicializar_kernel.h"
 #include "kernel_cpu_dispatch.h"
 #include "kernel_cpu_interrupt.h"
 #include "kernel_entradasalida.h"
 #include "kernel_memoria.h"
-
-#include <utils/include/cliente/cliente.h>
-#include <utils/include/servidor/servidor.h>
+#include <utils/include/shared.h>
 
 // VARIABLES GLOBALES
 t_log* kernel_logger;
 t_log* kernel_logger_extra;
-t_log* kernel_log_debug;
 t_config* kernel_config;
-
-char* path_config_Kernel = "/home/utnso/Documents/tp-2024-1c-ubuntunel/kernel/Kernel.config";
 
 int fd_memoria;
 int fd_entradasalida;
@@ -48,6 +43,5 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
-void atender_kernel_cpu_dispatch();
 
 #endif

@@ -1,32 +1,32 @@
 #ifndef ENTRADASALIDA_H_
 #define ENTRADASALIDA_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <utils/include/shared.h> 
-
+#include "../include/es_gestor.h"
+#include "../include/inicializar_es.h"
+#include "../include/comunicaciones_es.h"
+#include <utils/include/shared.h>
 
 // VARIABLES GLOBALES
-extern t_log* es_logger;
-extern t_log* es_logger_extra;
+t_log* es_logger;
+t_log* es_logger_extra;
 
-extern t_config* es_config;
+t_config* es_config;
 
-extern int fd_kernel;
-extern int fd_memoria;
+int fd_kernel;
+int fd_memoria;
 
 // Variables de config
-extern char* TIPO_INTERFAZ;
-extern int TIEMPO_UNIDAD_TRABAJO;
+char* TIPO_INTERFAZ;
+int TIEMPO_UNIDAD_TRABAJO;
 
-extern char* IP_KERNEL;
-extern char* PUERTO_KERNEL;
+char* IP_KERNEL;
+char* PUERTO_KERNEL;
 
-extern char* IP_MEMORIA;
-extern char* PUERTO_MEMORIA;
+char* IP_MEMORIA;
+char* PUERTO_MEMORIA;
 
-extern char* PATH_BASE_DIALFS;
-extern int BLOCK_SIZE;
-extern int BLOCK_COUNT;
+char* PATH_BASE_DIALFS;
+int BLOCK_SIZE;
+int BLOCK_COUNT;
 
 #endif
