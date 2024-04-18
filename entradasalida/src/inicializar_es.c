@@ -45,5 +45,8 @@ void iniciar_config(){
 
 void imprimir_config(){
 
-    log_info(es_logger,"PATH INSTRUCCIONES: %s",IP_MEMORIA);
+    log_info(es_logger,"SERVIDOR: %s",IP_MEMORIA);
+    log_info(es_logger,"SERVIDOR: %s",PUERTO_MEMORIA);
+    log_info(es_logger,"SERVIDOR: %s",PUERTO_KERNEL);
+
 }

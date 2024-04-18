@@ -20,17 +20,9 @@ int main(void){
     fd_kernel_interrupt = esperar_cliente(fd_cpu_interrupt, cpu_logger, "KERNEL - Interrupt");
 
     // COMUNICACIÓN
-    pthread_t hilo_memoria;
-    int err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_cpu,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_memoria(cpu)\n");
-        return -3;
-    }
-    pthread_join(hilo_memoria,NULL);
 
-    /*
     pthread_t hilo_k_dispatch;
-    err = pthread_create(&hilo_k_dispatch,NULL,(void*)esperar_kernel_dispatch_cpu,NULL);
+    int err = pthread_create(&hilo_k_dispatch,NULL,(void*)esperar_kernel_cpu_dispatch,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_k_dispatch(cpu)\n");
         return -3;
@@ -38,16 +30,23 @@ int main(void){
     pthread_detach(hilo_k_dispatch);
                         //1//             //3//                 //4//
                         //HILO//          //Funcion deseada//   //Puntero si hace falta//
-
-                        
     pthread_t hilo_k_interrupt;
-    err = pthread_create(&hilo_k_interrupt,NULL,(void*)esperar_kernel_interrupt_cpu,NULL);
+    err = pthread_create(&hilo_k_interrupt,NULL,(void*)esperar_kernel_cpu_interrupt,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_k_interrupt(cpu)\n");
         return -3;
     }
-    pthread_join(hilo_k_interrupt,NULL);
-*/    
+    pthread_detach(hilo_k_interrupt);
+                        
+    
+   
+    pthread_t hilo_memoria;
+    err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_cpu,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_memoria(cpu)\n");
+        return -3;
+    }
+    pthread_join(hilo_memoria,NULL);
 
 	return EXIT_SUCCESS;
 }

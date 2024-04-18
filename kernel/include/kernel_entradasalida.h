@@ -3,6 +3,6 @@
 
 #include "../include/k_gestor.h"
 
-void atender_kernel_entradasalida();
+void esperar_entradasalida_kernel();
 
 #endif /* KERNEL_ENTRADASALIDA_H_ */

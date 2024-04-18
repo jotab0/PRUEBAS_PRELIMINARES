@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     //Me conecto como Cliente a KERNEL
     fd_kernel = crear_conexion(IP_KERNEL, PUERTO_KERNEL);
     log_info(es_logger, "Conexion con Kernel exitosa.");
-
+    
 
     pthread_t hilo_memoria;
     int err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_es,NULL);
@@ -24,15 +24,15 @@ int main(int argc, char* argv[]) {
         perror("Fallo de creación de hilo_memoria(entradasalida))\n");
         return -3;
     }
-    pthread_join(hilo_memoria,NULL);
- /*       
+    pthread_detach(hilo_memoria);
+  
     pthread_t hilo_kernel;
-    pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_es,NULL);
+    err = pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_es,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_kernel(entradasalida)\n");
         return -3;
     }
     pthread_join(hilo_kernel,NULL);
-*/
+
     return 0; 
 }

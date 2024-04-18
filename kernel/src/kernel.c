@@ -22,10 +22,10 @@ int main(int argc, char* argv[]) {
     fd_kernel = iniciar_servidor(PUERTO_ESCUCHA, kernel_logger, "!! Servidor ENTRADA-SALIDA iniciado !!");
     fd_entradasalida = esperar_cliente(fd_kernel, kernel_logger, "ENTRADA-SALIDA");
 
-/*
+
     //Atender los mensajes de CPU - Dispatch
     pthread_t hilo_cpu_dispatch;
-    int err = pthread_create(&hilo_cpu_dispatch, NULL, (void*)atender_kernel_cpu_dispatch, NULL);
+    int err = pthread_create(&hilo_cpu_dispatch, NULL, (void*)esperar_cpu_interrupt_kernel, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_cpu_dispatch(kernel)\n");
         return -3;
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     //Atender los mensajes de CPU - Interrupt
 
     pthread_t hilo_cpu_interrupt;
-    err = pthread_create(&hilo_cpu_interrupt, NULL, (void*)atender_kernel_cpu_interrupt, NULL);
+    err = pthread_create(&hilo_cpu_interrupt, NULL, (void*)esperar_cpu_dispatch_kernel, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_cpu_interrupt(kernel)\n");
         return -3;
@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     //Atender los mensajes de EntradaSalida
 
     pthread_t hilo_entradasalida;
-    err = pthread_create(&hilo_entradasalida, NULL, (void*)atender_kernel_entradasalida, NULL);
+    err = pthread_create(&hilo_entradasalida, NULL, (void*)esperar_entradasalida_kernel, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_entradasalida(kernel)\n");
         return -3;
@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
     pthread_detach(hilo_entradasalida);
      
     //Atender los mensajes de Memoria
-*/
+
     pthread_t hilo_memoria;
-    int err = pthread_create(&hilo_memoria, NULL, (void*)atender_kernel_memoria, NULL);
+    err = pthread_create(&hilo_memoria, NULL, (void*)esperar_memoria_kernel, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_memoria(kernel)\n");
         return -3;

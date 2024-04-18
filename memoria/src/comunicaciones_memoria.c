@@ -4,7 +4,7 @@
 void esperar_cpu_memoria(){
     int estado_while = 1;
     while (estado_while) {
-        log_trace(memoria_logger,"ESPERANDO MENSAJES DE CPU");
+        log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE CPU...");
 		int cod_op = recibir_operacion(fd_cpu);
 		switch (cod_op) {
 		case MENSAJE:
@@ -25,7 +25,7 @@ void esperar_cpu_memoria(){
 void esperar_kernel_memoria(){
     int estado_while = 1;
     while (estado_while) {
-		log_trace(memoria_logger,"ESPERANDO MENSAJES DE KERNEL");
+		log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE KERNEL...");
         int cod_op = recibir_operacion(fd_kernel);
 		switch (cod_op) {
 		case MENSAJE:
@@ -46,7 +46,7 @@ void esperar_kernel_memoria(){
 void esperar_es_memoria(){
     int estado_while = 1;
     while (estado_while) {
-		log_trace(memoria_logger,"ESPERANDO MENSAJES DE E/S");
+		log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE E/S...");
         int cod_op = recibir_operacion(fd_es);
 		switch (cod_op) {
 		case MENSAJE:

@@ -3,6 +3,6 @@
 
 #include "../include/k_gestor.h"
 
-void atender_kernel_cpu_interrupt();
+void esperar_cpu_interrupt_kernel();
 
 #endif /* KERNEL_CPU_INTERRUPT_H_ */
