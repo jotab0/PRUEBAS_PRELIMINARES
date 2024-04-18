@@ -3,8 +3,8 @@
 
 # include "m_gestor.h"
 
-void esperar_cpu();
-void esperar_kernel();
-void esperar_es();
+void esperar_cpu_memoria();
+void esperar_kernel_memoria();
+void esperar_es_memoria();
 
 #endif

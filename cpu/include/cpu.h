@@ -3,8 +3,9 @@
 
 #include "c_gestor.h"
 #include "inicializar_cpu.h"
-#include "comunicaciones.h"
+#include "comunicaciones_cpu.h"
 #include <utils/include/shared.h>
+#include <pthread.h>
 
 // VARIABLES GLOBALES
 t_log* cpu_logger;

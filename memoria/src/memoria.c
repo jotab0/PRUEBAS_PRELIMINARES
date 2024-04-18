@@ -24,18 +24,32 @@ int main(int argc, char* argv[]) {
     // Esperar conexion de entrada y salida
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
     
+    //Cuano la CPU no rompe, queda esperando en ambos hilos
     pthread_t hilo_cpu;
-    pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu,NULL);
-    pthread_detach(esperar_cpu);
-    
-    pthread_t hilo_kernel;
-    pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel,NULL);
-    pthread_detach(esperar_kernel);
+    int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_cpu(memoria))\n");
+        return -3;
+    }
+    pthread_detach(hilo_cpu);
+
 
     pthread_t hilo_es;
-    pthread_create(&hilo_es,NULL,(void*)esperar_es,NULL);
-    pthread_join(esperar_cpu,NULL);
-    // FINALIZAR MEMORIA 
+    err = pthread_create(&hilo_es,NULL,(void*)esperar_es_memoria,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_es(memoria))\n");
+        return -3;
+    }
+    pthread_detach(hilo_es);
+    
+    pthread_t hilo_kernel;
+    err = pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_memoria,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_kernel(memoria))\n");
+        return -3;
+    }
+    pthread_join(hilo_kernel,NULL);
+
 
     return EXIT_SUCCESS;
 }

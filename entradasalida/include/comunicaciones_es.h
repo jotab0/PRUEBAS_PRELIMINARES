@@ -3,7 +3,7 @@
 
 # include "es_gestor.h"
 
-void esperar_cpu();
-void esperar_kernel();
+void esperar_memoria_es();
+void esperar_kernel_es();
 
 #endif

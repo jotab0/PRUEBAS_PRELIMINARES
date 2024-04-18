@@ -9,7 +9,7 @@ void inicializar_es(){
 void inicializar_logs(){
 
     // INCIAR ES
-    es_logger = log_create("EntradaSalida.log", "ES_log", true, LOG_LEVEL_INFO);
+    es_logger = log_create("EntradaSalida.log", "ES_log", true, LOG_LEVEL_TRACE);
     if (es_logger == NULL){
         perror ("No se pudo crear log para el módulo E/S");
         exit(EXIT_FAILURE);

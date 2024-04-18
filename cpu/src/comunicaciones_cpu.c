@@ -1,9 +1,10 @@
-#include "../include/comunicaciones.h"
+#include "../include/comunicaciones_cpu.h"
 
-void esperar_kernel_dispatch(){
-    int estado_while = 0;
-    while (estado_while) { //Bucle que queda esperando la operación
-        int cod_op = recibir_operacion(fd_cpu_dispatch);
+void esperar_kernel_dispatch_cpu(){
+    int estado_while = 1;
+    while (estado_while) {
+		log_info(cpu_logger, "Hilo cpu dispatch <- kerenel creado");
+        int cod_op = recibir_operacion(fd_kernel_dispatch);
 		switch (cod_op) {
 		case MENSAJE:
 			break;
@@ -20,10 +21,11 @@ void esperar_kernel_dispatch(){
 	}
 }
 
-void esperar_kernel_interrupt(){
-    int estado_while = 0;
-    while (estado_while) { //Bucle que queda esperando la operación
-        int cod_op = recibir_operacion(fd_cpu_interrupt);
+void esperar_kernel_interrupt_cpu(){
+    int estado_while = 1;
+    while (estado_while) {
+		log_info(cpu_logger, "Hilo cpu interrupt <- kerenel creado"); //Bucle que queda esperando la operación
+        int cod_op = recibir_operacion(fd_kernel_interrupt);
 		switch (cod_op) {
 		case MENSAJE:
 			break;
@@ -40,9 +42,10 @@ void esperar_kernel_interrupt(){
 	}
 }
 
-void esperar_memoria(){
-    int estado_while= 0;
-    while (estado_while) { //Bucle que queda esperando la operación
+void esperar_memoria_cpu(){
+    int estado_while = 1;
+    while (estado_while) {
+		log_trace(cpu_logger,"ESPERANDO MENSAJES DE MEMORIA");
         int cod_op = recibir_operacion(fd_memoria);
 		switch (cod_op) {
 		case MENSAJE:

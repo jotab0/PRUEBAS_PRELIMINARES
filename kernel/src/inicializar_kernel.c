@@ -8,7 +8,7 @@ void inicializar_kernel(){
 
 void inicializar_logs(){
     
-    kernel_logger = log_create("Kernel.log", "Kernel_log", true, LOG_LEVEL_INFO);
+    kernel_logger = log_create("Kernel.log", "Kernel_log", true, LOG_LEVEL_TRACE);
     if (kernel_logger == NULL){
         perror ("No se pudo crear log para el Kernel");
         exit(EXIT_FAILURE);

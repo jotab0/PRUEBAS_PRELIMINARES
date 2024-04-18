@@ -3,6 +3,7 @@
 void atender_kernel_memoria(){
     bool control_key = 1;
     while(control_key){
+        log_trace(kernel_logger,"ESPERANDO MENSAJES DE MEMORIA");
         int cod_op = recibir_operacion(fd_memoria);
         switch (cod_op){
             case MENSAJE:

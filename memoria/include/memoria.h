@@ -5,6 +5,8 @@
 #include "../include/inicializar_memoria.h"
 #include "../include/comunicaciones_memoria.h"
 #include <utils/include/shared.h>
+#include <pthread.h>
+
 // VARIABLES GLOBALES
 t_log* memoria_logger;
 t_log* memoria_logger_extra;

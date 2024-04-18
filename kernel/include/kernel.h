@@ -13,6 +13,7 @@ RESERVADA extern. */
 #include "kernel_entradasalida.h"
 #include "kernel_memoria.h"
 #include <utils/include/shared.h>
+#include <pthread.h>
 
 // VARIABLES GLOBALES
 t_log* kernel_logger;
@@ -23,7 +24,7 @@ int fd_memoria;
 int fd_entradasalida;
 int fd_cpu_dispatch;
 int fd_cpu_interrupt;
-
+int fd_kernel;
 // Variables de config
 char* PUERTO_ESCUCHA;
 

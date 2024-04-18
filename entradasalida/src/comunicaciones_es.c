@@ -1,10 +1,10 @@
 # include "../include/comunicaciones_es.h"
 
 
-void esperar_cpu(){
-    int estado_while = 0;
+void esperar_kernel_es(){
+    int estado_while = 1;
     while (estado_while) { //Bucle que queda esperando la operación
-        int cod_op = recibir_operacion(fd_memoria);
+        int cod_op = recibir_operacion(fd_kernel);
 		switch (cod_op) {
 		case MENSAJE:
 			break;
@@ -21,9 +21,10 @@ void esperar_cpu(){
 	}
 }
 
-void esperar_kernel(){
-    int estado_while = 0;
-    while (estado_while) { //Bucle que queda esperando la operación
+void esperar_memoria_es(){
+    int estado_while = 1;
+    while (estado_while) {
+		log_trace(es_logger,"ESPERANDO MENSAJES DE MEMORIA");
         int cod_op = recibir_operacion(fd_memoria);
         switch (cod_op) {
 		case MENSAJE:
@@ -31,7 +32,7 @@ void esperar_kernel(){
 		case PAQUETE:
 			break;
 		case -1:
-			log_error(es_logger, "KERNEL se desconecto. Terminando servidor");
+			log_error(es_logger, "MEMORIA se desconecto. Terminando servidor");
 			estado_while = 0;
             break;
 		default:

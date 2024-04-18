@@ -5,6 +5,7 @@
 #include "../include/inicializar_es.h"
 #include "../include/comunicaciones_es.h"
 #include <utils/include/shared.h>
+#include <pthread.h>
 
 // VARIABLES GLOBALES
 t_log* es_logger;
