@@ -7,9 +7,9 @@ void esperar_cpu_interrupt_kernel(){
         int cod_op = recibir_operacion(fd_cpu_interrupt);
 		switch (cod_op) {
 		case MENSAJE:
-			log_trace(kernel_logger,"Entre al MENSAJE");
+			/*log_trace(kernel_logger,"Entre al MENSAJE");
 			char* mensaje = recibir_buffer(fd_cpu);
-			log_info(kernel_logger, "Me llego el mensaje %s", mensaje);
+			log_info(kernel_logger, "Me llego el mensaje %s", mensaje);*/
 			break;
 		case PAQUETE:
 			break;

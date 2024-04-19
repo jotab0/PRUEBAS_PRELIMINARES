@@ -7,9 +7,9 @@ void esperar_memoria_kernel(){
         int cod_op = recibir_operacion(fd_memoria);
         switch (cod_op){
             case MENSAJE:
-                log_trace(kernel_logger,"Entre al MENSAJE");
+                /*log_trace(kernel_logger,"Entre al MENSAJE");
 			    char* mensaje = recibir_buffer(fd_cpu);
-			    log_info(kernel_logger, "Me llego el mensaje %s", mensaje);
+			    log_info(kernel_logger, "Me llego el mensaje %s", mensaje);*/
                 break;
             case PAQUETE:
                 //
