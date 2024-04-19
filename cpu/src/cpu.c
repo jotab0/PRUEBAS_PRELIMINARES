@@ -4,7 +4,7 @@
 // CLIENTE DE:  MEMORIA
 
 void mandar_mesaje_a_memoria(){
-    enviar_mensaje("Hola memoria",fd_memoria);
+    enviar_mensaje("Hola memoria: CPU",fd_memoria);
 }
 
 int main(void){
