@@ -4,10 +4,7 @@
 // CLIENTE DE:  MEMORIA
 
 void mandar_mesaje_a_memoria(){
-    t_buffer* buffer = crear_buffer();
-    cargar_string_a_buffer(buffer,"Hola memoria");
-    t_paquete* paquete = crear_paquete_con_buffer(MENSAJE,buffer);
-    enviar_paquete(paquete,fd_memoria);
+    enviar_mensaje("Hola memoria",fd_memoria);
 }
 
 int main(void){
@@ -47,6 +44,7 @@ int main(void){
     }
     pthread_detach(hilo_k_interrupt);
 
+    sleep(10);
     pthread_t hilo_mensaje_a_memoria;
     err = pthread_create(&hilo_mensaje_a_memoria,NULL,(void*)mandar_mesaje_a_memoria,NULL);
     if (err!=0){
