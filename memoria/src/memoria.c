@@ -5,7 +5,6 @@
 // CLIENTE DE: - 
 
 
-
 int main(int argc, char* argv[]) {
     
     // Inicializar estructuras de memoria

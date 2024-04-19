@@ -3,6 +3,10 @@
 // SERVIDOR DE: ENTRADASALIDA
 // CLIENTE DE: MEMORIA, CPU 
 
+void mandar_mesaje_a_cpu(){
+    enviar_mensaje("Hola cpu",fd_cpu_dispatch);
+}
+
 int main(int argc, char* argv[]) {
    
     //Inicializa Kernel
