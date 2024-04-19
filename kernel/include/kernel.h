@@ -44,8 +44,4 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
-// prueba
-void mandar_mesaje_a_cpu;
-
-
 #endif
