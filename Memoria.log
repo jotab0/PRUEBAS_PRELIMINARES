@@ -1,1 +1,4 @@
 [INFO] 02:07:29:634 Memoria_log/(23671:23671): PATH INSTRUCCIONES: /home/utnso/scripts-pruebas
+[INFO] 22:54:47:544 Memoria_log/(5923:5923): PUERTO ESCUCHA: 8002
+[TRACE] 22:54:47:545 Memoria_log/(5923:5923): SERVER: !! Servidor MEMORIA iniciada !!
+[INFO] 22:54:47:545 Memoria_log/(5923:5923): Esperando a CPU

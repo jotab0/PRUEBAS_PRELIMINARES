@@ -8,6 +8,9 @@ void esperar_cpu_memoria(){
 		int cod_op = recibir_operacion(fd_cpu);
 		switch (cod_op) {
 		case MENSAJE:
+		 	log_trace(memoria_logger,"Entre al MENSAJE");
+			char* mensaje = recibir_buffer(fd_cpu);
+			log_info(memoria_logger, "Me llego el mensaje %s", mensaje);
 			break;
 		case PAQUETE:
 			break;
@@ -63,3 +66,4 @@ void esperar_es_memoria(){
 		}
 	}
 }
+
