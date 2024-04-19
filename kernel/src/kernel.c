@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
     }
     pthread_join(hilo_memoria,NULL);
 
+
     //log_debug(kernel_logger_extra, "Advertencia de salida");
 
     //Iniciar la consola interactiva
