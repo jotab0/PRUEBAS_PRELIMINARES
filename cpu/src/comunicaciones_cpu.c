@@ -12,7 +12,7 @@ void esperar_kernel_cpu_interrupt(){
         int cod_op = recibir_operacion(fd_kernel_interrupt);
 		switch (cod_op) {
 		case MENSAJE:
-		 	recibir_mensaje_tp0(fd_kernel_interrupt,cpu_logger);
+			recibir_mensaje_tp0(fd_kernel_interrupt, cpu_logger);
 			break;
 		case PAQUETE:
 			lista = recibir_paquete(fd_kernel_interrupt);
@@ -32,6 +32,7 @@ void esperar_kernel_cpu_interrupt(){
 
 void esperar_kernel_cpu_dispatch(){
     int estado_while = 1;
+	t_list* lista;
     while (estado_while) {
 		t_list* lista;
 		log_trace(cpu_logger,"CPU DISPATCH: ESPERANDO MENSAJES DE KERNEL...");
@@ -58,6 +59,7 @@ void esperar_kernel_cpu_dispatch(){
 
 void esperar_memoria_cpu(){
     int estado_while = 1;
+	t_list* lista;
     while (estado_while) {
 		log_trace(cpu_logger,"CPU: ESPERANDO MENSAJES DE MEMORIA");
 		t_list* lista;

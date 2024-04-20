@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
     }
     pthread_detach(hilo_cpu_interrupt);
 
+
     pthread_t hilo_mensajes;
     err = pthread_create(&hilo_mensajes,NULL,(void*)mandar_mensajes,NULL);
     if (err!=0){
@@ -67,9 +68,8 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_detach(hilo_entradasalida);
-     
+    
     //Atender los mensajes de Memoria
-
     pthread_t hilo_memoria;
     err = pthread_create(&hilo_memoria, NULL, (void*)esperar_memoria_kernel, NULL);
     if (err!=0){
@@ -78,9 +78,9 @@ int main(int argc, char* argv[]) {
     }
     pthread_join(hilo_memoria,NULL);
 
-    //log_debug(kernel_logger_extra, "Advertencia de salida");
 
-    //Iniciar la consola interactiva
-    
+    //COMUNICACIÓN
+
+    // INICIAR CONSOLA INTERACTIVA (Tiene que ser antes del hilo con el join (Quizá puede ir primera))
     return EXIT_SUCCESS;
 }

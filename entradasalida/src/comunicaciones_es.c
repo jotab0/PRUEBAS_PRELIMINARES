@@ -19,9 +19,9 @@ void esperar_kernel_es(){
 			log_info(es_logger,"Me llegaron los siguientes mensajes:\n");
 			list_iterate(lista,(void*)iterator);
 			break;
-		case -1:
-			log_error(es_logger, "KERNEL se desconecto. Terminando servidor");
-			estado_while = 0;
+			case -1:
+				log_error(es_logger, "KERNEL se desconecto. Terminando servidor");
+				estado_while = 0;
             break;
 		default:
 			log_warning(es_logger,"Operacion desconocida");
@@ -45,13 +45,13 @@ void esperar_memoria_es(){
 			log_info(es_logger,"Me llegaron los siguientes mensajes:\n");
 			list_iterate(lista,(void*)iterator);
 			break;
-		case -1:
-			log_error(es_logger, "MEMORIA se desconecto. Terminando servidor");
-			estado_while = 0;
+			case -1:
+				log_error(es_logger, "MEMORIA se desconecto. Terminando servidor");
+				estado_while = 0;
             break;
 		default:
 			log_warning(es_logger,"Operacion desconocida");
-			break;
+		break;
 		}
 	}
 }

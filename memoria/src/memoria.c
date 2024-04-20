@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
     
     // Esperar conexion de entrada y salida
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
-    
-
+  
+  
 
     pthread_t hilo_cpu;
     int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
@@ -68,3 +68,4 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
