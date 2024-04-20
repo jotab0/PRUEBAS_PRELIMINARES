@@ -7,6 +7,11 @@ void mandar_mesaje_a_memoria(){
     enviar_mensaje("Hola memoria: Entrada Salida",fd_memoria);
 } 
 
+void mandar_mensaje_a_kernel(){
+    enviar_mensaje("Hola Kernel: Entrada Salida", fd_kernel);
+}
+
+
 int main(int argc, char* argv[]) {
 
     // Inicializar estructuras de ES
@@ -25,10 +30,19 @@ int main(int argc, char* argv[]) {
     pthread_t hilo_mensaje_a_memoria;
     int err = pthread_create(&hilo_mensaje_a_memoria,NULL,(void*)mandar_mesaje_a_memoria,NULL);
     if (err!=0){
-        perror("Fallo de creación de hilo_k_interrupt(cpu)\n");
+        perror("Fallo de creación de hilo_mensaje_a_memoria(entradasalida)\n");
         return -3;
     }
     pthread_detach(hilo_mensaje_a_memoria);
+
+     // Hilo: mensaje a kernel 
+    pthread_t hilo_mensaje_a_kernel;
+    err = pthread_create(&hilo_mensaje_a_kernel,NULL,(void*)mandar_mensaje_a_kernel,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_mensaje_a_kernel(entradasalida)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensaje_a_kernel);
 
 
     pthread_t hilo_memoria;
