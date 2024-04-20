@@ -2,6 +2,10 @@
 
 // SERVIDOR DE: ENTRADASALIDA
 // CLIENTE DE: MEMORIA, CPU 
+void mandar_mesaje_a_memoria(){
+    enviar_mensaje("Hola memoria: Kernel",fd_memoria);
+}
+
 
 // MENSAJES DE PRUEBA
 void mandar_mensaje_a_cpu_dispatch(){
@@ -79,8 +83,17 @@ int main(int argc, char* argv[]) {
     }
     pthread_detach(hilo_entradasalida);
      
+    
+    // Hilo: mensaje a memoria 
+    pthread_t hilo_mensaje_a_memoria;
+    err = pthread_create(&hilo_mensaje_a_memoria,NULL,(void*)mandar_mesaje_a_memoria,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_k_interrupt(cpu)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensaje_a_memoria);
+    
     //Atender los mensajes de Memoria
-
     pthread_t hilo_memoria;
     err = pthread_create(&hilo_memoria, NULL, (void*)esperar_memoria_kernel, NULL);
     if (err!=0){
@@ -91,6 +104,8 @@ int main(int argc, char* argv[]) {
 
 
     //log_debug(kernel_logger_extra, "Advertencia de salida");
+
+    //COMUNICACIÓN
 
     //Iniciar la consola interactiva
     
