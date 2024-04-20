@@ -1,54 +1,42 @@
 #include "../include/memoria.h"
 
-
 // SERVIDOR DE: CPU, KERNEL, ENTRADASALIDA
 // CLIENTE DE: - 
 
 
 int main(int argc, char* argv[]) {
     
-    // Inicializar estructuras de memoria
-    inicializar_memoria();
-
-    // Iniciar servidor de memoria
-    fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"!! Servidor MEMORIA iniciada !!");  
-    
-    //CONECTAR CON CLIENTES
-    // Esperar conexion de CPU
-    fd_cpu = esperar_cliente(fd_memoria, memoria_logger,"CPU");
-
-    // Esperar conexion de kernel 
-    fd_kernel = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
-    
-    // Esperar conexion de entrada y salida
-    fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
-    
-    //Cuano la CPU no rompe, queda esperando en ambos hilos
-    pthread_t hilo_cpu;
-    int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_cpu(memoria))\n");
-        return -3;
+    // INCIA MEMORIA
+    memoria_logger = log_create("Memoria.log", "Memoria_log", true, LOG_LEVEL_INFO);
+    if (memoria_logger == NULL){
+        perror ("No se pudo crear log para la memoria");
+        exit(EXIT_FAILURE);
     }
-    pthread_detach(hilo_cpu);
 
-
-    pthread_t hilo_es;
-    err = pthread_create(&hilo_es,NULL,(void*)esperar_es_memoria,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_es(memoria))\n");
-        return -3;
+    memoria_logger_extra = log_create("Memoria_extra_log.log", "Memoria_extra_log", true, LOG_LEVEL_TRACE);
+    if (memoria_logger == NULL){
+        perror ("No se pudo crear log extra para la memoria");
+        exit(EXIT_FAILURE);
     }
-    pthread_detach(hilo_es);
+
+    memoria_config = config_create(path_config_Memoria);
+
+	if (memoria_config == NULL) {
+        perror ("No se pudo crear el config para la memoria");
+		exit(EXIT_FAILURE);
+	}
+
+    PUERTO_ESCUCHA = config_get_string_value(memoria_config,"PUERTO_ESCUCHA");
+    TAM_MEMORIA = config_get_int_value(memoria_config,"TAM_MEMORIA");
+    TAM_PAGINA = config_get_int_value(memoria_config,"TAM_PAGINA");
+    PATH_INSTRUCCIONES= config_get_string_value(memoria_config,"PATH_INSTRUCCIONES");
+    RETARDO_RESPUESTA = config_get_int_value(memoria_config,"RETARDO_RESPUESTA");
+
+    log_info(memoria_logger,"PATH INSTRUCCIONES: %s",PATH_INSTRUCCIONES);
+
+    // INICIAR SERVIDOR DE MEMORIA
     
-    pthread_t hilo_kernel;
-    err = pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_memoria,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_kernel(memoria))\n");
-        return -3;
-    }
-    pthread_join(hilo_kernel,NULL);
+    //int fd_kernel = iniciar_servidor()
 
-
-    return EXIT_SUCCESS;
+    return 0;
 }
