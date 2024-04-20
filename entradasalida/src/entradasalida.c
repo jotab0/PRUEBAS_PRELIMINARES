@@ -3,14 +3,12 @@
 // SERVIDOR DE: -
 // CLIENTE DE: KERNEL, MEMORIA 
 
-void mandar_mesaje_a_memoria(){
-    enviar_mensaje("Hola memoria: Entrada Salida",fd_memoria);
-} 
 
-void mandar_mensaje_a_kernel(){
-    enviar_mensaje("Hola Kernel: Entrada Salida", fd_kernel);
+void mandar_mesajes(){
+    sleep(10);
+    enviar_mensaje("Hola memoria, soy E/S",fd_memoria);
+    enviar_mensaje("Hola kernel, soy E/S",fd_kernel);
 }
-
 
 int main(int argc, char* argv[]) {
 
@@ -25,26 +23,6 @@ int main(int argc, char* argv[]) {
     fd_kernel = crear_conexion(IP_KERNEL, PUERTO_KERNEL);
     log_info(es_logger, "Conexion con Kernel exitosa.");
     
-    //Hilo: mensaje a memoria
-    
-    pthread_t hilo_mensaje_a_memoria;
-    int err = pthread_create(&hilo_mensaje_a_memoria,NULL,(void*)mandar_mesaje_a_memoria,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_mensaje_a_memoria(entradasalida)\n");
-        return -3;
-    }
-    pthread_detach(hilo_mensaje_a_memoria);
-
-     // Hilo: mensaje a kernel 
-    pthread_t hilo_mensaje_a_kernel;
-    err = pthread_create(&hilo_mensaje_a_kernel,NULL,(void*)mandar_mensaje_a_kernel,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_mensaje_a_kernel(entradasalida)\n");
-        return -3;
-    }
-    pthread_detach(hilo_mensaje_a_kernel);
-
-
     pthread_t hilo_memoria;
     err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_es,NULL);
     if (err!=0){
@@ -52,6 +30,14 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_detach(hilo_memoria);
+
+    pthread_t hilo_mensajes;
+    err = pthread_create(&hilo_mensajes,NULL,(void*)mandar_mesajes,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_k_interrupt(cpu)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensajes);
   
     pthread_t hilo_kernel;
     err = pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_es,NULL);
