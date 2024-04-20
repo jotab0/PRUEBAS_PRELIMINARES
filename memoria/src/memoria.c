@@ -4,6 +4,10 @@
 // SERVIDOR DE: CPU, KERNEL, ENTRADASALIDA
 // CLIENTE DE: - 
 
+// MENSAJES DE PRUEBA
+void mandar_mensaje_a_cpu(){
+    enviar_mensaje("Hola CPU", fd_cpu);
+}
 
 int main(int argc, char* argv[]) {
     
@@ -31,6 +35,15 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_detach(hilo_cpu);
+
+    // mensaje a cpu
+    pthread_t hilo_mensaje_a_cpu;
+    err = pthread_create(&hilo_mensaje_a_cpu,NULL,(void*)mandar_mensaje_a_cpu,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_mensaje_a_cpu(memoria)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensaje_a_cpu);
 
 
     pthread_t hilo_es;
