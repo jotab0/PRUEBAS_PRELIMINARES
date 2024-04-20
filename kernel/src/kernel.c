@@ -60,11 +60,14 @@ int main(int argc, char* argv[]) {
         perror("Fallo de creación de hilo_memoria(kernel)\n");
         return -3;
     }
-    pthread_join(hilo_memoria,NULL);
+    pthread_detach(hilo_memoria);
 
     //log_debug(kernel_logger_extra, "Advertencia de salida");
 
     //Iniciar la consola interactiva
-    
+    iniciar_consola_interactiva();
+
+    log_debug(kernel_log_debug, "Advertencia de salida de Kernel");
+
     return EXIT_SUCCESS;
 }

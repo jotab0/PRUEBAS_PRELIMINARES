@@ -14,6 +14,7 @@ RESERVADA extern. */
 #include "kernel_memoria.h"
 #include <utils/include/shared.h>
 #include <pthread.h>
+#include "consola.h"
 
 // VARIABLES GLOBALES
 t_log* kernel_logger;
@@ -44,5 +45,9 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
+int identificador_PID = 1;
+int contador_pcbs = 1;
+
+pthread_mutex_t mutex_pid;
 
 #endif
