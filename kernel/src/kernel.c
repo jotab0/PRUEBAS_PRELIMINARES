@@ -3,6 +3,15 @@
 // SERVIDOR DE: ENTRADASALIDA
 // CLIENTE DE: MEMORIA, CPU 
 
+// MENSAJES DE PRUEBA
+void mandar_mensaje_a_cpu_dispatch(){
+    enviar_mensaje("Hola CPU-Dispatch", fd_cpu_dispatch);
+}
+
+void mandar_mensaje_a_cpu_interrupt(){
+    enviar_mensaje("Hola CPU-Interrupt", fd_cpu_interrupt);
+}
+
 int main(int argc, char* argv[]) {
    
     //Inicializa Kernel
@@ -32,6 +41,15 @@ int main(int argc, char* argv[]) {
     }
     pthread_detach(hilo_cpu_dispatch);
 
+    // mensaje a cpu-dispatch
+    pthread_t hilo_mensaje_a_cpu_dispatch;
+    err = pthread_create(&hilo_mensaje_a_cpu_dispatch,NULL,(void*)mandar_mensaje_a_cpu_dispatch,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_mensaje_a_cpu_dispatch(kernel)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensaje_a_cpu_dispatch);
+
     //Atender los mensajes de CPU - Interrupt
 
     pthread_t hilo_cpu_interrupt;
@@ -41,6 +59,15 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_detach(hilo_cpu_interrupt);
+
+    // mensaje a cpu-interrupt
+    pthread_t hilo_mensaje_a_cpu_interrupt;
+    err = pthread_create(&hilo_mensaje_a_cpu_interrupt,NULL,(void*)mandar_mensaje_a_cpu_interrupt,NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_mensaje_a_cpu_interrupt(kernel)\n");
+        return -3;
+    }
+    pthread_detach(hilo_mensaje_a_cpu_interrupt);
 
     //Atender los mensajes de EntradaSalida
 
