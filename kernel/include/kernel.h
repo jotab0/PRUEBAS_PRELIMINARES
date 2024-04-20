@@ -18,6 +18,7 @@ RESERVADA extern. */
 
 // VARIABLES GLOBALES
 t_log* kernel_logger;
+t_log* kernel_log_debug;
 t_log* kernel_logger_extra;
 t_config* kernel_config;
 

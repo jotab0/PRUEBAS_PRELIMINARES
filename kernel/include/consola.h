@@ -4,7 +4,7 @@
 #include "../include/k_gestor.h"
 #include "../include/servicios_kernel.h"
 
-#include <../src/utils/include/shared.h>
+#include <utils/include/shared.h>
 
 void iniciar_consola_interactiva();
 bool validacion_de_instruccion_de_consola(char* leido);

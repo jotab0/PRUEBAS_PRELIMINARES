@@ -1,6 +1,5 @@
 #include "../include/consola.h"
 
-
 void iniciar_consola_interactiva(){
     char* leido;
     leido = readline("> ");
@@ -55,13 +54,13 @@ bool validacion_de_instruccion_de_consola(char* leido){
 }
 
 void atender_instruccion_validada(char* leido){
-    char** comand_consola = string_split(leido, " ");
+    char** comando_consola = string_split(leido, " ");
     t_buffer* un_buffer = crear_buffer();
 
-    if(strcmp(comand_consola[0], "INICIAR_PROCESO") == 0){//[PATH] [SIZE] [PRIORIDAD]
-    cargar_string_a_buffer(un_buffer, comand_consola[1]); //[PATH]
-    cargar_string_a_buffer(un_buffer, comand_consola[2]); //[SIZE]
-    cargar_string_a_buffer(un_buffer, comand_consola[3]); //[PRIORIDAD]
+    if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){//[PATH] [SIZE] [PRIORIDAD]
+    cargar_string_a_buffer(un_buffer, comando_consola[1]); //[PATH]
+    cargar_string_a_buffer(un_buffer, comando_consola[2]); //[SIZE]
+    cargar_string_a_buffer(un_buffer, comando_consola[3]); //[PRIORIDAD]
     f_iniciar_proceso(un_buffer);
 }else if(strcmp(comando_consola[0], "FINALIZAR_PROCESO") == 0){
 
@@ -81,7 +80,7 @@ void atender_instruccion_validada(char* leido){
     log_error(kernel_logger, "Comando no reconocido, pero que paso el filtro??");
     exit(EXIT_FAILURE);
 }
-    string_array_destroy(comand_consola);
+    string_array_destroy(comando_consola);
 }
 
 void f_iniciar_proceso(t_buffer* un_buffer){
@@ -99,7 +98,9 @@ void f_iniciar_proceso(t_buffer* un_buffer){
     cargar_int_a_buffer(a_enviar, pid);
     cargar_string_a_buffer(a_enviar, path);
     cargar_int_a_buffer(un_buffer, size_num);
-    t_paquete* un_paquete = crear_super_paquete(CREAR_PROCESO_KM, a_enviar);
+    t_paquete* un_paquete = crear_paquete_con_buffer(CREAR_PROCESO_KM, a_enviar);
     enviar_paquete(un_paquete, fd_memoria);
     destruir_paquete(un_paquete);
+
+    //[FALTA] hacer el resto de la logica para el funcionamiento del kernel
 }
