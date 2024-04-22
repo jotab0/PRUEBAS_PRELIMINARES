@@ -33,13 +33,18 @@ void esperar_cpu_memoria(){
 
 void esperar_kernel_memoria(){
     int estado_while = 1;
+	t_list* lista;
     while (estado_while) {
 		log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE KERNEL...");
         int cod_op = recibir_operacion(fd_kernel);
 		switch (cod_op) {
 		case MENSAJE:
+		 	recibir_mensaje_tp0(fd_kernel,memoria_logger);
 			break;
 		case PAQUETE:
+			lista = recibir_paquete(fd_kernel);
+			log_info(memoria_logger,"Me llegaron los siguientes mensajes:\n");
+			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(memoria_logger, "KERNEL se desconecto. Terminando servidor");
@@ -54,13 +59,18 @@ void esperar_kernel_memoria(){
 
 void esperar_es_memoria(){
     int estado_while = 1;
+	t_list* lista;
     while (estado_while) {
 		log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE E/S...");
         int cod_op = recibir_operacion(fd_es);
 		switch (cod_op) {
 		case MENSAJE:
+		 	recibir_mensaje_tp0(fd_es,memoria_logger);
 			break;
 		case PAQUETE:
+			lista = recibir_paquete(fd_es);
+			log_info(memoria_logger,"Me llegaron los siguientes mensajes:\n");
+			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(memoria_logger, "ENTRADASALIDA se desconecto. Terminando servidor");
