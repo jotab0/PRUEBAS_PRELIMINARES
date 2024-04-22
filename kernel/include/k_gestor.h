@@ -8,15 +8,20 @@ RESERVADA extern. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <readline/readline.h>
 
 #include "../src/utils/include/shared.h"
 
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/string.h>
+
+#include <../src/utils/include/shared.h>
 
 //Variables globales
 
 extern t_log* kernel_logger;
+extern t_log* kernel_log_debug;
 extern t_log* kernel_logger_extra;
 extern t_config* kernel_config;
 
@@ -48,5 +53,9 @@ extern int fd_cpu_dispatch;
 extern int fd_cpu_interrupt;
 extern int fd_kernel;
 
+extern int identificador_PID;
+extern int contador_pcbs;
+
+extern pthread_mutex_t mutex_pid;
 
 #endif

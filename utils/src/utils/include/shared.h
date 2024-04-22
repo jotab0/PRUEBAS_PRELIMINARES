@@ -18,15 +18,19 @@ typedef enum {
     MENSAJE,
     PAQUETE,
     HANDSHAKE,
-    RTA_HANDSHAKE,
-      //KERNEL-MEMORIA
-    CREAR_PROCESO,
-    RTA_CREAR_PROCESO
+    RPTA_HANDSHAKE,
+    //**KERNEL-MEMORIA**
+    CREAR_PROCESO_KM,
+    RTA_CREAR_PROCES_MK
     // SEPARAR SEGUN TIPO:
-    //KERNEL-CPU
-    //KERNEL-ES
-    //ES-MEMORIA
-    //CPU-MEMORIA
+    //**KERNEL-CPU**
+    
+    //**KERNEL-ES**
+    
+    //**ES-MEMORIA**
+
+    //**CPU-MEMORIA**
+
 }op_code;
 
 typedef struct 
