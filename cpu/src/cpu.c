@@ -69,6 +69,10 @@ int main(void){
     }
     pthread_join(hilo_memoria,NULL);
 
+    // CICLO DE INSTRUCCION
+
+    realizarCicloInstruccion();
+
     
 	return EXIT_SUCCESS;
 }
