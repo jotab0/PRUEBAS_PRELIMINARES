@@ -2,18 +2,36 @@
 static void iterator(char* value){
 	log_info(kernel_logger,"%s",value);
 }
-void esperar_entradasalida_kernel(){
+
+void esperar_conexiones_entradasalida(){
+	while(1){
+        
+        int *fd_conexion_entradasalida = malloc(sizeof(int));
+        *fd_conexion_entradasalida = esperar_cliente(fd_kernel, kernel_logger, "ENTRADA-SALIDA");
+
+        pthread_t hilo_entradasalida;
+        int err = pthread_create(&hilo_entradasalida, NULL,(void*)esperar_entradasalida_kernel, (int*)fd_conexion_entradasalida);
+        if (err!=0){
+            perror("Fallo de creación de hilo_entradasalida(kernel)\n");
+            exit(-3);
+        }
+        pthread_detach(hilo_entradasalida);
+
+    }
+}
+
+void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
     int estado_while = 1;
 	t_list* lista;
     while (estado_while) {
 		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE E/S...");
-        int cod_op = recibir_operacion(fd_entradasalida);
+        int cod_op = recibir_operacion(*fd_conexion_entradasalida);
 		switch (cod_op) {
 		case MENSAJE:
-		 	recibir_mensaje_tp0(fd_entradasalida,kernel_logger);
+		 	recibir_mensaje_tp0(*fd_conexion_entradasalida,kernel_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_entradasalida);
+			lista = recibir_paquete(*fd_conexion_entradasalida);
 			log_info(kernel_logger,"Me llegaron los siguientes mensajes:\n");
 			list_iterate(lista,(void*)iterator);
 			break;
@@ -27,3 +45,4 @@ void esperar_entradasalida_kernel(){
 		}
 	}
 }
+// LA IDEA ES CREAR HILO POR PEDIDO

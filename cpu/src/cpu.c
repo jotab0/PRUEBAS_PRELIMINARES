@@ -37,7 +37,7 @@ int main(void){
 
     //atender los mensajes de kernel-dispatch
     pthread_t hilo_k_dispatch;
-    err = pthread_create(&hilo_k_dispatch,NULL,(void*)esperar_kernel_cpu_dispatch,NULL);
+    int err = pthread_create(&hilo_k_dispatch,NULL,(void*)esperar_kernel_cpu_dispatch,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_k_dispatch(cpu)\n");
         return -3;
@@ -71,7 +71,7 @@ int main(void){
 
     // CICLO DE INSTRUCCION
 
-    realizarCicloInstruccion();
+    //realizarCicloInstruccion();
 
     
 	return EXIT_SUCCESS;

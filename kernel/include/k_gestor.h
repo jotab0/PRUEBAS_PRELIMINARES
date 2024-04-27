@@ -58,4 +58,30 @@ extern int contador_pcbs;
 
 extern pthread_mutex_t mutex_pid;
 
+typedef enum{
+	NEW,
+	READY,
+	EXEC,
+	BLOCKED,
+	EXIT
+}est_pcb;
+
+
+
+typedef struct{
+	uint32_t AX;
+	uint32_t BX;
+	uint32_t CX;
+	uint32_t DX;
+}registrosCPU;
+typedef struct{ //
+	int pid;
+	int program_counter;
+    int quantum;
+	//int size;
+	//char* path;
+	//est_pcb estado;
+	registrosCPU* registros_CPU;
+}pcb;
+
 #endif

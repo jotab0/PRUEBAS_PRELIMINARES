@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     log_info(es_logger, "Conexion con Kernel exitosa.");
     
     pthread_t hilo_memoria;
-    err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_es,NULL);
+    int err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_es,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_memoria(entradasalida))\n");
         return -3;

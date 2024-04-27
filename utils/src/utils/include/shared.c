@@ -253,7 +253,7 @@ void* recibir_buffer(int socket_cliente)
 void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 {
 	int size;
-	char* buffer = recibir_buffer_tp0(&size, socket_cliente);
+	char* buffer = recibir_buffer_tp0(&size, socket_cliente); // PARA QUE SE USA EL SIZE? No sería mejor declararlo en recibir_buffer??
 	log_info(logger, "Me llego el mensaje %s", buffer);
 	free(buffer);
 }
@@ -332,3 +332,4 @@ void eliminar_paquete(t_paquete* paquete)
 	free(paquete->buffer);
 	free(paquete);
 }
+
