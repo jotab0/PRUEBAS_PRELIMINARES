@@ -3,7 +3,9 @@
 void inicializar_kernel(){
     inicializar_logs();
     inicializar_configs();
-    imprimir_configs();
+    crear_listas();
+    inicializar_semaforos();
+    inicializar_mutexes();
 }
 
 void inicializar_logs(){
@@ -42,8 +44,25 @@ void inicializar_configs(){
         GRADO_MULTIPROGRAMACION = config_get_int_value(kernel_config,"GRADO_MULTIPROGRAMACION");
 }
 
-void imprimir_configs(){
-    log_info(kernel_logger, "KERNEL ALGORITMO_PLANIFICACION: %s", ALGORITMO_PLANIFICACION);
+void crear_listas(){
+	ready = list_create();
+	execute = list_create();
+	new = list_create();
+	blocked = list_create();
+	lista_exit = list_create();
+}
+
+void inicializar_semaforos(){
+	sem_init(&sem_enviar_interrupcion, 0, 0);
+}
+
+void inicializar_mutexes(){
+	pthread_mutex_init(&mutex_lista_ready, NULL);
+	pthread_mutex_init(&mutex_lista_exec, NULL);
+
+	pthread_mutex_init(&mutex_ticket, NULL);
+    pthread_mutex_init(&mutex_flag_exit, NULL);
+    pthread_mutex_init(&mutex_pid, NULL);
 }
 
     

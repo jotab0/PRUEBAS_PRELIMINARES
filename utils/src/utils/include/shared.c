@@ -101,32 +101,6 @@ void destruir_buffer(t_buffer* buffer) { // DESTRUYE BUFFER PARA QUE NO HAYA !!!
     free(buffer);
 }
 
-void cargar_mensaje_a_buffer(t_buffer* buffer, void* mensaje, int tam_mensaje) { // AGREGA EL CODIGO DE MSJE + MENSAJE A UN BUFFER EXISTENTE (Puede ya tener algo cargado o no)
-	if(buffer -> size == 0){
-		buffer -> stream = malloc(sizeof(int) + tam_mensaje); // VA SIEMRPE PRIMERO SIZEOF(INT) PORQUE ES EL TAMAÑO QUE VA A TENER SIEMPRE EL CÓDIGO DE COMUNICACIÓN
-		memcpy(buffer -> stream,&tam_mensaje,sizeof(int));
-		memcpy(buffer -> stream + sizeof(int),mensaje,tam_mensaje);
-	}
-	else {
-   		buffer->stream = realloc(buffer->stream, buffer->size + sizeof(int) + tam_mensaje); // realloc() permite aumentar en tiempo de ejecución el tamaño de memoria dinámica ya pedido
-    	memcpy(buffer->stream + buffer->size, &tam_mensaje, sizeof(int));
-    	memcpy(buffer->stream + buffer->size + sizeof(int), mensaje, tam_mensaje);
-	}
-    buffer->size += sizeof(int);
-    buffer->size += tam_mensaje;
-}
-
-void cargar_int_a_buffer(t_buffer* buffer, int valor) {  
-    cargar_mensaje_a_buffer(buffer, &valor, sizeof(int));
-}
-
-void cargar_uint32_a_buffer(t_buffer* buffer, uint32_t valor) {
-    cargar_mensaje_a_buffer(buffer, &valor, sizeof(uint32_t));
-}
-
-void cargar_string_a_buffer(t_buffer* buffer, char* string) {
-    cargar_mensaje_a_buffer(buffer, string, strlen(string)+1);
-}
 
 void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	
@@ -190,40 +164,11 @@ uint32_t extraer_uint32_del_buffer(t_buffer* buffer){
 
 // PAQUETES
 
-t_paquete* crear_paquete_con_buffer(op_code codigo_operacion, t_buffer* buffer){ // EL PAQUETE ADEMAS DE LLEVAR INFORMACION (COMO EL BUFFER) LLEVA EL CODIGO DE OPERACION
-	t_paquete* nuevo_paquete = malloc(sizeof(t_paquete));
-	nuevo_paquete -> codigo_operacion = codigo_operacion;
-	nuevo_paquete -> buffer = buffer;
-	return nuevo_paquete;
-}
-
 void destruir_paquete(t_paquete* paquete){
 	destruir_buffer(paquete->buffer);
 	free(paquete);
 }
 
-void* serializar_paquete(t_paquete* paquete){
-	int tam_puntero = paquete->buffer->size + 2*sizeof(int); // POR LOS 2 sizeof(int) QUE AGREGO MÁS ABAJO
-	void* puntero = malloc(sizeof(tam_puntero));
-	int desplazamiento = 0;
-
-	memcpy(puntero+desplazamiento,&(paquete->codigo_operacion),sizeof(int)); // COPIO EL CODIGO DE OPERACION
-	desplazamiento += sizeof(int);
-	memcpy(puntero+desplazamiento,&(paquete->buffer->size),sizeof(int)); // COPIO EL TAMAÑO DEL BUFFER
-	desplazamiento += sizeof(int);
-	memcpy(puntero+desplazamiento,&(paquete->buffer->stream),paquete->buffer->size); // COPIO EL STREAM
-
-	return puntero; 
-}
-
-void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRIPTOR DE CONEXION
-	void* a_enviar = serializar_paquete(paquete);
-
-	int bytes = paquete->buffer->size + 2*sizeof(int); // LE AGREGA *2 int POR LOS QUE LE AGREGO AL SERIALZIAR
-	send(fd, a_enviar, bytes, 0);
-
-	free(a_enviar);
-}
 
 // LUEGO CADA UNO SE FIJA COMO LO EXTRAE, YA QUE DEPENDERÁ DEL CODIGO DE OPERACIÓN
 
@@ -248,7 +193,8 @@ void* recibir_buffer(int socket_cliente)
 	return buffer; // SOLAMENTE TIENE EL STREAM
 }
 
-// LITERAL tp0
+// COMUNICACIÓN
+
 
 void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 {
@@ -258,27 +204,7 @@ void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 	free(buffer);
 }
 
-t_list* recibir_paquete(int socket_cliente)
-{
-	int size;
-	int desplazamiento = 0;
-	void * buffer;
-	t_list* valores = list_create();
-	int tamanio;
 
-	buffer = recibir_buffer_tp0(&size, socket_cliente);
-	while(desplazamiento < size)
-	{
-		memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
-		desplazamiento+=sizeof(int);
-		char* valor = malloc(tamanio);
-		memcpy(valor, buffer+desplazamiento, tamanio);
-		desplazamiento+=tamanio;
-		list_add(valores, valor);
-	}
-	free(buffer);
-	return valores;
-}
 
 void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda string como mensaje
 {
@@ -315,6 +241,93 @@ void* serializar_paquete_tp0(t_paquete* paquete, int bytes)
 	return magic;
 }
 
+// ============= Nuevo
+
+
+t_paquete* crear_paquete_con_buffer(op_code codigo_operacion){ // EL PAQUETE ADEMAS DE LLEVAR INFORMACION (COMO EL BUFFER) LLEVA EL CODIGO DE OPERACION
+	t_paquete* nuevo_paquete = malloc(sizeof(t_paquete));
+	nuevo_paquete -> codigo_operacion = codigo_operacion;
+	crear_buffer_en_paquete(nuevo_paquete);
+	return nuevo_paquete;
+}
+
+void crear_buffer_en_paquete(t_paquete* paquete){
+	paquete->buffer = malloc(sizeof(t_buffer));
+	paquete->buffer->size = 0;
+	paquete->buffer->stream = NULL;
+}
+
+void cargar_mensaje_a_buffer(t_buffer* buffer, void* mensaje, int tam_mensaje) { // AGREGA EL CODIGO DE MSJE + MENSAJE A UN BUFFER EXISTENTE (Puede ya tener algo cargado o no)
+	if(buffer -> size == 0){
+		buffer -> stream = malloc(sizeof(int) + tam_mensaje); // VA SIEMRPE PRIMERO SIZEOF(INT) PORQUE ES EL TAMAÑO QUE VA A TENER SIEMPRE EL CÓDIGO DE COMUNICACIÓN
+		memcpy(buffer -> stream,&tam_mensaje,sizeof(int));
+		memcpy(buffer -> stream + sizeof(int),mensaje,tam_mensaje);
+	}
+	else {
+   		buffer->stream = realloc(buffer->stream, buffer->size + sizeof(int) + tam_mensaje); // realloc() permite aumentar en tiempo de ejecución el tamaño de memoria dinámica ya pedido
+    	memcpy(buffer->stream + buffer->size, &tam_mensaje, sizeof(int));
+    	memcpy(buffer->stream + buffer->size + sizeof(int), mensaje, tam_mensaje);
+	}
+    buffer->size += sizeof(int);
+    buffer->size += tam_mensaje;
+}
+
+void cargar_int_a_buffer(t_buffer* buffer, int valor) {  
+    cargar_mensaje_a_buffer(buffer, &valor, sizeof(int));
+}
+
+void cargar_uint32_a_buffer(t_buffer* buffer, uint32_t valor) {
+    cargar_mensaje_a_buffer(buffer, &valor, sizeof(uint32_t));
+}
+
+void cargar_string_a_buffer(t_buffer* buffer, char* string) {
+    cargar_mensaje_a_buffer(buffer, string, strlen(string)+1);
+}
+
+void cargar_int_a_paquete(t_paquete* paquete, int valor) {  
+    cargar_mensaje_a_buffer(paquete -> buffer, &valor, sizeof(int));
+}
+
+void cargar_uint32_a_paquete(t_paquete* paquete, uint32_t valor) {
+    cargar_mensaje_a_buffer(paquete->buffer, &valor, sizeof(uint32_t));
+}
+
+void cargar_string_a_paquete(t_paquete* paquete, char* string) {
+    cargar_mensaje_a_buffer(paquete -> buffer, string, strlen(string)+1);
+}
+
+void eliminar_paquete(t_paquete* paquete)
+{
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRIPTOR DE CONEXION
+	void* a_enviar = serializar_paquete(paquete);
+
+	int bytes = paquete->buffer->size + 2*sizeof(int); // LE AGREGA *2 int POR LOS QUE LE AGREGO AL SERIALZIAR
+	send(fd, a_enviar, bytes, 0);
+
+	free(a_enviar);
+}
+
+void* serializar_paquete(t_paquete* paquete){
+	int tam_puntero = paquete->buffer->size + 2*sizeof(int); // POR LOS 2 sizeof(int) QUE AGREGO MÁS ABAJO
+	void* puntero = malloc(sizeof(tam_puntero));
+	int desplazamiento = 0;
+
+	memcpy(puntero+desplazamiento,&(paquete->codigo_operacion),sizeof(int)); // COPIO EL CODIGO DE OPERACION
+	desplazamiento += sizeof(int);
+	memcpy(puntero+desplazamiento,&(paquete->buffer->size),sizeof(int)); // COPIO EL TAMAÑO DEL BUFFER
+	desplazamiento += sizeof(int);
+	memcpy(puntero+desplazamiento,paquete->buffer->stream,paquete->buffer->size); // COPIO EL STREAM
+
+	return puntero; 
+}
+
+// ========== Modificar y agregar la logica para extraer lo que mande
+
 void* recibir_buffer_tp0(int* size, int socket_cliente)
 {
 	void * buffer;
@@ -326,10 +339,33 @@ void* recibir_buffer_tp0(int* size, int socket_cliente)
 	return buffer; // SOLAMENTE TIENE EL STREAM
 }
 
-void eliminar_paquete(t_paquete* paquete)
+t_list* recibir_paquete(int socket_cliente)
 {
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
+	int size;
+	int desplazamiento = 0;
+	void * buffer;
+	t_list* valores = list_create();
+	int tamanio;
+
+	buffer = recibir_buffer_tp0(&size, socket_cliente);
+	while(desplazamiento < size)
+	{
+		memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
+		desplazamiento+=sizeof(int);
+		char* valor = malloc(tamanio);
+		memcpy(valor, buffer+desplazamiento, tamanio);
+		desplazamiento+=tamanio;
+		list_add(valores, valor);
+	}
+	free(buffer);
+	return valores;
 }
 
+
+// FUNCIONES THREADS
+
+void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento){
+	pthread_t thread;
+	pthread_create(&thread, NULL, (void*)una_funcion, struct_argumento);
+	pthread_detach(thread);
+}

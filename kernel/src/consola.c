@@ -55,10 +55,11 @@ void atender_instruccion(char* leido){
     char** comando_consola = string_split(leido, " ");
     t_buffer* un_buffer = crear_buffer();
 
-    if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){//[PATH] [SIZE]
+    if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){/*
+    //[PATH] [SIZE]
     cargar_string_a_buffer(un_buffer, comando_consola[1]); //[PATH]
     cargar_string_a_buffer(un_buffer, comando_consola[2]); //[SIZE]
-    f_iniciar_proceso(un_buffer);
+    f_iniciar_proceso(un_buffer);*/
     // Tiene que crear PCB del procesp en new
 }else if(strcmp(comando_consola[0], "FINALIZAR_PROCESO") == 0){
 
@@ -78,7 +79,7 @@ void atender_instruccion(char* leido){
 }
     string_array_destroy(comando_consola);
 }
-
+/*
 void f_iniciar_proceso(t_buffer* un_buffer){
     char* path = extraer_string_del_buffer(un_buffer);
     char* size = extraer_string_del_buffer(un_buffer);
@@ -99,6 +100,4 @@ void f_iniciar_proceso(t_buffer* un_buffer){
 
     // LÓGICA DE CREACIÓN DE PROCESO EN KERNEL?
     // Crear/agregar PCB a lista
-    
-
-}
+}*/

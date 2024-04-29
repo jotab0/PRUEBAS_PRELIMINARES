@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <pthread.h>
 #include <netdb.h>
 #include <string.h>
 
@@ -21,9 +22,10 @@ typedef enum {
     RTA_HANDSHAKE,
     //**KERNEL-MEMORIA**
     CREAR_PROCESO,
-    RTA_CREAR_PROCESO
+    RTA_CREAR_PROCESO,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
+    EJECUTAR_PROCESO_KCPU
     
     //**KERNEL-ES**
     
@@ -60,7 +62,6 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer);
 int extraer_int_del_buffer(t_buffer* buffer);
 char* extraer_string_del_buffer(t_buffer* buffer);
 uint32_t extraer_uint32_del_buffer(t_buffer* buffer);
-t_paquete* crear_paquete_con_buffer(op_code codigo_operacion, t_buffer* buffer);
 void destruir_paquete(t_paquete* paquete);
 void* serializar_paquete(t_paquete* paquete);
 void enviar_paquete(t_paquete* paquete, int fd);
@@ -72,5 +73,12 @@ void enviar_mensaje(char* mensaje, int socket_cliente);
 void* serializar_paquete_tp0(t_paquete* paquete, int bytes);
 void* recibir_buffer_tp0(int* size, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
+t_paquete* crear_paquete_con_buffer(op_code codigo_operacion);
+void crear_buffer_en_paquete(t_paquete* paquete);
+void cargar_int_a_paquete(t_paquete* paquete, int valor);
+void cargar_uint32_a_paquete(t_paquete* paquete, uint32_t valor);
+void cargar_string_a_paquete(t_paquete* paquete, char* string);
+//FUNCIONES VARIAS
+void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento);
 
 #endif

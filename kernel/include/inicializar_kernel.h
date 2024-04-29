@@ -6,7 +6,8 @@
 void inicializar_kernel();
 void inicializar_logs();
 void inicializar_configs();
-void imprimir_configs();
-
+void crear_listas();
+void inicializar_semaforos();
+void inicializar_mutexes();
 
 #endif

@@ -44,5 +44,6 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 			break;
 		}
 	}
+	free(fd_conexion_entradasalida);
 }
 // LA IDEA ES CREAR HILO POR PEDIDO
