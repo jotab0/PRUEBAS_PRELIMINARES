@@ -11,7 +11,7 @@ void mandar_mensajes(){
     enviar_mensaje("Hola E/S, soy KERNEL",fd_entradasalida);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]){
    
     //Inicializa Kernel
     inicializar_kernel();
@@ -28,7 +28,6 @@ int main(int argc, char* argv[]) {
     log_info(kernel_logger, "Conexion con MEMORIA exitosa.");
 
     fd_kernel = iniciar_servidor(PUERTO_ESCUCHA, kernel_logger, "!! Servidor ENTRADA-SALIDA iniciado !!");
-    fd_entradasalida = esperar_cliente(fd_kernel, kernel_logger, "ENTRADA-SALIDA");
 
 
     //Atender los mensajes de CPU - Dispatch
@@ -61,13 +60,16 @@ int main(int argc, char* argv[]) {
 
     //Atender los mensajes de EntradaSalida
 
+
     pthread_t hilo_entradasalida;
-    err = pthread_create(&hilo_entradasalida, NULL, (void*)esperar_entradasalida_kernel, NULL);
+    err = pthread_create(&hilo_entradasalida, NULL, (void*)esperar_conexiones_entradasalida, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_entradasalida(kernel)\n");
         return -3;
     }
     pthread_detach(hilo_entradasalida);
+
+
     
     //Atender los mensajes de Memoria
     pthread_t hilo_memoria;
@@ -79,13 +81,7 @@ int main(int argc, char* argv[]) {
     pthread_detach(hilo_memoria);
 
     //Iniciar la consola interactiva
-    iniciar_consola_interactiva();
-
-    log_debug(kernel_log_debug, "Advertencia de salida de Kernel");
-
-    //COMUNICACIÓN
-
-    // INICIAR CONSOLA INTERACTIVA (Tiene que ser antes del hilo con el join (Quizá puede ir primera))
+    iniciar_consola();
 
     return EXIT_SUCCESS;
 }
