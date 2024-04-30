@@ -20,7 +20,7 @@ pcb* crear_pcb(char* path, char* size, char* prioridad){
 	return nuevo_PCB;
 }
 
-// PLANIFICADOR LARFGO PLAZO
+// PLANIFICADOR LARGO PLAZO
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR.

@@ -17,8 +17,6 @@ RESERVADA extern. */
 #include <commons/config.h>
 #include <commons/string.h>
 
-#include <../src/utils/include/shared.h>
-
 //Variables globales
 
 extern t_log* kernel_logger;
