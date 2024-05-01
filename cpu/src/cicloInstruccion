@@ -9,7 +9,7 @@ void realizarCicloInstruccion(){
     // tipo? instruccion = recibirInstruccion();
 
     // DECODE Y EXECUTE
-    // decodeYExecute(instruccion);
+    decodeYExecute(instruccion);
 
     // CHECK INTERRUPTION
 
@@ -19,4 +19,24 @@ void realizarCicloInstruccion(){
     //}
 
 }
+
+void decodeYExecute(instruccion){
+    switch(instruccion){
+        case SET:
+            break;
+        case SUM:
+            break;
+        case SUB:
+            break;
+        case JNZ:
+            break;
+        case IO_GEN_SLEEP:
+            break;
+        default:
+            // log info de error? (instuccion desconocida)
+    }
+}
+
+
+
 
