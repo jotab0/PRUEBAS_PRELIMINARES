@@ -86,13 +86,6 @@ int recibir_operacion(int socket_cliente)
 
 // BUFFERS
 
-t_buffer* crear_buffer() { // CREA BUFFER PARA QUE LLEVE DISTINTOS MENSAJES
-	t_buffer* buffer = malloc(sizeof(t_buffer));
-    buffer->size = 0;
-	buffer->stream = NULL;
-	return buffer;
-}
-
 void destruir_buffer(t_buffer* buffer) { // DESTRUYE BUFFER PARA QUE NO HAYA !!!!MEMORY LEAKS!!!!
     if (buffer->stream != NULL) {
         free(buffer->stream);
@@ -244,6 +237,13 @@ void* serializar_paquete_tp0(t_paquete* paquete, int bytes)
 // ============= Nuevo
 
 
+t_buffer* crear_buffer() { // CREA BUFFER PARA QUE LLEVE DISTINTOS MENSAJES
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+    buffer->size = 0;
+	buffer->stream = NULL;
+	return buffer;
+}
+
 t_paquete* crear_paquete_con_buffer(op_code codigo_operacion){ // EL PAQUETE ADEMAS DE LLEVAR INFORMACION (COMO EL BUFFER) LLEVA EL CODIGO DE OPERACION
 	t_paquete* nuevo_paquete = malloc(sizeof(t_paquete));
 	nuevo_paquete -> codigo_operacion = codigo_operacion;
@@ -319,7 +319,7 @@ void* serializar_paquete(t_paquete* paquete){
 
 	memcpy(puntero+desplazamiento,&(paquete->codigo_operacion),sizeof(int)); // COPIO EL CODIGO DE OPERACION
 	desplazamiento += sizeof(int);
-	memcpy(puntero+desplazamiento,&(paquete->buffer->size),sizeof(int)); // COPIO EL TAMAÑO DEL BUFFER
+	memcpy(puntero+desplazamiento,&(paquete->buffer->size),sizeof(int)); // COPIO EL TAMAÑO DEL "BUFFER"
 	desplazamiento += sizeof(int);
 	memcpy(puntero+desplazamiento,paquete->buffer->stream,paquete->buffer->size); // COPIO EL STREAM
 
@@ -368,4 +368,10 @@ void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento)
 	pthread_t thread;
 	pthread_create(&thread, NULL, (void*)una_funcion, struct_argumento);
 	pthread_detach(thread);
+}
+
+void ejecutar_en_un_hilo_nuevo_join(void (*f)(void*) ,void* struct_arg){
+	pthread_t thread;
+	pthread_create(&thread, NULL, (void*)f, struct_arg);
+	pthread_join(thread, NULL);
 }

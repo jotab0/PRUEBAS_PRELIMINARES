@@ -1,15 +1,8 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-/* TODAS LAS VARIABLES GLOBALES QUE NECESITE SE DECLARAN 
-EN kernel.h Y SE HACE UNA COPIA EN k_gestor.h CON LA PALABRA 
-RESERVADA extern. */
-
 #include "k_gestor.h"
 
-// #include "inicializar_kernel.h" 
-// Incluir esto me traía problemas porque estaba definiendo 
-// 2 veces las variables a inicializar por más que estaban en el gestor
 #include "kernel_cpu_dispatch.h"
 #include "kernel_cpu_interrupt.h"
 #include "kernel_entradasalida.h"
@@ -50,12 +43,13 @@ char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
 pthread_mutex_t mutex_lista_ready;
+pthread_mutex_t mutex_lista_ready_plus;
 pthread_mutex_t mutex_lista_exec;
 pthread_mutex_t mutex_ticket;
-pthread_mutex_t mutex_flag_exit;
 pthread_mutex_t mutex_pid;
 
 t_list* ready;
+t_list* ready_plus;
 t_list* execute;
 t_list* new;
 t_list* blocked;

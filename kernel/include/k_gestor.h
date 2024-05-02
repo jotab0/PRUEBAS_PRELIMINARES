@@ -1,10 +1,6 @@
 #ifndef K_GESTOR_H_
 #define K_GESTOR_H_
 
-/* TODAS LAS VARIABLES GLOBALES QUE NECESITE SE DECLARAN 
-EN kernel.h Y SE HACE UNA COPIA EN k_gestor.h CON LA PALABRA 
-RESERVADA extern. */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -59,16 +55,19 @@ typedef enum{
 	BLOCKED,
 	EXIT
 }estado_pcb;
+
 typedef struct{
 	uint32_t AX;
 	uint32_t BX;
 	uint32_t CX;
 	uint32_t DX;
 }registrosCPU;
+
 typedef struct{ //
 	int pid;
 	int program_counter;
-    int quantum;
+	int quantum;
+	int tiempo_ejecutado;
 	int ticket;
 	estado_pcb estado;
 	registrosCPU* registros_CPU;
@@ -78,22 +77,19 @@ typedef struct{ //
 
 
 
-extern int identificador_PID;
+extern int identificador_PID;	// mutex: mutex_pid
 extern int contador_pcbs;
-extern int ticket_actual;
-extern bool flag_exit;
-
-
-extern int TAM_QUANTUM;
+extern int ticket_actual;		// mutex: mutex_ticket
 
 extern pthread_mutex_t mutex_lista_ready;
+extern pthread_mutex_t mutex_lista_ready_plus;
 extern pthread_mutex_t mutex_lista_exec;
 extern pthread_mutex_t mutex_ticket;
-extern pthread_mutex_t mutex_flag_exit;
 extern pthread_mutex_t mutex_pid;
 
-extern t_list* ready;
-extern t_list* execute;
+extern t_list* ready;			// mutex: mutex_lista_ready
+extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
+extern t_list* execute;			// mutex: mutex_lista_exec
 extern t_list* new;
 extern t_list* blocked;
 extern t_list* lista_exit;

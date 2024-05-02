@@ -52,10 +52,12 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	t_paquete* un_paquete = crear_paquete_con_buffer(EJECUTAR_PROCESO_KCPU);
 	cargar_int_a_paquete(un_paquete, un_pcb->pid);
 	cargar_int_a_paquete(un_paquete, un_pcb->program_counter);
-	cargar_uint32_a_paquete(un_paquete, &(un_pcb->registros_CPU->AX));
-	cargar_uint32_a_paquete(un_paquete, &(un_pcb->registros_CPU->BX));
-	cargar_uint32_a_paquete(un_paquete, &(un_pcb->registros_CPU->CX));
-	cargar_uint32_a_paquete(un_paquete, &(un_pcb->registros_CPU->DX));
+	cargar_int_a_paquete(un_paquete, un_pcb->tiempo_ejecutado);
+	cargar_int_a_paquete(un_paquete,un_pcb->ticket);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->AX);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->BX);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->CX);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->DX);
 
 	enviar_paquete(un_paquete, fd_cpu_dispatch); //RECORDAR: PAQUETE SE SERIALIZA ACÁ ADENTRO
 	eliminar_paquete(un_paquete);
