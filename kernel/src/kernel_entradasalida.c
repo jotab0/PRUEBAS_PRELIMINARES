@@ -4,6 +4,7 @@ static void iterator(char* value){
 }
 
 void esperar_conexiones_entradasalida(){
+	fd_kernel = iniciar_servidor(PUERTO_ESCUCHA, kernel_logger, "!! Servidor ENTRADA-SALIDA iniciado !!");
 	while(1){
         
         int *fd_conexion_entradasalida = malloc(sizeof(int));
@@ -16,7 +17,6 @@ void esperar_conexiones_entradasalida(){
             exit(-3);
         }
         pthread_detach(hilo_entradasalida);
-
     }
 }
 

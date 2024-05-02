@@ -14,6 +14,7 @@ RESERVADA extern. */
 #include "kernel_cpu_interrupt.h"
 #include "kernel_entradasalida.h"
 #include "kernel_memoria.h"
+#include "inicializar_kernel.h"
 #include <utils/include/shared.h>
 #include <pthread.h>
 #include "consola.h"
@@ -48,5 +49,18 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
+pthread_mutex_t mutex_lista_ready;
+pthread_mutex_t mutex_lista_exec;
+pthread_mutex_t mutex_ticket;
+pthread_mutex_t mutex_flag_exit;
+pthread_mutex_t mutex_pid;
+
+t_list* ready;
+t_list* execute;
+t_list* new;
+t_list* blocked;
+t_list* lista_exit;
+
+sem_t sem_enviar_interrupcion;
 
 #endif

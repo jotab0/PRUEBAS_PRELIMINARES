@@ -2,6 +2,22 @@
 static void iterator(char* value){
 	log_info(kernel_logger,"%s",value);
 }
+
+void esperar_conexiones_memoria(){
+	
+	fd_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
+    log_info(kernel_logger, "Conexion con MEMORIA exitosa.");
+
+	pthread_t hilo_memoria;
+    int err = pthread_create(&hilo_memoria, NULL, (void*)esperar_memoria_kernel, NULL);
+    if (err!=0){
+        perror("Fallo de creación de hilo_memoria(kernel)\n");
+        return -3;
+    }
+    pthread_detach(hilo_memoria);
+}
+
+
 void esperar_memoria_kernel(){
     bool control_key = 1;
     t_list* lista;
