@@ -80,5 +80,6 @@ void cargar_uint32_a_paquete(t_paquete* paquete, uint32_t valor);
 void cargar_string_a_paquete(t_paquete* paquete, char* string);
 //FUNCIONES VARIAS
 void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento);
+void ejecutar_en_hilo_join(void (*f)(void*) ,void* struct_arg);
 
 #endif

@@ -19,3 +19,4 @@ int generar_ticket(){
 	pthread_mutex_unlock(&mutex_ticket);
 	return valor_ticket;
 }
+

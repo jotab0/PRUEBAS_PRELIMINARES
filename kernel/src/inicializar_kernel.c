@@ -46,6 +46,7 @@ void inicializar_configs(){
 
 void crear_listas(){
 	ready = list_create();
+    ready_plus = list_create();
 	execute = list_create();
 	new = list_create();
 	blocked = list_create();
@@ -58,10 +59,11 @@ void inicializar_semaforos(){
 
 void inicializar_mutexes(){
 	pthread_mutex_init(&mutex_lista_ready, NULL);
+    pthread_mutex_init(&mutex_lista_ready_plus, NULL);
+
 	pthread_mutex_init(&mutex_lista_exec, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
-    pthread_mutex_init(&mutex_flag_exit, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
 }
 

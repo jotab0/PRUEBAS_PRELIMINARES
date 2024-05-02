@@ -12,7 +12,6 @@ void esperar_conexiones_memoria(){
     int err = pthread_create(&hilo_memoria, NULL, (void*)esperar_memoria_kernel, NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_memoria(kernel)\n");
-        return -3;
     }
     pthread_detach(hilo_memoria);
 }

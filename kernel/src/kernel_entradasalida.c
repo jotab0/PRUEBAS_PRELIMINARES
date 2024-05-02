@@ -3,7 +3,8 @@ static void iterator(char* value){
 	log_info(kernel_logger,"%s",value);
 }
 
-void esperar_conexiones_entradasalida(){
+
+void esperar_conexiones_entradasalida(){ // PERMITE LA ESCUCHA A TRAVÉS DE MÚLTIPLES CANALES
 	fd_kernel = iniciar_servidor(PUERTO_ESCUCHA, kernel_logger, "!! Servidor ENTRADA-SALIDA iniciado !!");
 	while(1){
         
