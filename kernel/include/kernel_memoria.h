@@ -4,5 +4,5 @@
 #include "../include/k_gestor.h"
 
 void esperar_memoria_kernel();
-
+void esperar_conexiones_memoria();
 #endif /* KERNEL_MEMORIA_H_ */

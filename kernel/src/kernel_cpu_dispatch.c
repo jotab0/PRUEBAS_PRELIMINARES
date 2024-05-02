@@ -4,6 +4,22 @@ static void iterator(char* value){
 	log_info(kernel_logger,"%s",value);
 }
 
+void esperar_conexiones_cpu_dispatch(){
+	
+	fd_cpu_dispatch = crear_conexion(IP_CPU, PUERTO_CPU_DISPATCH);
+    log_info(kernel_logger, "Conexion con CPU DISPATCH exitosa.");
+
+	pthread_t hilo_cpu_dispatch;
+	int err = pthread_create(&hilo_cpu_dispatch, NULL,(void*)esperar_cpu_dispatch_kernel, NULL);
+	if (err!=0){
+		perror("Fallo de creación de hilo_cpu_dispatch(kernel)\n");
+		exit(-3);
+	}
+	pthread_detach(hilo_cpu_dispatch);
+}
+
+
+
 void esperar_cpu_dispatch_kernel(){
     int estado_while = 1;
 	t_list* lista;

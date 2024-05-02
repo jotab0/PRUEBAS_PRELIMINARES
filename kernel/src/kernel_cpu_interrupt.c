@@ -2,6 +2,21 @@
 static void iterator(char* value){
 	log_info(kernel_logger,"%s",value);
 }
+
+void esperar_conexiones_cpu_interrupt(){
+	
+	fd_cpu_interrupt = crear_conexion(IP_CPU, PUERTO_CPU_INTERRUPT);
+    log_info(kernel_logger, "Conexion con CPU INTERRUPT exitosa.");
+
+	pthread_t hilo_cpu_interrupt;
+	int err = pthread_create(&hilo_cpu_interrupt, NULL,(void*)esperar_cpu_interrupt_kernel, NULL);
+	if (err!=0){
+		perror("Fallo de creación de hilo_cpu_interrupt(kernel)\n");
+		exit(-3);
+	}
+	pthread_detach(hilo_cpu_interrupt);
+}
+
 void esperar_cpu_interrupt_kernel(){
     int estado_while = 1;
 	t_list* lista;
