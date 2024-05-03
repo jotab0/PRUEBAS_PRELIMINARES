@@ -30,6 +30,7 @@ int main(int argc, char* argv[]) {
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
   
   
+///// HILOS /////
 
     pthread_t hilo_cpu;
     int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
@@ -66,6 +67,27 @@ int main(int argc, char* argv[]) {
     
     //int fd_kernel = iniciar_servidor()
 
+ ///// PROCESOS /////
+
+    t_list* list_procesos_recibidos = list_create();
+
     return 0;
 }
+
+
+///// COMUNICACIONES CON LOS MODULOS -> ATENDER LOS PEDIDOS 
+
+    
+    void cliente_segun_modulo(int conexion, t_buffer* unBuffer){
+        int identificador_modulo = int_del_buffer(unBuffer);
+
+        switch (identificador_modulo) {
+		case CPU:
+			fd_cpu = conexion;
+			log_info(memoria_logger, "CPU se conecto correctamente");
+			encargarse_cpu(fd_cpu);
+
+			break; 
+        }
+    }
 

@@ -25,14 +25,19 @@ typedef enum {
     RTA_CREAR_PROCESO,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
-    EJECUTAR_PROCESO_KCPU
+    EJECUTAR_PROCESO_KCPU,
     
     //**KERNEL-ES**
     
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**
-
+    SOLICITUD_INFO_MEMORIA,
+    SOLICITUD_INSTRUCCION,
+    SOLICITUD_EJECUCION,
+    SOLICITUD_CONSULTA_PAG,
+    SOLICITUD_LECTURA_MEMORIA_BLOQUE,
+    SOLICITUD_ESCRITURA_MEMORIA_BLOQUE
 }op_code;
 
 typedef struct 
@@ -46,7 +51,12 @@ typedef struct{
     t_buffer* buffer;
 }t_paquete;
 
-
+typedef enum{
+	MEMORIA,
+	FILESYSTEM,
+	CPU,
+	KERNEL
+}modulo_identificador;
 
 int crear_conexion(char *ip, char* puerto);
 int iniciar_servidor(char* puerto,t_log* logger,char* mensaje);
