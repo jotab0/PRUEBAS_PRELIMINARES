@@ -154,14 +154,8 @@ uint32_t extraer_uint32_del_buffer(t_buffer* buffer){
 	return valor_del_uint32_t; 
 }
 
-
+//--------------------------------------------------------------------------------
 // PAQUETES
-
-void destruir_paquete(t_paquete* paquete){
-	destruir_buffer(paquete->buffer);
-	free(paquete);
-}
-
 
 // LUEGO CADA UNO SE FIJA COMO LO EXTRAE, YA QUE DEPENDERÁ DEL CODIGO DE OPERACIÓN
 
@@ -175,6 +169,14 @@ void destruir_paquete(t_paquete* paquete){
 
 // Como el size viene antes que el stream:
 
+
+void destruir_paquete(t_paquete* paquete){
+	destruir_buffer(paquete->buffer);
+	free(paquete);
+}
+
+
+
 void* recibir_buffer(int socket_cliente)
 {
 	void* buffer;
@@ -185,6 +187,7 @@ void* recibir_buffer(int socket_cliente)
 
 	return buffer; // SOLAMENTE TIENE EL STREAM
 }
+
 
 // COMUNICACIÓN
 
@@ -236,6 +239,8 @@ void* serializar_paquete_tp0(t_paquete* paquete, int bytes)
 
 // ============= Nuevo
 
+//--------------------------------------------------------------------------------
+// CREAR  Y ELIMINAR PAQUETE
 
 t_buffer* crear_buffer() { // CREA BUFFER PARA QUE LLEVE DISTINTOS MENSAJES
 	t_buffer* buffer = malloc(sizeof(t_buffer));
@@ -256,6 +261,16 @@ void crear_buffer_en_paquete(t_paquete* paquete){
 	paquete->buffer->size = 0;
 	paquete->buffer->stream = NULL;
 }
+
+void eliminar_paquete(t_paquete* paquete)
+{
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+}
+
+//--------------------------------------------------------------------------------
+// CARGAR DATOS
 
 void cargar_mensaje_a_buffer(t_buffer* buffer, void* mensaje, int tam_mensaje) { // AGREGA EL CODIGO DE MSJE + MENSAJE A UN BUFFER EXISTENTE (Puede ya tener algo cargado o no)
 	if(buffer -> size == 0){
@@ -296,12 +311,10 @@ void cargar_string_a_paquete(t_paquete* paquete, char* string) {
     cargar_mensaje_a_buffer(paquete -> buffer, string, strlen(string)+1);
 }
 
-void eliminar_paquete(t_paquete* paquete)
-{
-	free(paquete->buffer->stream);
-	free(paquete->buffer);
-	free(paquete);
-}
+
+
+//--------------------------------------------------------------------------------
+// OTRAS FUNCIONES PAQUETE
 
 void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRIPTOR DE CONEXION
 	void* a_enviar = serializar_paquete(paquete);
@@ -361,6 +374,64 @@ t_list* recibir_paquete(int socket_cliente)
 	return valores;
 }
 
+// Agregado paquete 
+  int* int_del_buffer(t_buffer* unBuffer){
+
+        if(unBuffer->size ==0){
+            printf("ERROR: el buffer esta vacio");
+            exit(EXIT_FAILURE);
+        }
+        if(unBuffer->size <0){
+            printf("ERROR: el tamanio es negativo");
+            exit(EXIT_FAILURE);
+        }
+
+        int valor_del_buffer;
+        memcpy(&valor_del_buffer, unBuffer->stream, sizeof(int));
+
+        int tamanio_nuevo = unBuffer->size - sizeof(int); //le resta lo q ya copiamos
+
+        if(tamanio_nuevo == 0){
+		    free(unBuffer->stream);
+		    unBuffer->stream = NULL;
+		    unBuffer->size = 0;
+		    return valor_del_buffer;
+	    }
+
+	    if(tamanio_nuevo < 0){
+		    printf("Error: el espacio era menor que el tamanio de un INT");
+		    exit(EXIT_FAILURE);
+	    }
+
+// se libera la memoria del buffer inicial y se actualiza el nuevo con los datos restantes
+	    void* buffer_nuevo = malloc(tamanio_nuevo);
+	    memcpy(buffer_nuevo, unBuffer->stream + sizeof(int), tamanio_nuevo);
+	    free(unBuffer->stream);
+	    unBuffer->stream = buffer_nuevo;
+	    unBuffer->size   = tamanio_nuevo;
+        return valor_del_buffer;
+    }
+
+
+
+t_buffer* recibir_paquete_completo(int cliente_socket) {
+
+        int tamanio_stream;
+        t_buffer* paquete = malloc(sizeof(t_buffer));
+        paquete->stream = recibir_contenido_buffer(&tamanio_stream, cliente_socket);
+        paquete->size = tamanio_stream;
+        return paquete;
+}
+
+void* recibir_contenido_buffer(int* tamanio, int cliente_socket) {
+
+    void* contenido;
+    recv(cliente_socket, tamanio, sizeof(int), MSG_WAITALL);  //recv(int socket, void *buf, size_t len, int flags)
+    contenido = malloc(*tamanio);
+    recv(cliente_socket, contenido, *tamanio, MSG_WAITALL);
+    return contenido;
+
+}
 
 // FUNCIONES THREADS
 
