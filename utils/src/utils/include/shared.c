@@ -70,18 +70,6 @@ int esperar_cliente(int socket_servidor,t_log* logger,char* mensaje)
 	return socket_cliente;
 }
 
-int recibir_operacion(int socket_cliente)
-{
-	int cod_op;
-	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
-		return cod_op;
-	else
-	{
-		close(socket_cliente);
-		return -1;
-	}
-}
-
 ////////////////////// COMUNICACIÓN  //////////////////////
 
 // CADA UNO SE FIJA COMO LO EXTRAE, YA QUE DEPENDERÁ DEL CODIGO DE OPERACIÓN
@@ -136,8 +124,13 @@ t_buffer* crear_buffer() { // CREA BUFFER PARA QUE LLEVE DISTINTOS MENSAJES
 
 t_paquete* crear_paquete_con_buffer(op_code codigo_operacion){ // EL PAQUETE ADEMAS DE LLEVAR INFORMACION (COMO EL BUFFER) LLEVA EL CODIGO DE OPERACION
 	t_paquete* nuevo_paquete = malloc(sizeof(t_paquete));
+	
+	// Agrego código de operacion
 	nuevo_paquete -> codigo_operacion = codigo_operacion;
+	
+	// Creo buffer en paquete
 	crear_buffer_en_paquete(nuevo_paquete);
+	
 	return nuevo_paquete;
 }
 
@@ -147,17 +140,34 @@ void crear_buffer_en_paquete(t_paquete* paquete){
 	paquete->buffer->stream = NULL;
 }
 
-void cargar_mensaje_a_buffer(t_buffer* buffer, void* mensaje, int tam_mensaje) { // AGREGA EL CODIGO DE MSJE + MENSAJE A UN BUFFER EXISTENTE (Puede ya tener algo cargado o no)
-	if(buffer -> size == 0){
+void cargar_mensaje_a_buffer(t_buffer* buffer, void* mensaje, int tam_mensaje) { // AGREGA EL TAM. DE MSJE + MSJE UN BUFFER EXISTENTE (Puede ya tener algo cargado o no)
+	
+	if(buffer -> size == 0){ // EValúo si está vacío el buffer
+		
+		// Reservo memoria para el tam. y el msje
 		buffer -> stream = malloc(sizeof(int) + tam_mensaje); // VA SIEMRPE PRIMERO SIZEOF(INT) PORQUE ES EL TAMAÑO QUE VA A TENER SIEMPRE EL CÓDIGO DE COMUNICACIÓN
+		
+		// Copio tamaño de mensaje 
 		memcpy(buffer -> stream,&tam_mensaje,sizeof(int));
+		
+		// Copio el mensaje
 		memcpy(buffer -> stream + sizeof(int),mensaje,tam_mensaje);
+
+		// Stream -> SIZE + MSJE
 	}
 	else {
+
+		// Aumenta tamaño de memoria de stream en tiempo de ejecución
    		buffer->stream = realloc(buffer->stream, buffer->size + sizeof(int) + tam_mensaje); // realloc() permite aumentar en tiempo de ejecución el tamaño de memoria dinámica ya pedido
-    	memcpy(buffer->stream + buffer->size, &tam_mensaje, sizeof(int));
+    	
+		// Agrego datos a partir de donde termina ultimo msje
+		memcpy(buffer->stream + buffer->size, &tam_mensaje, sizeof(int));
     	memcpy(buffer->stream + buffer->size + sizeof(int), mensaje, tam_mensaje);
+
+		// Stream -> SIZE + MSJE + SIZE_NUEVO + MSJE_NUEVO ...
 	}
+
+	// Actualizo tamaño del buffer
     buffer->size += sizeof(int);
     buffer->size += tam_mensaje;
 }
@@ -194,6 +204,7 @@ void eliminar_paquete(t_paquete* paquete)
 }
 
 void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRIPTOR DE CONEXION
+	
 	void* a_enviar = serializar_paquete(paquete);
 
 	int bytes = paquete->buffer->size + 2*sizeof(int); // LE AGREGA *2 int POR LOS QUE LE AGREGO AL SERIALZIAR
@@ -203,10 +214,13 @@ void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRI
 }
 
 void* serializar_paquete(t_paquete* paquete){
+	
 	int tam_puntero = paquete->buffer->size + 2*sizeof(int); // POR LOS 2 sizeof(int) QUE AGREGO MÁS ABAJO
+	
 	void* puntero = malloc(tam_puntero);
 	int desplazamiento = 0;
 
+	// Copia en destino (puntero) lo que hay en source (paquete)
 	memcpy(puntero+desplazamiento,&(paquete->codigo_operacion),sizeof(int)); // COPIO EL CODIGO DE OPERACION
 	desplazamiento += sizeof(int);
 	memcpy(puntero+desplazamiento,&(paquete->buffer->size),sizeof(int)); // COPIO EL TAMAÑO DEL "BUFFER"
@@ -214,37 +228,63 @@ void* serializar_paquete(t_paquete* paquete){
 	memcpy(puntero+desplazamiento,paquete->buffer->stream,paquete->buffer->size); // COPIO EL STREAM
 
 	return puntero; 
+	// puntero -> COD_OP + TAM. + STREAM
 }
 
 // ========== LÓGICA DE EXTRACCIÓN DE MENSAJES
 
-void* recibir_buffer_tp0(int* size, int socket_cliente)
+
+int recibir_operacion(int socket_cliente) // DEVUELVE SOLAMENTE EL CODIGO DE OPERACION
+{
+	int cod_op;
+
+	if(recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
+		return cod_op;
+	else
+	{
+		close(socket_cliente);
+		return -1;
+	}
+}
+
+void* recibir_buffer_tp0(int* size, int socket_cliente) // RECIBE TODO EL STREAM DEL PAQUETE SERIALIZADO
 {
 	void * buffer;
 
+	// Recibo TAM. y lo guardo en size (nos sirve para después)
 	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+	
+	// Reservo memoria para el puntero del tamaño TAM.
 	buffer = malloc(*size);
+
+	// Recibo STREAM en buffer
 	recv(socket_cliente, buffer, *size, MSG_WAITALL);
 
-	return buffer; // SOLAMENTE TIENE EL STREAM
+	return buffer; 
 }
 
-t_buffer* recibir_buffer(int socket_cliente)
+t_buffer* recibir_buffer(int socket_cliente) // BUFFERIALIZO
 {
 	int size;
 	void* buffer;
 	t_buffer* nuevo_buffer = crear_buffer();
 	
+	// Recibo todo el stream
 	buffer = recibir_buffer_tp0(&size, socket_cliente);
 	
+	// Guardo el tamaño del buffer total
 	nuevo_buffer->size = size;
-	nuevo_buffer->stream = buffer;
 
+	// Agrego todo el stream al stream del buffer
+	nuevo_buffer->stream = buffer;
+|	
+	// Devuelvo el nuevo buffer
 	return nuevo_buffer;
 }
 
 void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	
+	// Evalúo posibles errores
 	if(buffer -> size == 0){
 		printf("ERROR: Se intento extraer_mensaje_de_buffer de buffer vacío");
 		exit(EXIT_FAILURE);
@@ -256,16 +296,22 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	}
 
 	int tam_mensaje;
+
+	// Saco el tamaño de la próxima porción del stream a sacar
 	memcpy(&tam_mensaje,buffer->stream,sizeof(int));
+
+	// Reservo memoria con el tamaño de la porción a sacar
 	void* mensaje = malloc(tam_mensaje);
+
+	// Copio em mensaje lo que hay en el stream en la posición 0 + sizeof(int), del tamaño que guardé antes
 	memcpy(mensaje,buffer->stream + sizeof(int),tam_mensaje);
 
+	// Guardo el tamaño nuevo (sizeof(int) + tamaño del mensaje que saqué)
 	int tam_nuevo = buffer->size - sizeof(int) - tam_mensaje;
 	
+	// Si es 0 destruyo buffer
 	if (tam_nuevo == 0){
-		buffer->size = 0;
-		free(buffer->stream);
-		buffer->stream = NULL;
+		destruir_buffer(buffer)
 		return mensaje;
 	}
 
@@ -274,19 +320,32 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 		exit(EXIT_FAILURE);
 	}
 
+	// Creo puntero con el nuevo tamaño del STREAM
 	void* nuevo_stream = malloc(tam_nuevo);
+
+	// Copio el STREAM viejo sin lo que ya saqué
 	memcpy(nuevo_stream,buffer->stream+sizeof(int)+tam_mensaje,tam_nuevo);
+
+	// Le reasigno el nuevo STREAM al buffer y actualizo el tamaño
 	free(buffer->stream);
 	buffer->size = tam_nuevo;
 	buffer->stream = nuevo_stream;
 
+	// Devuelvo mensaje a través de puntero de tipo void*
 	return mensaje;
 }
 
-int extraer_int_del_buffer(t_buffer* buffer){
+int extraer_int_del_buffer(t_buffer* buffer){ 
+
+	// Creo puntero del tipo de dato que espero
 	int* un_entero = extraer_mensaje_de_buffer(buffer);
+
+	// Se lo asigno a la variable 
 	int valor_del_int = *un_entero;
+
 	free(un_entero);
+
+	// Retorno valor
 	return valor_del_int; 
 }
 
@@ -318,8 +377,6 @@ void destruir_paquete(t_paquete* paquete){
 	destruir_buffer(paquete->buffer);
 	free(paquete);
 }
-
-
 
 // FUNCIONES THREADS
 
