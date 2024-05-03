@@ -79,11 +79,11 @@ int esperar_cliente(int socket_servidor,t_log* logger,char* mensaje)
 
 
 // BUFFER 				|-> STREAM Y SIZE
-// PAQUETE 				|-> CODIGO DE OPERACION + BUFFER (STREAM + SIZE)
+// PAQUETE 				|-> CODIGO DE OPERACION Y BUFFER (STREAM Y SIZE)
 
 // ======== Serializar:
 
-// PAQUETE SERIALZIADO 	|-> CODIGO DE OPERACION + SIZE + STREAM(TAM + MSJE + TAM2 + MESAJE)
+// PAQUETE SERIALZIADO 	|-> CODIGO DE OPERACION - SIZE - STREAM(TAM - MSJE - TAM2 - MESAJE2)
 
 
 // COMUNICACIÓN PRUEBA

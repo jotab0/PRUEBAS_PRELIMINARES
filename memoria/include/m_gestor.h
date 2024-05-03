@@ -29,4 +29,16 @@ extern int fd_cpu;
 extern int fd_es;
 extern int fd_kernel;
 
+
+//PROCESO
+typedef struct 
+{
+    int pid_proceso;
+	int size;
+	char* pathInstrucciones;
+	t_list* lista_de_instrucciones;
+	t_list* tabla_paginas;
+	pthread_mutex_t mutex_tabla_paginas;
+}t_proceso;
+
 #endif
