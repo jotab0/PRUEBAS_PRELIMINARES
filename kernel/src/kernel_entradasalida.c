@@ -1,8 +1,4 @@
 #include "../include/kernel_entradasalida.h"
-static void iterator(char* value){
-	log_info(kernel_logger,"%s",value);
-}
-
 
 void esperar_conexiones_entradasalida(){ // PERMITE LA ESCUCHA A TRAVÉS DE MÚLTIPLES CANALES
 	fd_kernel = iniciar_servidor(PUERTO_ESCUCHA, kernel_logger, "!! Servidor ENTRADA-SALIDA iniciado !!");
@@ -23,7 +19,6 @@ void esperar_conexiones_entradasalida(){ // PERMITE LA ESCUCHA A TRAVÉS DE MÚL
 
 void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
     int estado_while = 1;
-	t_list* lista;
     while (estado_while) {
 		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE E/S...");
         int cod_op = recibir_operacion(*fd_conexion_entradasalida);
@@ -32,9 +27,6 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 		 	recibir_mensaje_tp0(*fd_conexion_entradasalida,kernel_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(*fd_conexion_entradasalida);
-			log_info(kernel_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(kernel_logger, "E/S se desconecto. Terminando servidor");

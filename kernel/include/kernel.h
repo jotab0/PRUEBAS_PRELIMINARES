@@ -57,4 +57,6 @@ t_list* lista_exit;
 
 sem_t sem_enviar_interrupcion;
 
+int ALGORITMO_PCP_SELECCIONADO;
+
 #endif

@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <netdb.h>
 #include <string.h>
+#include <semaphore.h>
 
 #include <commons/log.h> 
 #include <commons/config.h>  // de esta manera agregamos librerías de las commons
@@ -43,7 +44,7 @@ typedef enum {
 typedef struct 
 {
     int size;
-    void* stream;
+    void* stream; // TAM + MSJE + ...
 }t_buffer;
 
 typedef struct{
@@ -57,6 +58,7 @@ typedef enum{
 	CPU,
 	KERNEL
 }modulo_identificador;
+
 
 int crear_conexion(char *ip, char* puerto);
 int iniciar_servidor(char* puerto,t_log* logger,char* mensaje);
@@ -75,12 +77,11 @@ uint32_t extraer_uint32_del_buffer(t_buffer* buffer);
 void destruir_paquete(t_paquete* paquete);
 void* serializar_paquete(t_paquete* paquete);
 void enviar_paquete(t_paquete* paquete, int fd);
-void* recibir_buffer(int socket_cliente);
+t_buffer* recibir_buffer(int socket_cliente);
 // LITERAL tp0
 void recibir_mensaje_tp0(int socket_cliente, t_log* logger);
 t_list* recibir_paquete(int socket_cliente);
 void enviar_mensaje(char* mensaje, int socket_cliente);
-void* serializar_paquete_tp0(t_paquete* paquete, int bytes);
 void* recibir_buffer_tp0(int* size, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 t_paquete* crear_paquete_con_buffer(op_code codigo_operacion);
@@ -91,5 +92,6 @@ void cargar_string_a_paquete(t_paquete* paquete, char* string);
 //FUNCIONES VARIAS
 void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento);
 void ejecutar_en_hilo_join(void (*f)(void*) ,void* struct_arg);
+
 
 #endif

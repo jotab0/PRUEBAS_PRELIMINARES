@@ -24,6 +24,8 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 // PLANIFICADOR LARGO PLAZO
 
+
+
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
 
@@ -50,12 +52,12 @@ void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 		pthread_mutex_unlock(&mutex_lista_ready);
 		pthread_mutex_unlock(&mutex_lista_ready_plus);
 
-		poner_en_ejecucion(un_pcb);
+		_poner_en_ejecucion(un_pcb);
 	}
 	pthread_mutex_unlock(&mutex_lista_exec);
 }
 
-void poner_en_ejecucion(pcb* un_pcb){ // ATENCIÓN!!! ESTA FUNCIÓN DEBE SER LLAMADA ENTRE MUTEXES SIEMPRE
+void _poner_en_ejecucion(pcb* un_pcb){ // ATENCIÓN!!! ESTA FUNCIÓN DEBE SER LLAMADA ENTRE MUTEXES SIEMPRE
 	
 	if(un_pcb != NULL){
 			list_add(execute, un_pcb);
@@ -81,15 +83,16 @@ void _programar_interrupcion_por_quantum_RR(pcb* un_pcb){ // Que pasa si el proc
 	int ticket_referencia = un_pcb->ticket;
 	usleep(un_pcb -> quantum);
 	pthread_mutex_lock(&mutex_ticket);
-	if(ticket_referencia == ticket_actual){ // Esto está bien auncque se cambie en cpu? // Esto es posible porque el ticket varía globalmente
-		sem_post(&sem_enviar_interrupcion);	
+	if(ticket_referencia == ticket_actual){ // Esto es posible porque el ticket varía globalmente
+											// Evita que se interrumpa un proceso que no debería ser interrumpido
+		sem_post(&sem_enviar_interrupcion);	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
 	}
 	pthread_mutex_unlock(&mutex_ticket);
 }
 
 void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 	int ticket_referencia = un_pcb->ticket;
-	int tiempo_restante = un_pcb->quantum - un_pcb->tiempo_ejecutado; // Consultar si está ok
+	int tiempo_restante = un_pcb->quantum - un_pcb->tiempo_ejecutado; // Consultar si está ok 
 	usleep(tiempo_restante);
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ 
@@ -100,3 +103,51 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 
 // En teoría lo anterior está ok porque cuando un proceso vuelva porque se interrumpió su quantum
 // la CPU debería haberme devuelto el proceso con su contexto de ejecución
+
+
+void planificador_corto_plazo(){
+	// Aquí se debería evaluar si la lista ready NO está vacía para luego pasar a ejecutar la función planificar_corto_plazo()
+	// Entonces mientras la lista ready no esté vacía se evaluará constantemente si la lista exec no está vacía
+	
+	switch(ALGORITMO_PCP_SELECCIONADO){
+		case FIFO:
+			if (!list_is_empty(ready)){
+					planificar_corto_plazo();
+			}
+		break;
+
+		case RR:
+			if (!list_is_empty(ready)){
+				planificar_corto_plazo();
+			}
+		break;
+
+		case VRR:
+			if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
+				planificar_corto_plazo();
+			}
+		break;
+
+		default:
+			log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
+			// Debería romer la ejecución?
+	}
+}
+
+// DUDAS:
+/*
+1)
+Al recibir el Contexto de Ejecución del proceso en ejecución, en caso de que el motivo de desalojo
+implique replanificar se seleccionará el siguiente proceso a ejecutar según indique el algoritmo. 
+Durante este período la CPU se quedará esperando el nuevo contexto.
+
+Hace falta que el motivo sea replanificar si cada vez que se vacía la lista EXEC se replanifica de manera automática?
+Yo creo que de esto en realidad se debería encargar la función que vuelva a poner el proceso en ready
+Quizás usar un mutex de lista ready y ready plus para que se llame a la función planificar_corto_plazo dentro de esa función
+
+2)Como hago para saber cuando se está ejecutando un proceso o no?
+
+Puedo usar semáforos entre módulos?
+
+*/
+	
