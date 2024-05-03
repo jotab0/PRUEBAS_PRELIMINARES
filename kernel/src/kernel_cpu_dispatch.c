@@ -22,10 +22,20 @@ void esperar_cpu_dispatch_kernel(){
 
     while (estado_while) {
 		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE CPU DISPATCH...");
-        int cod_op = recibir_operacion(fd_cpu_dispatch);
+        // COD_OP + TAM + STREAM
+		int cod_op = recibir_operacion(fd_cpu_dispatch);
 		switch (cod_op) {
-		case MENSAJE:
-		 	recibir_mensaje_tp0(fd_cpu_dispatch,kernel_logger);
+		// TAM + STREAM
+		case RTA_CREAR_PROCESO:
+		 	t_buffer* un_buffer = recibir_buffer(fd_cpu_dispatch);
+			// Buffer 	-> size = TAM
+			//			-> stream = STREAM 
+
+			/*
+			TU CODIGO DE EXTRACCION o PROCEDIMIENTO
+			*/
+
+			destruir_buffer(un_buffer);
 			break;
 		case PAQUETE:
 			break;

@@ -51,11 +51,9 @@ bool validacion_de_instruccion_de_consola(char* leido){
 
 void atender_instruccion(char* leido){
     char** comando_consola = string_split(leido, " ");
-    t_buffer* un_buffer = crear_buffer(); // ? 
 
-if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){ // [PATH] 
-    
-    
+if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){ 
+
 }else if(strcmp(comando_consola[0], "FINALIZAR_PROCESO") == 0){
 
 }else if(strcmp(comando_consola[0], "EJECUTAR_SCRIPT") == 0){

@@ -39,7 +39,7 @@ typedef enum {
 typedef struct 
 {
     int size;
-    void* stream;
+    void* stream; // TAM + MSJE + ...
 }t_buffer;
 
 typedef struct{

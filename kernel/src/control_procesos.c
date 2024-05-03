@@ -147,5 +147,7 @@ Quizás usar un mutex de lista ready y ready plus para que se llame a la funció
 
 2)Como hago para saber cuando se está ejecutando un proceso o no?
 
+Puedo usar semáforos entre módulos?
+
 */
 	
