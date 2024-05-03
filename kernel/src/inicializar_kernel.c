@@ -6,6 +6,7 @@ void inicializar_kernel(){
     crear_listas();
     inicializar_semaforos();
     inicializar_mutexes();
+    establecer_algoritmo_seleccionado();
 }
 
 void inicializar_logs(){
@@ -44,6 +45,19 @@ void inicializar_configs(){
         GRADO_MULTIPROGRAMACION = config_get_int_value(kernel_config,"GRADO_MULTIPROGRAMACION");
 }
 
+void establecer_algoritmo_seleccionado(){
+    if (strcmp(ALGORITMO_PLANIFICACION, "FIFO") == 0) {
+       ALGORITMO_PCP_SELECCIONADO = FIFO;
+    } else if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0) {
+        ALGORITMO_PCP_SELECCIONADO = RR;
+    } else if (strcmp(ALGORITMO_PLANIFICACION, "VRR") == 0) {
+        ALGORITMO_PCP_SELECCIONADO = VRR;
+    } else {
+        log_error(kernel_logger_extra,"ERROR: El algoritmo seleccionado en la configuración no es válido");
+    }
+}
+
+
 void crear_listas(){
 	ready = list_create();
     ready_plus = list_create();
@@ -67,4 +81,4 @@ void inicializar_mutexes(){
     pthread_mutex_init(&mutex_pid, NULL);
 }
 
-    
+

@@ -1,8 +1,5 @@
 #include "../include/kernel_cpu_dispatch.h"
 
-static void iterator(char* value){
-	log_info(kernel_logger,"%s",value);
-}
 
 void esperar_conexiones_cpu_dispatch(){
 	
@@ -22,7 +19,6 @@ void esperar_conexiones_cpu_dispatch(){
 
 void esperar_cpu_dispatch_kernel(){
     int estado_while = 1;
-	t_list* lista;
 
     while (estado_while) {
 		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE CPU DISPATCH...");
@@ -32,9 +28,6 @@ void esperar_cpu_dispatch_kernel(){
 		 	recibir_mensaje_tp0(fd_cpu_dispatch,kernel_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_cpu_dispatch);
-			log_info(kernel_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(kernel_logger, "CPU DISPATCH se desconecto. Terminando servidor");

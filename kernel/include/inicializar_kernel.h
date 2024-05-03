@@ -9,5 +9,6 @@ void inicializar_configs();
 void crear_listas();
 void inicializar_semaforos();
 void inicializar_mutexes();
+void establecer_algoritmo_seleccionado();
 
 #endif

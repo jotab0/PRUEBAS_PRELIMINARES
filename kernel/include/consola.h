@@ -2,7 +2,7 @@
 #define CONSOLA_H_
 
 #include "../include/k_gestor.h"
-#include "../include/servicios_kernel.h"
+#include "../include/shared_kernel.h"
 
 #include <utils/include/shared.h>
 

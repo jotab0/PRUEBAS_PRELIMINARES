@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <readline/readline.h>
-#include <semaphore.h>
 
 #include "../src/utils/include/shared.h"
 
@@ -55,6 +54,14 @@ typedef enum{
 	BLOCKED,
 	EXIT
 }estado_pcb;
+
+extern int ALGORITMO_PCP_SELECCIONADO;
+
+typedef enum{
+	FIFO,
+	RR,
+	VRR
+}algoritmo_de_planificacion;
 
 typedef struct{
 	uint32_t AX;

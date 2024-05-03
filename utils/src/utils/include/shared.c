@@ -84,86 +84,7 @@ int recibir_operacion(int socket_cliente)
 
 ////////////////////// COMUNICACIÓN  //////////////////////
 
-// BUFFERS
-
-void destruir_buffer(t_buffer* buffer) { // DESTRUYE BUFFER PARA QUE NO HAYA !!!!MEMORY LEAKS!!!!
-    if (buffer->stream != NULL) {
-        free(buffer->stream);
-        buffer->stream = NULL;
-    }
-    free(buffer);
-}
-
-
-void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
-	
-	if(buffer -> size == 0){
-		printf("ERROR: Se intento extraer_mensaje_de_buffer de buffer vacío");
-		exit(EXIT_FAILURE);
-	}
-
-	if(buffer -> size < 0){
-		printf("ERROR: Se intento extraer_mensaje_de_buffer pero el tamaño del mensaje es negativo");
-		exit(EXIT_FAILURE);
-	}
-
-	int tam_mensaje;
-	memcpy(&tam_mensaje,buffer->stream,sizeof(int));
-	void* mensaje = malloc(tam_mensaje);
-	memcpy(mensaje,buffer->stream + sizeof(int),tam_mensaje);
-
-	int tam_nuevo = buffer->size - sizeof(int) - tam_mensaje;
-	
-	if (tam_nuevo == 0){
-		buffer->size = 0;
-		free(buffer->stream);
-		buffer->stream = NULL;
-		return mensaje;
-	}
-
-	if (tam_nuevo < 0){
-		printf("ERROR: Buffer de tamaño negativo");
-		exit(EXIT_FAILURE);
-	}
-
-	void* nuevo_stream = malloc(tam_nuevo);
-	memcpy(nuevo_stream,buffer->stream+sizeof(int)+tam_mensaje,tam_nuevo);
-	free(buffer->stream);
-	buffer->size = tam_nuevo;
-	buffer->stream = nuevo_stream;
-
-	return mensaje;
-}
-
-int extraer_int_del_buffer(t_buffer* buffer){
-	int* un_entero = extraer_mensaje_de_buffer(buffer);
-	int valor_del_int = *un_entero;
-	free(un_entero);
-	return valor_del_int; 
-}
-
-char* extraer_string_del_buffer(t_buffer* buffer){
-	char* string = extraer_mensaje_de_buffer(buffer);
-	return string;
-}
-
-uint32_t extraer_uint32_del_buffer(t_buffer* buffer){
-	uint32_t* un_entero = extraer_mensaje_de_buffer(buffer);
-	uint32_t valor_del_uint32_t = *un_entero;
-	free(un_entero);
-	return valor_del_uint32_t; 
-}
-
-
-// PAQUETES
-
-void destruir_paquete(t_paquete* paquete){
-	destruir_buffer(paquete->buffer);
-	free(paquete);
-}
-
-
-// LUEGO CADA UNO SE FIJA COMO LO EXTRAE, YA QUE DEPENDERÁ DEL CODIGO DE OPERACIÓN
+// CADA UNO SE FIJA COMO LO EXTRAE, YA QUE DEPENDERÁ DEL CODIGO DE OPERACIÓN
 
 
 // BUFFER 				|-> STREAM + SIZE
@@ -173,21 +94,7 @@ void destruir_paquete(t_paquete* paquete){
 
 // PAQUETE SERIALZIADO 	|-> CODIGO DE OPERACION + SIZE + STREAM
 
-// Como el size viene antes que el stream:
-
-void* recibir_buffer(int socket_cliente)
-{
-	void* buffer;
-	int* size = 0;
-	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
-	buffer = malloc(*size); 									// RESERVO MEMORIA DEL TAMAÑO DEL SIZE PARA BUFFER
-	recv(socket_cliente, buffer, *size, MSG_WAITALL);			// RECIVO EL STREAM
-
-	return buffer; // SOLAMENTE TIENE EL STREAM
-}
-
 // COMUNICACIÓN
-
 
 void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 {
@@ -196,8 +103,6 @@ void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 	log_info(logger, "Me llego el mensaje %s", buffer);
 	free(buffer);
 }
-
-
 
 void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda string como mensaje
 {
@@ -211,7 +116,7 @@ void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda str
 
 	int bytes = paquete->buffer->size + 2*sizeof(int);
 
-	void* a_enviar = serializar_paquete_tp0(paquete, bytes);
+	void* a_enviar = serializar_paquete(paquete);
 
 	send(socket_cliente, a_enviar, bytes, 0);
 
@@ -219,22 +124,7 @@ void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda str
 	eliminar_paquete(paquete);
 }
 
-void* serializar_paquete_tp0(t_paquete* paquete, int bytes)
-{
-	void * magic = malloc(bytes);
-	int desplazamiento = 0;
-
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
-
-	return magic;
-}
-
-// ============= Nuevo
+// ========== LÓGICA DE CREACIÓN DE MENSAJES
 
 
 t_buffer* crear_buffer() { // CREA BUFFER PARA QUE LLEVE DISTINTOS MENSAJES
@@ -314,7 +204,7 @@ void enviar_paquete(t_paquete* paquete, int fd){ // RECIBE PAQUETE Y FILE DESCRI
 
 void* serializar_paquete(t_paquete* paquete){
 	int tam_puntero = paquete->buffer->size + 2*sizeof(int); // POR LOS 2 sizeof(int) QUE AGREGO MÁS ABAJO
-	void* puntero = malloc(sizeof(tam_puntero));
+	void* puntero = malloc(tam_puntero);
 	int desplazamiento = 0;
 
 	memcpy(puntero+desplazamiento,&(paquete->codigo_operacion),sizeof(int)); // COPIO EL CODIGO DE OPERACION
@@ -326,7 +216,7 @@ void* serializar_paquete(t_paquete* paquete){
 	return puntero; 
 }
 
-// ========== Modificar y agregar la logica para extraer lo que mande
+// ========== LÓGICA DE EXTRACCIÓN DE MENSAJES
 
 void* recibir_buffer_tp0(int* size, int socket_cliente)
 {
@@ -339,27 +229,96 @@ void* recibir_buffer_tp0(int* size, int socket_cliente)
 	return buffer; // SOLAMENTE TIENE EL STREAM
 }
 
-t_list* recibir_paquete(int socket_cliente)
+t_buffer* recibir_buffer(int socket_cliente)
 {
 	int size;
-	int desplazamiento = 0;
-	void * buffer;
-	t_list* valores = list_create();
-	int tamanio;
-
+	void* buffer;
+	t_buffer* nuevo_buffer = crear_buffer();
+	
 	buffer = recibir_buffer_tp0(&size, socket_cliente);
-	while(desplazamiento < size)
-	{
-		memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
-		desplazamiento+=sizeof(int);
-		char* valor = malloc(tamanio);
-		memcpy(valor, buffer+desplazamiento, tamanio);
-		desplazamiento+=tamanio;
-		list_add(valores, valor);
-	}
-	free(buffer);
-	return valores;
+	
+	nuevo_buffer->size = size;
+	nuevo_buffer->stream = buffer;
+
+	return nuevo_buffer;
 }
+
+void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
+	
+	if(buffer -> size == 0){
+		printf("ERROR: Se intento extraer_mensaje_de_buffer de buffer vacío");
+		exit(EXIT_FAILURE);
+	}
+
+	if(buffer -> size < 0){
+		printf("ERROR: Se intento extraer_mensaje_de_buffer pero el tamaño del mensaje es negativo");
+		exit(EXIT_FAILURE);
+	}
+
+	int tam_mensaje;
+	memcpy(&tam_mensaje,buffer->stream,sizeof(int));
+	void* mensaje = malloc(tam_mensaje);
+	memcpy(mensaje,buffer->stream + sizeof(int),tam_mensaje);
+
+	int tam_nuevo = buffer->size - sizeof(int) - tam_mensaje;
+	
+	if (tam_nuevo == 0){
+		buffer->size = 0;
+		free(buffer->stream);
+		buffer->stream = NULL;
+		return mensaje;
+	}
+
+	if (tam_nuevo < 0){
+		printf("ERROR: Buffer de tamaño negativo");
+		exit(EXIT_FAILURE);
+	}
+
+	void* nuevo_stream = malloc(tam_nuevo);
+	memcpy(nuevo_stream,buffer->stream+sizeof(int)+tam_mensaje,tam_nuevo);
+	free(buffer->stream);
+	buffer->size = tam_nuevo;
+	buffer->stream = nuevo_stream;
+
+	return mensaje;
+}
+
+int extraer_int_del_buffer(t_buffer* buffer){
+	int* un_entero = extraer_mensaje_de_buffer(buffer);
+	int valor_del_int = *un_entero;
+	free(un_entero);
+	return valor_del_int; 
+}
+
+char* extraer_string_del_buffer(t_buffer* buffer){
+	char* string = extraer_mensaje_de_buffer(buffer);
+	return string;
+}
+
+uint32_t extraer_uint32_del_buffer(t_buffer* buffer){
+	uint32_t* un_entero = extraer_mensaje_de_buffer(buffer);
+	uint32_t valor_del_uint32_t = *un_entero;
+	free(un_entero);
+	return valor_del_uint32_t; 
+}
+
+// DESTRUIR BUFFER
+
+void destruir_buffer(t_buffer* buffer) { // DESTRUYE BUFFER PARA QUE NO HAYA !!!!MEMORY LEAKS!!!!
+    if (buffer->stream != NULL) {
+        free(buffer->stream);
+        buffer->stream = NULL;
+    }
+    free(buffer);
+}
+
+// DESTRUIR PAQUETE CON SU BUFFER:
+
+void destruir_paquete(t_paquete* paquete){
+	destruir_buffer(paquete->buffer);
+	free(paquete);
+}
+
 
 
 // FUNCIONES THREADS
