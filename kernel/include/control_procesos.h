@@ -15,6 +15,7 @@ void _poner_en_ejecucion(pcb* un_pcb);
 void planificador_corto_plazo();
 void planificador_largo_plazo();
 void planificar_lista_blocked();
+void plp_FIFO_RR();
 
 void _check_interrupt_pcp();
 void _check_interrupt_plp();

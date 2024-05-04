@@ -39,7 +39,8 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 // PLANIFICADOR LARGO PLAZO
 
 void planificador_largo_plazo() { // Controla todo el tiempo la lista new
-   
+// MODIFICAR PARA QUE AGREGUE A READY_PLUS
+// VOY A AGREGAR SWITCH PARA QUE SE HAGA UNA SOLA VEZ AL EJECUTAR EL KERNEL
     while (1) {
         
 		_check_interrupt_plp();
@@ -96,6 +97,53 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 			log_error(kernel_logger, "ERROR: Se intentó cargar un proceso vacío");
 		}
     }
+}
+
+void plp_FIFO_RR(){
+	// Chequeo condiciones para crear proceso
+		// Acá podría haber un sem_wait para controlar grado de multiprogramación
+		pthread_mutex_lock(&mutex_lista_new);
+        if (list_is_empty(new)) {
+            pthread_mutex_unlock(&mutex_lista_new);
+            sleep(1); 
+			// Ejecuto el while nuevamente 
+    		return; 
+        }
+
+		pcb* un_pcb = NULL;
+        un_pcb = list_remove(new, 0);
+        pthread_mutex_unlock(&mutex_lista_new);
+		
+		if (un_pcb != NULL){
+			
+			// Envía la orden de iniciar estructura a memoria y espera con semáforo a que memoria la cree 
+			iniciar_estructura_en_memoria(un_pcb);
+			
+			if(flag_respuesta_creacion_proceso == 0){
+				
+				// Vuelvo a agregar el pcb a la lista new en caso de que falló creación de proceso
+				pthread_mutex_lock(&mutex_lista_new);
+					list_add(new,un_pcb);
+				pthread_mutex_lock(&mutex_lista_new);
+				
+				// Reinicio la bendera
+				flag_respuesta_creacion_proceso = 1; // Asumo que no necesito mutex porque plp es el único que accede a este flag y son ejecuciones secuenciales
+				
+				// Ejecuto while nuevamente
+				return;
+			}
+
+			pthread_mutex_lock(&mutex_lista_ready);
+			list_add(ready, un_pcb);
+			pthread_mutex_unlock(&mutex_lista_ready);
+			
+			cambiar_estado_pcb(un_pcb, READY);
+			log_info(kernel_logger, "Proceso %d movido a READY", un_pcb->pid);
+			
+			pthread_mutex_lock(&mutex_procesos_en_core); // (Lo dejo por las dudas)
+			procesos_en_core++;
+			pthread_mutex_unlock(&mutex_procesos_en_core);
+		}
 }
 
 // PLANIFICADOR CORTO PLAZO
@@ -288,7 +336,7 @@ Puedo usar semáforos entre módulos?
 // PLANIFICACIÓN BLOCKED A READY
 // PLANIFICACIÓN BLOCKED A EXIT
 
-void planificar_lista_blocked(){
+void planificar_lista_blocked(motivo_bloqueo motivo){
 	// A TENER EN CUENTA:
 	// Cuando un proceso se bloquea?
 	// CPU me va a pedir que bloquee un proceso (olor a semáforo)
@@ -299,6 +347,17 @@ void planificar_lista_blocked(){
 	//		  luego socket correspondiente)
 	//		- La interfaz admite la operacion solicitada (En la lista anterior tambiém instrucciones que puede manejar?)
 	//				-> Base de datos con nombres, sockets (dinámico) y instrucciones que pueden aceptar?
+	
+	// Implementar semáforo de bloqueo
+	switch (motivo)
+	{
+	case PEDIDO_A_INTERFAZ:
+		break;
+	case RECURSO_FALTANTE:
+		break;
+	default:
+		break;
+	}
 }
 
 void planificar_lista_exit(){
