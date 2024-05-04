@@ -1,6 +1,6 @@
 #include "../include/control_procesos.h"
 // FUNCIONALIDADES PCB
-pcb* crear_pcb(char* path, char* size, char* prioridad){
+pcb* crear_pcb(char* path, int size_path){
 	pcb* nuevo_PCB = malloc(sizeof(pcb));
 	
 	nuevo_PCB->pid = asignar_pid();
@@ -8,6 +8,8 @@ pcb* crear_pcb(char* path, char* size, char* prioridad){
 	nuevo_PCB->quantum = QUANTUM;
 	nuevo_PCB->tiempo_ejecutado = 0;
 	nuevo_PCB->ticket = generar_ticket();
+	nuevo_PCB->size = size_path;
+	nuevo_PCB->path = path; //Que pasa si cambia o sucesde algo con lo que apunta
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
 	nuevo_PCB->registros_CPU->AX = 0;
 	nuevo_PCB->registros_CPU->BX = 0;
@@ -24,7 +26,7 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 // PLANIFICADOR LARGO PLAZO
 
-
+void planificar_largo_plazo(){}
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
@@ -34,6 +36,7 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 // 	- Salida por I/O				(Osea salida de exec)
 // 	- Salida por fin de proceso		(Osea salida de exec)
 // 	- Salida por fin de quantum		(Osea salida de exec)
+//	- => CUANDO EXEC ESTÁ VACÍA
 
 void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 
@@ -41,8 +44,6 @@ void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 	if(list_is_empty(execute)){
 		
 		pcb* un_pcb = NULL;
-		pthread_mutex_lock(&mutex_lista_ready);
-		pthread_mutex_lock(&mutex_lista_ready_plus);
 		if (!list_is_empty(ready_plus)){
 			un_pcb = list_remove(ready_plus, 0);
 		}
@@ -96,7 +97,9 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 	usleep(tiempo_restante);
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ 
+
 		sem_post(&sem_enviar_interrupcion);	
+
 	}
 	pthread_mutex_unlock(&mutex_ticket);
 }
@@ -106,32 +109,71 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 
 
 void planificador_corto_plazo(){
-	// Aquí se debería evaluar si la lista ready NO está vacía para luego pasar a ejecutar la función planificar_corto_plazo()
-	// Entonces mientras la lista ready no esté vacía se evaluará constantemente si la lista exec no está vacía
-	
-	switch(ALGORITMO_PCP_SELECCIONADO){
-		case FIFO:
-			if (!list_is_empty(ready)){
+
+	while(1){
+		
+		_check_interrupt_pcp();
+		switch(ALGORITMO_PCP_SELECCIONADO){
+			case FIFO:
+
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready)){
+					
 					planificar_corto_plazo();
-			}
-		break;
+				
+				}
 
-		case RR:
-			if (!list_is_empty(ready)){
-				planificar_corto_plazo();
-			}
-		break;
+				pthread_mutex_unlock(&mutex_lista_ready);
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
 
-		case VRR:
-			if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
-				planificar_corto_plazo();
-			}
-		break;
+			break;
 
-		default:
-			log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
-			// Debería romer la ejecución?
+			case RR:
+								
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready)){
+
+					planificar_corto_plazo();
+					
+				}
+
+				pthread_mutex_unlock(&mutex_lista_ready);
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
+
+			break;
+
+			case VRR:
+
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
+
+					planificar_corto_plazo();
+
+				}
+
+				pthread_mutex_unlock(&mutex_lista_ready); // nota
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
+
+			break;
+
+			default:
+				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
+				// Debería romer la ejecución?
+		}
+		// debería poner un seep para liberar un poco a la lista ready=
+		usleep(1000); 
 	}
+
+}
+
+void _check_interrupt_pcp(){
+	sem_wait(&sem_interrupt_pcp); // Preguntar si semáforo está bien inicializado
 }
 
 // DUDAS:
@@ -148,6 +190,8 @@ Quizás usar un mutex de lista ready y ready plus para que se llame a la funció
 2)Como hago para saber cuando se está ejecutando un proceso o no?
 
 Puedo usar semáforos entre módulos?
+
+3) que pasasa si hay varios planificadores a corto plazo corriendo al mismo tiempo? Acelera la ejecución del programa? PROBAR
 
 */
 	

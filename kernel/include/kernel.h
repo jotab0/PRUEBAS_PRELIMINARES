@@ -45,6 +45,11 @@ int GRADO_MULTIPROGRAMACION;
 pthread_mutex_t mutex_lista_ready;
 pthread_mutex_t mutex_lista_ready_plus;
 pthread_mutex_t mutex_lista_exec;
+pthread_mutex_t mutex_lista_new;
+pthread_mutex_t mutex_lista_blocked;
+pthread_mutex_t mutex_lista_exit;
+
+
 pthread_mutex_t mutex_ticket;
 pthread_mutex_t mutex_pid;
 
@@ -56,6 +61,7 @@ t_list* blocked;
 t_list* lista_exit;
 
 sem_t sem_enviar_interrupcion;
+sem_t sem_interrupt_pcp;
 
 int ALGORITMO_PCP_SELECCIONADO;
 

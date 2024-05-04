@@ -69,13 +69,16 @@ void crear_listas(){
 
 void inicializar_semaforos(){
 	sem_init(&sem_enviar_interrupcion, 0, 0);
+    sem_init(&sem_interrupt_pcp, 0, 1);
 }
 
 void inicializar_mutexes(){
 	pthread_mutex_init(&mutex_lista_ready, NULL);
     pthread_mutex_init(&mutex_lista_ready_plus, NULL);
-
 	pthread_mutex_init(&mutex_lista_exec, NULL);
+    pthread_mutex_init(&mutex_lista_new, NULL);
+    pthread_mutex_init(&mutex_lista_blocked, NULL);
+    pthread_mutex_init(&mutex_lista_exit, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);

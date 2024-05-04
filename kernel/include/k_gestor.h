@@ -76,6 +76,8 @@ typedef struct{ //
 	int quantum;
 	int tiempo_ejecutado;
 	int ticket;
+	int size;
+	char* path;
 	estado_pcb estado;
 	registrosCPU* registros_CPU;
 }pcb;
@@ -88,20 +90,25 @@ extern int identificador_PID;	// mutex: mutex_pid
 extern int contador_pcbs;
 extern int ticket_actual;		// mutex: mutex_ticket
 
+extern pthread_mutex_t mutex_ticket;
+extern pthread_mutex_t mutex_pid;
+
 extern pthread_mutex_t mutex_lista_ready;
 extern pthread_mutex_t mutex_lista_ready_plus;
 extern pthread_mutex_t mutex_lista_exec;
-extern pthread_mutex_t mutex_ticket;
-extern pthread_mutex_t mutex_pid;
+extern pthread_mutex_t mutex_lista_new;
+extern pthread_mutex_t mutex_lista_blocked;
+extern pthread_mutex_t mutex_lista_exit;
 
 extern t_list* ready;			// mutex: mutex_lista_ready
 extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
 extern t_list* execute;			// mutex: mutex_lista_exec
-extern t_list* new;
-extern t_list* blocked;
-extern t_list* lista_exit;
+extern t_list* new;				// mutex: mutex_lista_new
+extern t_list* blocked;			// mutex: mutex_lista_blocked
+extern t_list* lista_exit;		// mutex: mutex_lista_exit
 
 extern sem_t sem_enviar_interrupcion;
+extern sem_t sem_interrupt_pcp;
 
 
 #endif
