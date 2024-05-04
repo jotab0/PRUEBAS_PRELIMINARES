@@ -55,8 +55,6 @@ typedef enum{
 	EXIT
 }estado_pcb;
 
-extern int ALGORITMO_PCP_SELECCIONADO;
-
 typedef enum{
 	FIFO,
 	RR,
@@ -84,16 +82,6 @@ typedef struct{ //
 
 // LISTAS Y VARIABLES DE PLANIFICACIÓN
 
-
-
-extern int identificador_PID;	// mutex: mutex_pid
-extern int contador_pcbs;
-extern int ticket_actual;		// mutex: mutex_ticket
-extern int procesos_en_core;
-
-extern pthread_mutex_t mutex_ticket;
-extern pthread_mutex_t mutex_pid;
-
 extern pthread_mutex_t mutex_lista_ready;
 extern pthread_mutex_t mutex_lista_ready_plus;
 extern pthread_mutex_t mutex_lista_exec;
@@ -101,6 +89,11 @@ extern pthread_mutex_t mutex_lista_new;
 extern pthread_mutex_t mutex_lista_blocked;
 extern pthread_mutex_t mutex_lista_exit;
 extern pthread_mutex_t mutex_procesos_en_core;
+
+
+extern pthread_mutex_t mutex_ticket;
+extern pthread_mutex_t mutex_pid;
+
 
 extern t_list* ready;			// mutex: mutex_lista_ready
 extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
@@ -113,6 +106,19 @@ extern sem_t sem_enviar_interrupcion;
 extern sem_t sem_interrupt_pcp;
 extern sem_t sem_estructura_iniciada_en_memoria;
 extern sem_t sem_interrupt_plp;
+extern sem_t sem_multiprogramacion;
+extern sem_t sem_listas_ready;
+
+extern int ALGORITMO_PCP_SELECCIONADO;
+
+extern int identificador_PID;	// mutex: mutex_pid
+extern int contador_pcbs;
+extern int ticket_actual;		// mutex: mutex_ticket
+extern int procesos_en_core;
+
+extern int flag_respuesta_creacion_proceso;
+extern int flag_interrupt_pcp;
+extern int flag_interrupt_plp;
 
 
 #endif

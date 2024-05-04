@@ -56,7 +56,7 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	cargar_int_a_paquete(un_paquete, un_pcb->pid);
 	cargar_int_a_paquete(un_paquete, un_pcb->program_counter);
 	cargar_int_a_paquete(un_paquete, un_pcb->tiempo_ejecutado);
-	cargar_int_a_paquete(un_paquete,un_pcb->ticket);
+	cargar_int_a_paquete(un_paquete, un_pcb->ticket);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->AX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->BX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->CX);

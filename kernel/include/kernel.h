@@ -42,6 +42,8 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
+// LISTAS Y VARIABLES DE PLANIFICACIÓN
+
 pthread_mutex_t mutex_lista_ready;
 pthread_mutex_t mutex_lista_ready_plus;
 pthread_mutex_t mutex_lista_exec;
@@ -64,13 +66,18 @@ sem_t sem_enviar_interrupcion;
 sem_t sem_interrupt_pcp;
 sem_t sem_interrupt_plp;
 sem_t sem_estructura_iniciada_en_memoria;
+sem_t sem_multiprogramacion;
+sem_t sem_listas_ready;
 
 int ALGORITMO_PCP_SELECCIONADO;
-
-int ticket_actual = 0;    
+  
 int identificador_PID = 0;
 int contador_pcbs = 0;
-bool flag_exit = false;
-int procesos_en_core = 0;;
+int ticket_actual = 0;  
+int procesos_en_core = 0;
+
+int flag_respuesta_creacion_proceso = 1;
+int flag_interrupt_pcp = 1;
+int flag_interrupt_plp = 1;
 
 #endif

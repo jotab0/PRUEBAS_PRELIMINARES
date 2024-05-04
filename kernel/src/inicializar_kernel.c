@@ -70,9 +70,11 @@ void crear_listas(){
 
 void inicializar_semaforos(){
 	sem_init(&sem_enviar_interrupcion, 0, 0);
-    sem_init(&sem_interrupt_pcp, 0, 1);
-    sem_init(&sem_interrupt_plp, 0, 1);
+    sem_init(&sem_interrupt_pcp, 0, 0);
+    sem_init(&sem_interrupt_plp, 0, 0);
     sem_init(&sem_estructura_iniciada_en_memoria,0,0);
+    sem_init(&sem_multiprogramacion,0,GRADO_MULTIPROGRAMACION - 1);
+    sem_init(&sem_listas_ready,0,0);
 }
 
 void inicializar_mutexes(){
@@ -92,5 +94,5 @@ void inicializar_planificadores(){
     
     ejecutar_en_hilo_detach((void*)planificador_largo_plazo,NULL);
     ejecutar_en_hilo_detach((void*)planificador_corto_plazo,NULL);
-    
+
 }

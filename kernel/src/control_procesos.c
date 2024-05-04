@@ -1,6 +1,6 @@
 #include "../include/control_procesos.h"
 // FUNCIONALIDADES PCB
-pcb* crear_pcb(char* path, int size_path){
+pcb* crear_pcb(char* path, int size){
 	pcb* nuevo_PCB = malloc(sizeof(pcb));
 	
 	nuevo_PCB->pid = asignar_pid();
@@ -8,7 +8,7 @@ pcb* crear_pcb(char* path, int size_path){
 	nuevo_PCB->quantum = QUANTUM;
 	nuevo_PCB->tiempo_ejecutado = 0;
 	nuevo_PCB->ticket = generar_ticket();
-	nuevo_PCB->size = size_path;
+	nuevo_PCB->size = size;
 	nuevo_PCB->path = path; //Que pasa si cambia o sucesde algo con lo que apunta
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
 	nuevo_PCB->registros_CPU->AX = 0;
@@ -26,33 +26,44 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 // PLANIFICADOR LARGO PLAZO
 
-void planificador_largo_plazo() {
+void planificador_largo_plazo() { // Controla todo el tiempo la lista new
    
     while (1) {
         
 		_check_interrupt_plp();
 
 		// Chequeo condiciones para crear proceso
+		// Acá podría haber un sem_wait para controlar grado de multiprogramación
 		pthread_mutex_lock(&mutex_lista_new);
-		pthread_mutex_lock(&mutex_procesos_en_core);
-        if (list_is_empty(new) || procesos_en_core >= GRADO_MULTIPROGRAMACION) {
+        if (list_is_empty(new)) {
             pthread_mutex_unlock(&mutex_lista_new);
-			pthread_mutex_unlock(&mutex_procesos_en_core);
-            sleep(1);  
-            continue;
+            sleep(1); 
+			// Ejecuto el while nuevamente 
+            continue; 
         }
 
 		pcb* un_pcb = NULL;
         un_pcb = list_remove(new, 0);
         pthread_mutex_unlock(&mutex_lista_new);
-		pthread_mutex_unlock(&mutex_procesos_en_core);
-
-        
 		
 		if (un_pcb != NULL){
 			
-			// Envía la orden de iniciar estructura a memoria y espera a que memoria la cree 
+			// Envía la orden de iniciar estructura a memoria y espera con semáforo a que memoria la cree 
 			iniciar_estructura_en_memoria(un_pcb);
+			
+			if(flag_respuesta_creacion_proceso == 0){
+				
+				// Vuelvo a agregar el pcb a la lista new en caso de que falló creación de proceso
+				pthread_mutex_lock(&mutex_lista_new);
+					list_add(new,un_pcb);
+				pthread_mutex_lock(&mutex_lista_new);
+				
+				// Reinicio la bendera
+				flag_respuesta_creacion_proceso = 1; // Asumo que no necesito mutex porque plp es el único que accede a este flag y son ejecuciones secuenciales
+				
+				// Ejecuto while nuevamente
+				continue;
+			}
 
 			pthread_mutex_lock(&mutex_lista_ready);
 			list_add(ready, un_pcb);
@@ -61,9 +72,13 @@ void planificador_largo_plazo() {
 			cambiar_estado_pcb(un_pcb, READY);
 			log_info(kernel_logger, "Proceso %d movido a READY", un_pcb->pid);
 			
-			pthread_mutex_lock(&mutex_procesos_en_core);
+			pthread_mutex_lock(&mutex_procesos_en_core); // (Lo dejo por las dudas)
 			procesos_en_core++;
 			pthread_mutex_unlock(&mutex_procesos_en_core);
+
+			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
+			sem_post(&sem_listas_ready);
+			sem_wait(&sem_multiprogramacion);
 		}
 		else{
 			log_error(kernel_logger, "ERROR: Se intentó cargar un proceso vacío");
@@ -81,15 +96,16 @@ void planificador_largo_plazo() {
 // 	- Salida por fin de quantum		(Osea salida de exec)
 //	- => CUANDO EXEC ESTÁ VACÍA
 
-void planificador_corto_plazo(){
-
+void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y ready_plus en caso de VRR
+ 
 	while(1){
 		
 		_check_interrupt_pcp();
+		sem_wait(&sem_listas_ready);
 		switch(ALGORITMO_PCP_SELECCIONADO){
 			case FIFO:
 
-				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready); 
 				pthread_mutex_lock(&mutex_lista_ready_plus);
 
 				if (!list_is_empty(ready)){
@@ -139,7 +155,7 @@ void planificador_corto_plazo(){
 				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
 				// Debería romer la ejecución?
 		}
-		// debería poner un seep para liberar un poco a la lista ready=
+		// Esto es para reducir un poco la carga de la CPU
 		sleep(1); 
 	}
 
@@ -161,6 +177,7 @@ void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 		pthread_mutex_unlock(&mutex_lista_ready_plus);
 
 		_poner_en_ejecucion(un_pcb);
+
 	}
 	pthread_mutex_unlock(&mutex_lista_exec);
 }
@@ -201,7 +218,7 @@ void _programar_interrupcion_por_quantum_RR(pcb* un_pcb){ // Que pasa si el proc
 void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 	int ticket_referencia = un_pcb->ticket;
 	int tiempo_restante = un_pcb->quantum - un_pcb->tiempo_ejecutado; // Consultar si está ok 
-	usleep(tiempo_restante);
+	usleep(tiempo_restante); // El tiempo debe ser calculado en base a microsegundos
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ 
 
@@ -214,15 +231,26 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 // En teoría lo anterior está ok porque cuando un proceso vuelva porque se interrumpió su quantum
 // la CPU debería haberme devuelto el proceso con su contexto de ejecución
 
-
-
-
 void _check_interrupt_pcp(){
-	sem_wait(&sem_interrupt_pcp); // Preguntar si semáforo está bien inicializado
+	switch (flag_interrupt_pcp) {
+        case 0:
+            sem_wait(&sem_interrupt_pcp); // Espera hasta que el semáforo sea señalizado
+            break;
+        default:
+            // Aquí puedes manejar otros valores de flag_interrupt_pcp si es necesario
+            break;
+    }
 }
 
 void _check_interrupt_plp(){
-	sem_wait(&sem_interrupt_plp);
+	switch (flag_interrupt_plp) {
+        case 0:
+            sem_wait(&sem_interrupt_pcp); // Espera hasta que el semáforo sea señalizado
+            break;
+        default:
+            // Aquí puedes manejar otros valores de flag_interrupt_pcp si es necesario
+            break;
+    }
 }
 
 // DUDAS:
