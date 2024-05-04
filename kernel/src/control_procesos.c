@@ -41,6 +41,9 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 // MODIFICAR PARA QUE AGREGUE A READY_PLUS
 // VOY A AGREGAR SWITCH PARA QUE SE HAGA UNA SOLA VEZ AL EJECUTAR EL KERNEL
+// NO HACE FALTA PORQUE LA UNICA VEZ QUE SE VA A AGREAGAR A READY +  ES CUANDO VUELVE DE BLOQUEO UN PROCESO QUE NO LLEGÓ A EJECUTAR QUANTUM
+// OSEA SE VA A ENCARGAR DE ESO LA FUNCION QUE MANEJE LA COLA DE BLOCKED
+
     while (1) {
         
 		_check_interrupt_plp();
@@ -89,8 +92,9 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 			procesos_en_core++;
 			pthread_mutex_unlock(&mutex_procesos_en_core);
 
-			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
+			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
 			sem_post(&sem_listas_ready);
+			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
 			sem_wait(&sem_multiprogramacion);
 		}
 		else{
@@ -99,52 +103,6 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
     }
 }
 
-void plp_FIFO_RR(){
-	// Chequeo condiciones para crear proceso
-		// Acá podría haber un sem_wait para controlar grado de multiprogramación
-		pthread_mutex_lock(&mutex_lista_new);
-        if (list_is_empty(new)) {
-            pthread_mutex_unlock(&mutex_lista_new);
-            sleep(1); 
-			// Ejecuto el while nuevamente 
-    		return; 
-        }
-
-		pcb* un_pcb = NULL;
-        un_pcb = list_remove(new, 0);
-        pthread_mutex_unlock(&mutex_lista_new);
-		
-		if (un_pcb != NULL){
-			
-			// Envía la orden de iniciar estructura a memoria y espera con semáforo a que memoria la cree 
-			iniciar_estructura_en_memoria(un_pcb);
-			
-			if(flag_respuesta_creacion_proceso == 0){
-				
-				// Vuelvo a agregar el pcb a la lista new en caso de que falló creación de proceso
-				pthread_mutex_lock(&mutex_lista_new);
-					list_add(new,un_pcb);
-				pthread_mutex_lock(&mutex_lista_new);
-				
-				// Reinicio la bendera
-				flag_respuesta_creacion_proceso = 1; // Asumo que no necesito mutex porque plp es el único que accede a este flag y son ejecuciones secuenciales
-				
-				// Ejecuto while nuevamente
-				return;
-			}
-
-			pthread_mutex_lock(&mutex_lista_ready);
-			list_add(ready, un_pcb);
-			pthread_mutex_unlock(&mutex_lista_ready);
-			
-			cambiar_estado_pcb(un_pcb, READY);
-			log_info(kernel_logger, "Proceso %d movido a READY", un_pcb->pid);
-			
-			pthread_mutex_lock(&mutex_procesos_en_core); // (Lo dejo por las dudas)
-			procesos_en_core++;
-			pthread_mutex_unlock(&mutex_procesos_en_core);
-		}
-}
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
@@ -161,6 +119,9 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 	while(1){
 		
 		_check_interrupt_pcp();
+		// Espero a que se agregue algo a ready
+		// Pensar que pasa si tengo proceso en blocked que entra y sale de readyplus, se me va a terminar bloqueando
+		// Claro entonces en el que maneje la lista blocked va a mandar un sem_post de que agrego a readyplus !!!! IMPORTANTE !!!!
 		sem_wait(&sem_listas_ready);
 		switch(ALGORITMO_PCP_SELECCIONADO){
 			case FIFO:
