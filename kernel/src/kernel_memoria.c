@@ -23,7 +23,12 @@ void esperar_memoria_kernel(){
             case MENSAJE:
                 recibir_mensaje_tp0(fd_memoria,kernel_logger);
             break;
-            case PAQUETE:
+            case RTA_INICIAR_ESTRUCTURA:
+
+                t_buffer* un_buffer = recibir_buffer(fd_memoria);
+                flag_respuesta_creacion_proceso = extraer_int_del_buffer(un_buffer);
+                sem_post(&sem_estructura_iniciada_en_memoria);
+                
 			break;
             case -1:
                 log_error(kernel_logger, "MEMORIA se desconecto. Terminando servidor");
@@ -35,4 +40,20 @@ void esperar_memoria_kernel(){
             break;
         }
     }
+}
+
+void iniciar_estructura_en_memoria(pcb* un_pcb){
+
+    t_paquete* paquete = NULL;
+    paquete = crear_paquete_con_buffer(INICIAR_ESTRUCTURA);
+
+    cargar_string_a_paquete(paquete,un_pcb->path);
+    cargar_int_a_paquete(paquete,un_pcb->size);
+    cargar_int_a_paquete(paquete,un_pcb->pid);
+
+    log_info(kernel_logger, "Solicitud de creación de proceso enviada a memoria");
+    enviar_paquete(paquete,fd_memoria);
+    destruir_paquete(paquete);
+    // Espero a la respuesta de memoria
+    sem_wait(&sem_estructura_iniciada_en_memoria);
 }

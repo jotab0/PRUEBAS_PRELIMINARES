@@ -319,7 +319,6 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	
 	// Si es 0 destruyo buffer
 	if (tam_nuevo == 0){
-		destruir_buffer(buffer);
 		return mensaje;
 	}
 

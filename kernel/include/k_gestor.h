@@ -55,13 +55,22 @@ typedef enum{
 	EXIT
 }estado_pcb;
 
-extern int ALGORITMO_PCP_SELECCIONADO;
-
 typedef enum{
 	FIFO,
 	RR,
 	VRR
 }algoritmo_de_planificacion;
+
+typedef enum{
+	PEDIDO_A_INTERFAZ,
+	RECURSO_FALTANTE,
+	BLOQUEO_NO_DEFINIDO
+}motivo_bloqueo;
+
+typedef struct{
+	char* nombre_interfaz;
+	instruccion_interfaz instruccion_a_interfaz;
+}pedido_interfaz;
 
 typedef struct{
 	uint32_t AX;
@@ -71,37 +80,60 @@ typedef struct{
 }registrosCPU;
 
 typedef struct{ //
+	
 	int pid;
 	int program_counter;
 	int quantum;
 	int tiempo_ejecutado;
 	int ticket;
-	estado_pcb estado;
+	int size;
+	char* path;
 	registrosCPU* registros_CPU;
+	estado_pcb estado;
+	motivo_bloqueo motivo_bloqueo; 
+	pedido_interfaz* pedido_a_interfaz;
+	
 }pcb;
 
 // LISTAS Y VARIABLES DE PLANIFICACIÓN
 
-
-
-extern int identificador_PID;	// mutex: mutex_pid
-extern int contador_pcbs;
-extern int ticket_actual;		// mutex: mutex_ticket
-
 extern pthread_mutex_t mutex_lista_ready;
 extern pthread_mutex_t mutex_lista_ready_plus;
 extern pthread_mutex_t mutex_lista_exec;
+extern pthread_mutex_t mutex_lista_new;
+extern pthread_mutex_t mutex_lista_blocked;
+extern pthread_mutex_t mutex_lista_exit;
+extern pthread_mutex_t mutex_procesos_en_core;
+
+
 extern pthread_mutex_t mutex_ticket;
 extern pthread_mutex_t mutex_pid;
+
 
 extern t_list* ready;			// mutex: mutex_lista_ready
 extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
 extern t_list* execute;			// mutex: mutex_lista_exec
-extern t_list* new;
-extern t_list* blocked;
-extern t_list* lista_exit;
+extern t_list* new;				// mutex: mutex_lista_new
+extern t_list* blocked;			// mutex: mutex_lista_blocked
+extern t_list* lista_exit;		// mutex: mutex_lista_exit
 
 extern sem_t sem_enviar_interrupcion;
+extern sem_t sem_interrupt_pcp;
+extern sem_t sem_estructura_iniciada_en_memoria;
+extern sem_t sem_interrupt_plp;
+extern sem_t sem_multiprogramacion;
+extern sem_t sem_listas_ready;
+
+extern int ALGORITMO_PCP_SELECCIONADO;
+
+extern int identificador_PID;	// mutex: mutex_pid
+extern int contador_pcbs;
+extern int ticket_actual;		// mutex: mutex_ticket
+extern int procesos_en_core;
+
+extern int flag_respuesta_creacion_proceso;
+extern int flag_interrupt_pcp;
+extern int flag_interrupt_plp;
 
 
 #endif
