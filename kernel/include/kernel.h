@@ -48,7 +48,7 @@ pthread_mutex_t mutex_lista_exec;
 pthread_mutex_t mutex_lista_new;
 pthread_mutex_t mutex_lista_blocked;
 pthread_mutex_t mutex_lista_exit;
-
+pthread_mutex_t mutex_procesos_en_core;
 
 pthread_mutex_t mutex_ticket;
 pthread_mutex_t mutex_pid;
@@ -62,7 +62,15 @@ t_list* lista_exit;
 
 sem_t sem_enviar_interrupcion;
 sem_t sem_interrupt_pcp;
+sem_t sem_interrupt_plp;
+sem_t sem_estructura_iniciada_en_memoria;
 
 int ALGORITMO_PCP_SELECCIONADO;
+
+int ticket_actual = 0;    
+int identificador_PID = 0;
+int contador_pcbs = 0;
+bool flag_exit = false;
+int procesos_en_core = 0;;
 
 #endif

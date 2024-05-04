@@ -63,5 +63,5 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->DX);
 
 	enviar_paquete(un_paquete, fd_cpu_dispatch); //RECORDAR: PAQUETE SE SERIALIZA ACÁ ADENTRO
-	eliminar_paquete(un_paquete);
+	destruir_paquete(un_paquete);
 }

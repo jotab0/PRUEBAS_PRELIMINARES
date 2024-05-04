@@ -5,4 +5,7 @@
 
 void esperar_memoria_kernel();
 void esperar_conexiones_memoria();
+
+void iniciar_estructura_en_memoria(pcb* un_pcb);
+
 #endif /* KERNEL_MEMORIA_H_ */

@@ -26,7 +26,50 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 // PLANIFICADOR LARGO PLAZO
 
-void planificar_largo_plazo(){}
+void planificador_largo_plazo() {
+   
+    while (1) {
+        
+		_check_interrupt_plp();
+
+		// Chequeo condiciones para crear proceso
+		pthread_mutex_lock(&mutex_lista_new);
+		pthread_mutex_lock(&mutex_procesos_en_core);
+        if (list_is_empty(new) || procesos_en_core >= GRADO_MULTIPROGRAMACION) {
+            pthread_mutex_unlock(&mutex_lista_new);
+			pthread_mutex_unlock(&mutex_procesos_en_core);
+            sleep(1);  
+            continue;
+        }
+
+		pcb* un_pcb = NULL;
+        un_pcb = list_remove(new, 0);
+        pthread_mutex_unlock(&mutex_lista_new);
+		pthread_mutex_unlock(&mutex_procesos_en_core);
+
+        
+		
+		if (un_pcb != NULL){
+			
+			// Envía la orden de iniciar estructura a memoria y espera a que memoria la cree 
+			iniciar_estructura_en_memoria(un_pcb);
+
+			pthread_mutex_lock(&mutex_lista_ready);
+			list_add(ready, un_pcb);
+			pthread_mutex_unlock(&mutex_lista_ready);
+			
+			cambiar_estado_pcb(un_pcb, READY);
+			log_info(kernel_logger, "Proceso %d movido a READY", un_pcb->pid);
+			
+			pthread_mutex_lock(&mutex_procesos_en_core);
+			procesos_en_core++;
+			pthread_mutex_unlock(&mutex_procesos_en_core);
+		}
+		else{
+			log_error(kernel_logger, "ERROR: Se intentó cargar un proceso vacío");
+		}
+    }
+}
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
@@ -37,6 +80,70 @@ void planificar_largo_plazo(){}
 // 	- Salida por fin de proceso		(Osea salida de exec)
 // 	- Salida por fin de quantum		(Osea salida de exec)
 //	- => CUANDO EXEC ESTÁ VACÍA
+
+void planificador_corto_plazo(){
+
+	while(1){
+		
+		_check_interrupt_pcp();
+		switch(ALGORITMO_PCP_SELECCIONADO){
+			case FIFO:
+
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready)){
+					
+					planificar_corto_plazo();
+				
+				}
+
+				pthread_mutex_unlock(&mutex_lista_ready);
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
+
+			break;
+
+			case RR:
+								
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready)){
+
+					planificar_corto_plazo();
+					
+				}
+
+				pthread_mutex_unlock(&mutex_lista_ready);
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
+
+			break;
+
+			case VRR:
+
+				pthread_mutex_lock(&mutex_lista_ready);
+				pthread_mutex_lock(&mutex_lista_ready_plus);
+
+				if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
+
+					planificar_corto_plazo();
+
+				}
+
+				pthread_mutex_unlock(&mutex_lista_ready); // nota
+				pthread_mutex_unlock(&mutex_lista_ready_plus);
+
+			break;
+
+			default:
+				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
+				// Debería romer la ejecución?
+		}
+		// debería poner un seep para liberar un poco a la lista ready=
+		sleep(1); 
+	}
+
+}
 
 void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 
@@ -108,72 +215,14 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 // la CPU debería haberme devuelto el proceso con su contexto de ejecución
 
 
-void planificador_corto_plazo(){
 
-	while(1){
-		
-		_check_interrupt_pcp();
-		switch(ALGORITMO_PCP_SELECCIONADO){
-			case FIFO:
-
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready)){
-					
-					planificar_corto_plazo();
-				
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
-
-			break;
-
-			case RR:
-								
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready)){
-
-					planificar_corto_plazo();
-					
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
-
-			break;
-
-			case VRR:
-
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
-
-					planificar_corto_plazo();
-
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready); // nota
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
-
-			break;
-
-			default:
-				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
-				// Debería romer la ejecución?
-		}
-		// debería poner un seep para liberar un poco a la lista ready=
-		usleep(1000); 
-	}
-
-}
 
 void _check_interrupt_pcp(){
 	sem_wait(&sem_interrupt_pcp); // Preguntar si semáforo está bien inicializado
+}
+
+void _check_interrupt_plp(){
+	sem_wait(&sem_interrupt_plp);
 }
 
 // DUDAS:

@@ -7,6 +7,7 @@ void inicializar_kernel(){
     inicializar_semaforos();
     inicializar_mutexes();
     establecer_algoritmo_seleccionado();
+    inicializar_planificadores();
 }
 
 void inicializar_logs(){
@@ -70,6 +71,8 @@ void crear_listas(){
 void inicializar_semaforos(){
 	sem_init(&sem_enviar_interrupcion, 0, 0);
     sem_init(&sem_interrupt_pcp, 0, 1);
+    sem_init(&sem_interrupt_plp, 0, 1);
+    sem_init(&sem_estructura_iniciada_en_memoria,0,0);
 }
 
 void inicializar_mutexes(){
@@ -79,9 +82,15 @@ void inicializar_mutexes(){
     pthread_mutex_init(&mutex_lista_new, NULL);
     pthread_mutex_init(&mutex_lista_blocked, NULL);
     pthread_mutex_init(&mutex_lista_exit, NULL);
+    pthread_mutex_init(&mutex_procesos_en_core, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
 }
 
-
+void inicializar_planificadores(){
+    
+    ejecutar_en_hilo_detach((void*)planificador_largo_plazo,NULL);
+    ejecutar_en_hilo_detach((void*)planificador_corto_plazo,NULL);
+    
+}
