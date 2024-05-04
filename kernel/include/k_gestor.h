@@ -61,6 +61,17 @@ typedef enum{
 	VRR
 }algoritmo_de_planificacion;
 
+typedef enum{
+	PEDIDO_A_INTERFAZ,
+	RECURSO_FALTANTE,
+	BLOQUEO_NO_DEFINIDO
+}motivo_bloqueo;
+
+typedef struct{
+	char* nombre_interfaz;
+	instruccion_interfaz instruccion_a_interfaz;
+}pedido_interfaz;
+
 typedef struct{
 	uint32_t AX;
 	uint32_t BX;
@@ -69,6 +80,7 @@ typedef struct{
 }registrosCPU;
 
 typedef struct{ //
+	
 	int pid;
 	int program_counter;
 	int quantum;
@@ -76,8 +88,11 @@ typedef struct{ //
 	int ticket;
 	int size;
 	char* path;
-	estado_pcb estado;
 	registrosCPU* registros_CPU;
+	estado_pcb estado;
+	motivo_bloqueo motivo_bloqueo; 
+	pedido_interfaz* pedido_a_interfaz;
+	
 }pcb;
 
 // LISTAS Y VARIABLES DE PLANIFICACIÓN

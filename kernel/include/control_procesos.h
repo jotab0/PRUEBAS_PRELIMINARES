@@ -14,6 +14,7 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb);
 void _poner_en_ejecucion(pcb* un_pcb);
 void planificador_corto_plazo();
 void planificador_largo_plazo();
+void planificar_lista_blocked();
 
 void _check_interrupt_pcp();
 void _check_interrupt_plp();

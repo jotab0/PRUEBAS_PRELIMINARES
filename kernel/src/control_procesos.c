@@ -1,21 +1,33 @@
 #include "../include/control_procesos.h"
 // FUNCIONALIDADES PCB
 pcb* crear_pcb(char* path, int size){
+	
 	pcb* nuevo_PCB = malloc(sizeof(pcb));
 	
 	nuevo_PCB->pid = asignar_pid();
-    nuevo_PCB->program_counter = 0;
+    
+	nuevo_PCB->program_counter = 0;
+	
 	nuevo_PCB->quantum = QUANTUM;
 	nuevo_PCB->tiempo_ejecutado = 0;
-	nuevo_PCB->ticket = generar_ticket();
+	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
+	
+	nuevo_PCB->ticket = -1; // Ver si puede traer problemas
+	
 	nuevo_PCB->size = size;
 	nuevo_PCB->path = path; //Que pasa si cambia o sucesde algo con lo que apunta
+	
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
 	nuevo_PCB->registros_CPU->AX = 0;
 	nuevo_PCB->registros_CPU->BX = 0;
 	nuevo_PCB->registros_CPU->CX = 0;
 	nuevo_PCB->registros_CPU->DX = 0;
 
+	nuevo_PCB->estado = NEW;
+	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO; // Esto entra en conflicto con el enum?
+	nuevo_PCB->pedido_a_interfaz->nombre_interfaz=NULL;
+	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz=INSTRUCCION_IO_NO_DEFINIDA;
+	
 	return nuevo_PCB;
 }
 
@@ -271,4 +283,29 @@ Puedo usar semáforos entre módulos?
 3) que pasasa si hay varios planificadores a corto plazo corriendo al mismo tiempo? Acelera la ejecución del programa? PROBAR
 
 */
-	
+
+// FALTA:
+// PLANIFICACIÓN BLOCKED A READY
+// PLANIFICACIÓN BLOCKED A EXIT
+
+void planificar_lista_blocked(){
+	// A TENER EN CUENTA:
+	// Cuando un proceso se bloquea?
+	// CPU me va a pedir que bloquee un proceso (olor a semáforo)
+	// Proceso pidió recurso que no dispone
+
+	// Cuando CPU me pide que lo bloquee tengo que sacarlo de exec si cumple con las siguientes condiciones
+	// 		- La interfaz existe y se encuentra conectada (Tengo que tener lista de interfaces con su nombre como índice y
+	//		  luego socket correspondiente)
+	//		- La interfaz admite la operacion solicitada (En la lista anterior tambiém instrucciones que puede manejar?)
+	//				-> Base de datos con nombres, sockets (dinámico) y instrucciones que pueden aceptar?
+}
+
+void planificar_lista_exit(){
+	// A TENER EN CUENTA:
+	// Cuando un proceso sale a exit?
+	// Cuando termina su ejecución (Me avisa CPU?)
+	// Cuando falla (Me avisa CPU?)
+	// Cuando lo pido por consola
+	// !!!! IMPORTANTE !!!! Cuando proceso salga por exit, grado de multiprogramación debe aumentar
+}

@@ -61,6 +61,11 @@ typedef enum{
 	KERNEL
 }modulo_identificador;
 
+typedef enum{
+	IO_GEN_SLEEP,
+    IO_STDIN_READ,
+    INSTRUCCION_IO_NO_DEFINIDA
+}instruccion_interfaz;
 
 int crear_conexion(char *ip, char* puerto);
 int iniciar_servidor(char* puerto,t_log* logger,char* mensaje);
