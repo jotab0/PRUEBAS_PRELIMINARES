@@ -1,40 +1,61 @@
 #include "../include/cicloInstruccion.h"
 
+
 void realizarCicloInstruccion(){
 
     // FETCH (solicita y recibe instruccion de memoria)
     // solicitar
+    //log obligatorio fetch
 
-    // recibir
-    // tipo? instruccion = recibirInstruccion();
+    // recibir (lo hace en un case de comunicaciones?)
 
     // DECODE Y EXECUTE
-    decodeYExecute(instruccion);
+    decodeYExecute(); 
 
     // CHECK INTERRUPTION
 
     // AUMENTAR PC
-    // if(la instruccion NO fue JNZ){
-    //      registro.PC ++;
-    //}
+    if(strcmp(instruccion_dividida[0] != "JNZ")){
+         PC ++;
+    }
 
 }
 
-void decodeYExecute(instruccion){
-    switch(instruccion){
-        case SET:
-            break;
-        case SUM:
-            break;
-        case SUB:
-            break;
-        case JNZ:
-            break;
-        case IO_GEN_SLEEP:
-            break;
-        default:
-            // log info de error? (instuccion desconocida)
+// esperar a que roy reciba el pcb para ver el pid y como detectar los registros
+
+void decodeYExecute(){ 
+    // strcmp compara cadenas
+    if(strcmp(instruccion_dividida[0], "SET") == 0) { //SET(registro, valor)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", PID, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        uint32_t* registro = detectar_registro(instruccion_dividida[1]); //registro
+        *registro_referido = atoi(instruccion_dividida[2]); //convierte el valor de la instruction_split[2] a un int y lo guarda en el registro referido 
+    } else if(strcmp(instruccion_dividida[0], "SUM") == 0){ //SUM(registroDestino, registroOrigen)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", PID, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        *registro_destino = *registro_destino + *registro_origen;
+    } else if(strcmp(instruccion_dividida[0], "SUB") == 0){ //SUB(registroDestino, registroOrigen)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", PID, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        *registro_destino = *registro_destino - *registro_origen;
+    } else if(strcmp(instruccion_dividida[0], "JNZ") == 0){ //JNZ(registro, instruccion)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", PID, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        uint32_t* registro = detectar_registro(instruccion_dividida[1]);
+        valorNuevoPC = atoi(instruccion_dividida[2]);
+        if(registro != 0){
+            PC = valorNuevoPC;
+        }
+    } else if(strcmp(instruccion_dividida[0], "IO_GEN_SLEEP") == 0){ //IO_GEN_SLEEP(interfaz, unidades de trabajo)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", PID, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        t_paquete* paquete = crear_paquete_con_buffer(INSTRUCCION_CPU); // nombre?
+        cargar_string_a_paquete_con_buffer(paquete, instruccion_dividida[0]); // instruccion
+        cargar_string_a_paquete_con_buffer(paquete, instruccion_dividida[1]); // interfaz (no se si se manda como string o de otra forma)
+        cargar_int_a_paquete_con_buffer(paquete, atoi(instruccion_dividida[2])); // unidades de tiempo
+        int resultado_envio = enviar_paquete(paquete, fd_kernel_dispatch); 
+        eliminar_paquete(paquete);
     }
+
 }
 
 

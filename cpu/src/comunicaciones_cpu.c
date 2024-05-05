@@ -59,19 +59,14 @@ void esperar_kernel_cpu_dispatch(){
 
 void esperar_memoria_cpu(){
     int estado_while = 1;
-	t_list* lista;
     while (estado_while) {
 		log_trace(cpu_logger,"CPU: ESPERANDO MENSAJES DE MEMORIA");
-		t_list* lista;
         int cod_op = recibir_operacion(fd_memoria);
 		switch (cod_op) {
-		case MENSAJE:
-		 	recibir_mensaje_tp0(fd_memoria,cpu_logger);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(fd_memoria);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
+		case SOLICITUD_INSTRUCCION:
+			t_buffer* unBuffer = recibir_buffer(fd_memoria);
+			recibir_instruccion(unBuffer);
+			destruir_buffer(unBuffer);
 			break;
 		case -1:
 			log_error(cpu_logger, "MEMORIA se desconecto. Terminando servidor");
@@ -82,4 +77,14 @@ void esperar_memoria_cpu(){
 			break;
 		}
 	}
+}
+
+// atender memoria
+
+void recibir_instruccion(t_buffer* unBuffer){
+	char* instruccion = extraer_string_del_buffer(unBuffer);
+	log_warning(cpu_logger, "Instruccion recibida: [%s]", instruccion);
+	// string split divide una cadena en subcadenas (para dividir el cod_op de los operadores?)
+	instruction_dividida = string_split(instruccion, " ");
+	free(instruccion);
 }

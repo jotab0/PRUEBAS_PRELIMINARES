@@ -7,7 +7,9 @@ RESERVADA extern. */
 
 #include "k_gestor.h"
 
-#include "inicializar_kernel.h"
+// #include "inicializar_kernel.h" 
+// Incluir esto me traía problemas porque estaba definiendo 
+// 2 veces las variables a inicializar por más que estaban en el gestor
 #include "kernel_cpu_dispatch.h"
 #include "kernel_cpu_interrupt.h"
 #include "kernel_entradasalida.h"
@@ -46,9 +48,5 @@ char** RECURSOS;
 char** INSTANCIAS_RECURSOS;
 int GRADO_MULTIPROGRAMACION;
 
-int identificador_PID = 1;
-int contador_pcbs = 1;
-
-pthread_mutex_t mutex_pid;
 
 #endif

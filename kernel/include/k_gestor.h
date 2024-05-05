@@ -9,14 +9,13 @@ RESERVADA extern. */
 #include <stdlib.h>
 #include <pthread.h>
 #include <readline/readline.h>
+#include <semaphore.h>
 
 #include "../src/utils/include/shared.h"
 
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
-
-#include <../src/utils/include/shared.h>
 
 //Variables globales
 
@@ -53,9 +52,53 @@ extern int fd_cpu_dispatch;
 extern int fd_cpu_interrupt;
 extern int fd_kernel;
 
+typedef enum{
+	NEW,
+	READY,
+	EXEC,
+	BLOCKED,
+	EXIT
+}estado_pcb;
+typedef struct{
+	uint32_t AX;
+	uint32_t BX;
+	uint32_t CX;
+	uint32_t DX;
+}registrosCPU;
+typedef struct{ //
+	int pid;
+	int program_counter;
+    int quantum;
+	int ticket;
+	estado_pcb estado;
+	registrosCPU* registros_CPU;
+}pcb;
+
+// LISTAS Y VARIABLES DE PLANIFICACIÓN
+
+
+
 extern int identificador_PID;
 extern int contador_pcbs;
+extern int ticket_actual;
+extern bool flag_exit;
 
+
+extern int TAM_QUANTUM;
+
+extern pthread_mutex_t mutex_lista_ready;
+extern pthread_mutex_t mutex_lista_exec;
+extern pthread_mutex_t mutex_ticket;
+extern pthread_mutex_t mutex_flag_exit;
 extern pthread_mutex_t mutex_pid;
+
+extern t_list* ready;
+extern t_list* execute;
+extern t_list* new;
+extern t_list* blocked;
+extern t_list* lista_exit;
+
+extern sem_t sem_enviar_interrupcion;
+
 
 #endif
