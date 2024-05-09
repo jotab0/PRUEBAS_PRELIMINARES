@@ -1,11 +1,10 @@
 #include "../include/encargarse_cpu.h"
 
+void enviar_tamanio_pagina(int cliente_socket);
+void resolver_solicitud_instruccion(t_buffer *unBuffer);
 
 void encargarse_cpu(int cliente_socket_cpu){
-        t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
-	    cargar_int_a_paquete(un_paquete, TAM_PAGINA);
-        enviar_paquete(un_paquete, fd_cpu);
-        eliminar_paquete(un_paquete);
+        enviar_tamanio_pagina(cliente_socket_cpu);
 
         int numero =1;
         while(numero){
@@ -35,34 +34,6 @@ void encargarse_cpu(int cliente_socket_cpu){
 //------------------------------------------------------------------------------------------------------------
 //FUNCIONES NECESARIAS
 
-bool comparar_pid(const void* elemento, const void* pid) {
-    //uso const para que no se modifiquen los valores
-    const t_proceso* proceso = (const t_proceso*)elemento;
-    return proceso->pid_proceso == *(const int*)pid;
-}
-
-//TODO
-t_proceso* buscar_proceso_por_pid(int pid_proceso){
-    
-    t_proceso* proceso_encontrado = list_find(list_procesos_recibidos, comparar_pid, &pid_proceso);
-    if (proceso_encontrado == NULL) {
-        log_error(memoria_logger, "No se encontró el proceso con PID: %d", pid_proceso);
-        return NULL; 
-    }
-    return proceso_encontrado;
-
-}
-
-char*  extraer_instruccion_por_ip(t_proceso* proceso, int ip_proceso){
-
-     if (ip_proceso < 0 ||ip_proceso >= list_size(proceso-> lista_de_instrucciones)) {
-        log_error(memoria_logger, "PID<%d> - Índice de instrucción <%d> NO VALIDO", proceso->pid_proceso, ip_proceso);
-        return NULL;
-    }
-
-    char* instruccion = list_get(proceso->lista_de_instrucciones, ip_proceso);
-    return instruccion;
-}
 
 void mandar_instruccion_a_cpu(char* instruccion){
     //retardo_respuesta_cpu_fs();
@@ -74,54 +45,16 @@ void mandar_instruccion_a_cpu(char* instruccion){
 
 
 //------------------------------------------------------------------------------------------------------------
-// Implementación de funciones de manejo de operaciones
 
-void solicitud_info_memoria(t_buffer *unBuffer) {
-   unBuffer = recibiendo_super_paquete(fd_cpu);
+
+void enviar_tamanio_pagina(int cliente_socket){
+    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
+    cargar_int_a_paquete(un_paquete, TAM_PAGINA);
+    enviar_paquete(un_paquete, fd_cpu);
+    eliminar_paquete(un_paquete);
 }
 
-
-void resolver_solicitud_instruccion(t_buffer *unBuffer) {
-
-    // Obtener PID e IP desde el buffer
-    int pid = extraer_int_del_buffer(unBuffer);
-    int ip  = extraer_int_del_buffer(unBuffer);
-
-    // Buscar el proceso correspondiente al PID
-    t_proceso* proceso = buscar_proceso_por_pid(pid); 
-    if (proceso == NULL) {
-        log_error(memoria_logger, "No se encontró el proceso con PID: %d", pid);
-        return;
-    }
-
-    // Obtener la instrucción específica usando el IP
-    char* instruccion = extraer_instruccion_por_ip(proceso, ip);
-    if (instruccion == NULL) {
-        log_error(memoria_logger, "No se encontró la instrucción en el IP: %d para el PID: %d", ip, pid);
-        return;   
-    }
-    // Registrar información del proceso y la instrucción
-    log_info(memoria_logger, "Proceso [PID: %d, IP: %d]: %s", pid, ip, instruccion);
-    mandar_instruccion_a_cpu(instruccion);
-}
-
-void resolver_solicitud_ejecucion(t_buffer *unBuffer) {
-    
-}
-
-void resolver_solicitud_consulta_pagina(t_buffer *unBuffer) {
-    
-}
-
-void resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
-    
-}
-
-void resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
-    
-}
-
-//------------------------------------------------------------------------------------------------------------
+/*
  // DEFINICION DE TIPO FUNCION DE PUNTERO PARA LAS OPERACIONES DE CPU
  typedef void (*operacion_handler_t)(t_buffer*);
 
@@ -146,12 +79,7 @@ void resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
     [SOLICITUD_ESCRITURA_MEMORIA_BLOQUE] = resolver_solicitud_escribir_bloque
  };
 
-void enviar_tamanio_pagina(int cliente_socket){
-    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
-    cargar_int_a_paquete(un_paquete, TAM_PAGINA);
-    enviar_paquete(un_paquete, fd_cpu);
-    eliminar_paquete(un_paquete);
-}
+
 
 void encargarse_cpu(int cliente_socket_cpu){
     enviar_tamanio_pagina(cliente_socket_cpu);
@@ -186,4 +114,55 @@ void encargarse_cpu(int cliente_socket_cpu){
         }
         free(unBuffer); 
     }
+}*/
+
+//---------------------------------------------------------------------------------------------------------
+// Implementación de funciones de manejo de operaciones
+
+void solicitud_info_memoria(t_buffer *unBuffer) {
+   unBuffer = recibir_paquete(fd_cpu);
+}
+
+
+void resolver_solicitud_instruccion(t_buffer *unBuffer) {
+
+    // Obtener PID e IP desde el buffer
+    int pid = extraer_int_del_buffer(unBuffer);
+    int ip  = extraer_int_del_buffer(unBuffer);
+
+    // Buscar el proceso correspondiente al PID
+    t_proceso* proceso = obtener_proceso_por_pid(pid); 
+    if (proceso == NULL) {
+        log_error(memoria_logger, "No se encontró el proceso con PID: %d", pid);
+        return;
+    }
+
+    // Obtener la instrucción específica usando el IP
+    char* instruccion = extraer_instruccion_por_ip(proceso, ip);
+    if (instruccion == NULL) {
+        log_error(memoria_logger, "No se encontró la instrucción en el IP: %d para el PID: %d", ip, pid);
+        return;   
+    }
+    // Registrar información del proceso y la instrucción
+    log_info(memoria_logger, "Proceso [PID: %d, IP: %d]: %s", pid, ip, instruccion);
+    mandar_instruccion_a_cpu(instruccion);
+}
+
+
+//---------------------------------------------------------------------------------------------------------
+
+void resolver_solicitud_ejecucion(t_buffer *unBuffer) {
+    
+}
+
+void resolver_solicitud_consulta_pagina(t_buffer *unBuffer) {
+    
+}
+
+void resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
+    
+}
+
+void resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
+    
 }

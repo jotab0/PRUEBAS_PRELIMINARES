@@ -96,6 +96,7 @@ void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 	free(buffer);
 }
 
+
 void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda string como mensaje
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -399,4 +400,13 @@ void ejecutar_en_un_hilo_nuevo_join(void (*f)(void*) ,void* struct_arg){
 	pthread_t thread;
 	pthread_create(&thread, NULL, (void*)f, struct_arg);
 	pthread_join(thread, NULL);
+}
+
+
+t_buffer* recibir_paquete(int conexion){
+	t_buffer* unBuffer = malloc(sizeof(t_buffer));
+	int size;
+	unBuffer->stream =  recibir_buffer_tp0(&size, conexion);
+	unBuffer->size = size;
+	return unBuffer;
 }
