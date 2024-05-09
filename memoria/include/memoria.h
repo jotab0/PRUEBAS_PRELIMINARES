@@ -19,6 +19,9 @@ int fd_cpu;
 int fd_es;
 int fd_kernel;
 
+// Variable de procesos en memoria
+t_list* lista_procesos;
+
 // Variables de config
 char* PUERTO_ESCUCHA;
 int TAM_MEMORIA;

@@ -13,7 +13,7 @@ void mandar_mensajes(){
 
 int main(int argc, char* argv[]) {
     
-     // Inicializar estructuras de memoria
+    // Inicializar estructuras de memoria
     inicializar_memoria();
 
     // Iniciar servidor de memoria
@@ -28,9 +28,14 @@ int main(int argc, char* argv[]) {
     
     // Esperar conexion de entrada y salida
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
-  
-  
-///// HILOS /////
+
+//-------------------------------------------------------------------------------------------------------
+// Procesos
+
+    t_list* lista_procesos = list_create();
+
+//-------------------------------------------------------------------------------------------------------
+// Hilos 
 
     pthread_t hilo_cpu;
     int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
@@ -67,10 +72,6 @@ int main(int argc, char* argv[]) {
     
     //int fd_kernel = iniciar_servidor()
 
- ///// PROCESOS /////
-
-    t_list* list_procesos_recibidos = list_create();
-
     return 0;
 }
 
@@ -86,8 +87,13 @@ int main(int argc, char* argv[]) {
 			fd_cpu = conexion;
 			log_info(memoria_logger, "CPU se conecto correctamente");
 			encargarse_cpu(fd_cpu);
-
 			break; 
+
+        case KERNEL:
+            fd_kernel = conexion;
+            log_info(memoria_logger, "Kernel se conecto correctamente");
+            encargarse_kernel(fd_kernel);    
+            break;
         }
     }
 

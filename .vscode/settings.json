@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "inicializar_cpu.h": "c"
-    }
+        "inicializar_cpu.h": "c",
+        "operaciones_proceso.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
