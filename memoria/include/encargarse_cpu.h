@@ -4,6 +4,6 @@
 #include "m_gestor.h"
 
 void encargarse_cpu(int cliente_socket_cpu);
-
+void retardo_respuesta();
 
 #endif
