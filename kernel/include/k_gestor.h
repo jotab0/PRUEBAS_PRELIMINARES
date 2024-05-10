@@ -95,6 +95,12 @@ typedef struct{ //
 	
 }pcb;
 
+typedef struct{
+	char* nombre_interfaz;
+	t_list* instrucciones_disponibles;
+}interfaz;
+
+
 // LISTAS Y VARIABLES DE PLANIFICACIÓN
 
 extern pthread_mutex_t mutex_lista_ready;
@@ -104,18 +110,20 @@ extern pthread_mutex_t mutex_lista_new;
 extern pthread_mutex_t mutex_lista_blocked;
 extern pthread_mutex_t mutex_lista_exit;
 extern pthread_mutex_t mutex_procesos_en_core;
+extern pthread_mutex_t mutex_lista_interfaces;
 
 
 extern pthread_mutex_t mutex_ticket;
 extern pthread_mutex_t mutex_pid;
 
 
-extern t_list* ready;			// mutex: mutex_lista_ready
-extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
-extern t_list* execute;			// mutex: mutex_lista_exec
-extern t_list* new;				// mutex: mutex_lista_new
-extern t_list* blocked;			// mutex: mutex_lista_blocked
-extern t_list* lista_exit;		// mutex: mutex_lista_exit
+extern t_list* ready;						// mutex: mutex_lista_ready
+extern t_list* ready_plus;					// mutex: mutex_lista_ready_plus
+extern t_list* execute;						// mutex: mutex_lista_exec
+extern t_list* new;							// mutex: mutex_lista_new
+extern t_list* blocked;						// mutex: mutex_lista_blocked
+extern t_list* lista_exit;					// mutex: mutex_lista_exit
+extern t_list* interfaces_conectadas;		// mutex: mutex_lista_interfaces
 
 extern sem_t sem_enviar_interrupcion;
 extern sem_t sem_interrupt_pcp;
@@ -123,6 +131,8 @@ extern sem_t sem_estructura_iniciada_en_memoria;
 extern sem_t sem_interrupt_plp;
 extern sem_t sem_multiprogramacion;
 extern sem_t sem_listas_ready;
+extern sem_t sem_lista_new;
+
 
 extern int ALGORITMO_PCP_SELECCIONADO;
 

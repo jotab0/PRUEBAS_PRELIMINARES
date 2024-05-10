@@ -31,7 +31,8 @@ typedef enum {
     EJECUTAR_PROCESO_KCPU,
     
     //**KERNEL-ES**
-    
+    HANDSHAKE_K_ES,
+
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**

@@ -20,3 +20,11 @@ int generar_ticket(){
 	return valor_ticket;
 }
 
+void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex){
+
+    pthread_mutex_lock(mutex);
+    list_add(lista,un_elemento);
+    pthread_mutex_unlock(mutex);
+
+}
+

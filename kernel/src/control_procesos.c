@@ -11,8 +11,8 @@ pcb* crear_pcb(char* path, int size){
 	nuevo_PCB->quantum = QUANTUM;
 	nuevo_PCB->tiempo_ejecutado = 0;
 	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
-	
-	nuevo_PCB->ticket = -1; // Ver si puede traer problemas
+
+	nuevo_PCB->ticket = -1; // Inicializa en -1 porque el valor del primer ticket global es 0
 	
 	nuevo_PCB->size = size;
 	nuevo_PCB->path = path; //Que pasa si cambia o sucesde algo con lo que apunta
@@ -24,7 +24,8 @@ pcb* crear_pcb(char* path, int size){
 	nuevo_PCB->registros_CPU->DX = 0;
 
 	nuevo_PCB->estado = NEW;
-	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO; // Esto entra en conflicto con el enum?
+	// *****CONSULTAR:
+	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO; 
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz=NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz=INSTRUCCION_IO_NO_DEFINIDA;
 	
@@ -38,11 +39,7 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 // PLANIFICADOR LARGO PLAZO
 
-void planificador_largo_plazo() { // Controla todo el tiempo la lista new
-// MODIFICAR PARA QUE AGREGUE A READY_PLUS
-// VOY A AGREGAR SWITCH PARA QUE SE HAGA UNA SOLA VEZ AL EJECUTAR EL KERNEL
-// NO HACE FALTA PORQUE LA UNICA VEZ QUE SE VA A AGREAGAR A READY +  ES CUANDO VUELVE DE BLOQUEO UN PROCESO QUE NO LLEGÓ A EJECUTAR QUANTUM
-// OSEA SE VA A ENCARGAR DE ESO LA FUNCION QUE MANEJE LA COLA DE BLOCKED
+void planificador_largo_plazo() { 
 
     while (1) {
         
@@ -50,15 +47,21 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 
 		// Chequeo condiciones para crear proceso
 		// Acá podría haber un sem_wait para controlar grado de multiprogramación
+		/*
 		pthread_mutex_lock(&mutex_lista_new);
         if (list_is_empty(new)) {
             pthread_mutex_unlock(&mutex_lista_new);
             sleep(1); 
 			// Ejecuto el while nuevamente 
             continue; 
-        }
+        }*/
+		// Espera a que ingrese un nuevo proceso por consola
+		//*****CONSTULTAR SI EL ÚNICO QUE AGREGA A NEW ES LA CONSOLA
+		sem_wait(&sem_lista_new);
 
 		pcb* un_pcb = NULL;
+
+		pthread_mutex_lock(&mutex_lista_new);
         un_pcb = list_remove(new, 0);
         pthread_mutex_unlock(&mutex_lista_new);
 		
@@ -95,6 +98,7 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
 			sem_post(&sem_listas_ready);
 			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
+			// Debe haber sem_post en: Exit
 			sem_wait(&sem_multiprogramacion);
 		}
 		else{
@@ -297,7 +301,7 @@ Puedo usar semáforos entre módulos?
 // PLANIFICACIÓN BLOCKED A READY
 // PLANIFICACIÓN BLOCKED A EXIT
 
-void planificar_lista_blocked(motivo_bloqueo motivo){
+void bloquear_proceso(pcb* un_pcb){
 	// A TENER EN CUENTA:
 	// Cuando un proceso se bloquea?
 	// CPU me va a pedir que bloquee un proceso (olor a semáforo)
@@ -308,17 +312,22 @@ void planificar_lista_blocked(motivo_bloqueo motivo){
 	//		  luego socket correspondiente)
 	//		- La interfaz admite la operacion solicitada (En la lista anterior tambiém instrucciones que puede manejar?)
 	//				-> Base de datos con nombres, sockets (dinámico) y instrucciones que pueden aceptar?
-	
-	// Implementar semáforo de bloqueo
-	switch (motivo)
+
+	switch (un_pcb->motivo_bloqueo)
 	{
 	case PEDIDO_A_INTERFAZ:
+		manejar_pedido_a_interfaz(un_pcb);
 		break;
 	case RECURSO_FALTANTE:
+
 		break;
 	default:
 		break;
 	}
+}
+
+void manejar_pedido_a_interfaz (pcb* un_pcb){
+	
 }
 
 void planificar_lista_exit(){

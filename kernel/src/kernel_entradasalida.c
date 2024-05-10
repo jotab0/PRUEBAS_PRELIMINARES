@@ -26,8 +26,19 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 		case MENSAJE:
 		 	recibir_mensaje_tp0(*fd_conexion_entradasalida,kernel_logger);
 			break;
-		case PAQUETE:
+		case HANDSHAKE_K_ES: // AGREGA A LISTA DE INTERFACES CONECTADAS
+			
+			t_buffer* buffer = NULL;
+			buffer = recibir_buffer(*fd_conexion_entradasalida);
+
+			char* nombre_interfaz = extraer_string_del_buffer(buffer);
+
+			list_add_sync(interfaces_conectadas,nombre_interfaz,&mutex_lista_interfaces);
+			
+			destruir_buffer(buffer);
+
 			break;
+
 		case -1:
 			log_error(kernel_logger, "E/S se desconecto. Terminando servidor");
 			estado_while = 0;

@@ -26,6 +26,7 @@ void esperar_memoria_kernel(){
             case RTA_INICIAR_ESTRUCTURA:
 
                 t_buffer* un_buffer = recibir_buffer(fd_memoria);
+                // Si me devuelve el flag con valor igual a 0, no pudo crearse
                 flag_respuesta_creacion_proceso = extraer_int_del_buffer(un_buffer);
                 sem_post(&sem_estructura_iniciada_en_memoria);
                 
