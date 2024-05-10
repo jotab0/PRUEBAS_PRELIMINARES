@@ -13,20 +13,15 @@ void mandar_mensajes(){
 
 int main(int argc, char* argv[]) {
     
-    // Inicializar estructuras de memoria
+    // 1) Inicializar estructuras de memoria
+   //  2) Iniciar servidor de memoria
+  //   3) Concectar con clientes
+	
     inicializar_memoria();
-
-    // Iniciar servidor de memoria
+	
     fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"!! Servidor MEMORIA iniciada !!");  
-    
-    //CONECTAR CON CLIENTES
-    // Esperar conexion de CPU
     fd_cpu = esperar_cliente(fd_memoria, memoria_logger,"CPU");
-
-    // Esperar conexion de kernel 
     fd_kernel = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
-    
-    // Esperar conexion de entrada y salida
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
 
 //-------------------------------------------------------------------------------------------------------
