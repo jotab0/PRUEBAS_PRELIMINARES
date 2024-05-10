@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
     
     void cliente_segun_modulo(int conexion, t_buffer* unBuffer){
-        int identificador_modulo = int_del_buffer(unBuffer);
+        int identificador_modulo = extraer_int_del_buffer(unBuffer);
 
         switch (identificador_modulo) {
 		case CPU:

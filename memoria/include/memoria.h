@@ -6,7 +6,7 @@
 #include "../include/comunicaciones_memoria.h"
 #include "../include/encargarse_cpu.h"
 #include "../include/encargarse_kernel.h"
-#include "../include/operaciones_procesos.h"
+#include "../include/operaciones_proceso.h"
 #include <utils/include/shared.h>
 #include <pthread.h>
 

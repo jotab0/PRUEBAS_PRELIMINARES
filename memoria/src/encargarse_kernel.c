@@ -47,8 +47,8 @@ t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
 }
 
 void  respuesta_kernel_de_solicitud_iniciar_proceso(){
-    t_paquete* un_paquete = crear_super_paquete(RTA_INICIAR_ESTRUCTURA);
-    cargar_string_al_super_paquete(un_paquete, "Correcto");
+    t_paquete* un_paquete = crear_paquete_con_buffer(RTA_INICIAR_ESTRUCTURA);
+    cargar_string_a_paquete(un_paquete, "Correcto");
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
 }
@@ -63,6 +63,37 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
     }
     return instrucciones;
 }
+
+//-------------------------------------------------------------------------------------
+
+char** string_split(const char* str, const char* delim) {
+    char** result = NULL;
+    size_t count = 0;
+    char* token = strtok((char*)str, delim);
+
+    while (token) {
+        result = realloc(result, sizeof(char*) * ++count);
+        if (!result) {
+            fprintf(stderr, "Error al asignar memoria para string_split\n");
+            exit(EXIT_FAILURE);
+        }
+        result[count - 1] = strdup(token);
+        token = strtok(NULL, delim);
+    }
+    result = realloc(result, sizeof(char*) * (count + 1));
+    result[count] = NULL;
+    return result;
+}
+
+void free_string_array(char** array) {
+    if (!array)
+        return;
+
+    for (int i = 0; array[i]; ++i)
+        free(array[i]);
+    free(array);
+}
+//-------------------------------------------------------------------------------------
 
 t_list* procesar_archivo(const char* path_archivo){
     FILE* archivo = fopen(path_archivo, "rt");

@@ -95,7 +95,7 @@ void enviar_paquete(t_paquete* paquete, int fd);
 t_buffer* recibir_buffer(int socket_cliente);
 // LITERAL tp0
 void recibir_mensaje_tp0(int socket_cliente, t_log* logger);
-t_list* recibir_paquete(int socket_cliente);
+
 void enviar_mensaje(char* mensaje, int socket_cliente);
 void* recibir_buffer_tp0(int* size, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
