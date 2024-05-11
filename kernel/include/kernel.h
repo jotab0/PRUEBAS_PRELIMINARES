@@ -71,6 +71,8 @@ sem_t sem_estructura_iniciada_en_memoria;
 sem_t sem_multiprogramacion;
 sem_t sem_listas_ready;
 sem_t sem_lista_new;
+sem_t sem_lista_execute;
+sem_t sem_solicitud_interfaz;
 
 int ALGORITMO_PCP_SELECCIONADO;
   

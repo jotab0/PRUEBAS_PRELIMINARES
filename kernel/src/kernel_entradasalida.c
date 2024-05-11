@@ -31,9 +31,10 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 			t_buffer* buffer = NULL;
 			buffer = recibir_buffer(*fd_conexion_entradasalida);
 
-			char* nombre_interfaz = extraer_string_del_buffer(buffer);
+			interfaz* nueva_interfaz = NULL;
+			nueva_interfaz = _crear_instancia_interfaz(buffer);
 
-			list_add_sync(interfaces_conectadas,nombre_interfaz,&mutex_lista_interfaces);
+			list_add_sync(interfaces_conectadas,nueva_interfaz,&mutex_lista_interfaces);
 			
 			destruir_buffer(buffer);
 
@@ -50,4 +51,25 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 	}
 	free(fd_conexion_entradasalida);
 }
+
 // LA IDEA ES CREAR HILO POR PEDIDO
+interfaz* _crear_instancia_interfaz(t_buffer* buffer){
+	
+	interfaz* una_interfaz = NULL; 
+	una_interfaz->nombre_interfaz = extraer_string_del_buffer(buffer);
+	
+	while(buffer->size > 0){
+		instruccion_interfaz una_instruccion = extraer_int_del_buffer(buffer);
+		list_add(una_interfaz->instrucciones_disponibles,&una_instruccion);
+	} 
+
+	return una_interfaz;
+}
+
+void solicitar_instruccion_a_interfaz(pcb* un_pcb){
+	
+	// Prguntar que le debería mandar
+	
+	sem_post(&sem_solicitud_interfaz);
+	// Que es lo que tiene que recibir la interfaz?
+}

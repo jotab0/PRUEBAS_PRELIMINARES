@@ -132,6 +132,8 @@ extern sem_t sem_interrupt_plp;
 extern sem_t sem_multiprogramacion;
 extern sem_t sem_listas_ready;
 extern sem_t sem_lista_new;
+extern sem_t sem_lista_execute;
+extern sem_t sem_solicitud_interfaz;
 
 
 extern int ALGORITMO_PCP_SELECCIONADO;

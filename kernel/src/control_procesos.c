@@ -127,6 +127,7 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 		// Pensar que pasa si tengo proceso en blocked que entra y sale de readyplus, se me va a terminar bloqueando
 		// Claro entonces en el que maneje la lista blocked va a mandar un sem_post de que agrego a readyplus !!!! IMPORTANTE !!!!
 		sem_wait(&sem_listas_ready);
+		sem_wait(&sem_lista_execute);
 		switch(ALGORITMO_PCP_SELECCIONADO){
 			case FIFO:
 
@@ -301,7 +302,7 @@ Puedo usar semáforos entre módulos?
 // PLANIFICACIÓN BLOCKED A READY
 // PLANIFICACIÓN BLOCKED A EXIT
 
-void bloquear_proceso(pcb* un_pcb){
+void manejar_bloqueo_de_proceso(pcb* un_pcb){
 	// A TENER EN CUENTA:
 	// Cuando un proceso se bloquea?
 	// CPU me va a pedir que bloquee un proceso (olor a semáforo)
@@ -328,7 +329,37 @@ void bloquear_proceso(pcb* un_pcb){
 
 void manejar_pedido_a_interfaz (pcb* un_pcb){
 	
+	// Se evalúa si es posible, sino lo manda a exit
+	_evaluar_diponibilidad_pedido(un_pcb);
+	solicitar_instruccion_a_interfaz(un_pcb);
+	
+	// Debería hacer ago con este pcb que extraigo? Porque es como que está desactualizado
+	pthread_mutex_lock(&mutex_lista_exec);
+	pcb* un_pcb = list_remove(execute, 0);
+	pthread_mutex_lock(&mutex_lista_exec);
+	
+	sem_post(&sem_lista_execute);
+	sem_wait(&sem_solicitud_interfaz);
+
 }
+
+void _evaluar_diponibilidad_pedido (pcb* un_pcb){
+/*
+	bool _coincide_nombre(void* elemento){	
+		return coinciden_strings(un_pcb,elemento);
+	}
+	
+	pthread_mutex_lock(&mutex_lista_interfaces);
+	interfaz* = list_find(interfaces_conectadas,_coincide_nombre);
+	pthread_mutex_unlock(&mutex_lista_interfaces);
+}
+
+bool coinciden_strings(pcb* un_pcb,pedido_interfaz* interfaz){
+	return strcmp(un_pcb->pedido_a_interfaz->nombre_interfaz,interfaz->nombre_interfaz);
+*/
+}
+
+
 
 void planificar_lista_exit(){
 	// A TENER EN CUENTA:

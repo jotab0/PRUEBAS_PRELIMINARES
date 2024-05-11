@@ -77,6 +77,8 @@ void inicializar_semaforos(){
     sem_init(&sem_multiprogramacion,0,GRADO_MULTIPROGRAMACION - 1);
     sem_init(&sem_listas_ready,0,0);
     sem_init(&sem_lista_new,0,0);
+    sem_init(&sem_lista_execute,0,1);
+    sem_init(&sem_solicitud_interfaz,0,0);
 }
 
 void inicializar_mutexes(){

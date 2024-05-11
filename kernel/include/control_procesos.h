@@ -3,6 +3,7 @@
 
 #include "k_gestor.h"
 #include "kernel_cpu_dispatch.h"
+#include "kernel_entradasalida.h"
 #include "kernel_memoria.h"
 #include "shared_kernel.h"
 
@@ -16,7 +17,9 @@ void planificador_corto_plazo();
 void planificador_largo_plazo();
 void _check_interrupt_pcp();
 void _check_interrupt_plp();
-void bloquear_proceso(pcb* un_pcb);
+void manejar_bloqueo_de_proceso(pcb* un_pcb);
 void manejar_pedido_a_interfaz (pcb* un_pcb);
+void _evaluar_diponibilidad_pedido (pcb* un_pcb);
+bool coinciden_strings(pcb* un_pcb,pedido_interfaz* interfaz);
 
 #endif

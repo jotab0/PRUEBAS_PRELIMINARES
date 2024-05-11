@@ -32,6 +32,7 @@ typedef enum {
     
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
+    SOLICITAR_INSTRUCCION_KES,
 
     //**ES-MEMORIA**
 
