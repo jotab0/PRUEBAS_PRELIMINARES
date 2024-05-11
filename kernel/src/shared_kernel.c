@@ -28,3 +28,23 @@ void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex){
 
 }
 
+void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo){
+    
+    if(pcb_desactualizado->pid == pcb_nuevo->pid){
+        
+        pcb_desactualizado->program_counter = pcb_nuevo->program_counter;
+        
+        pcb_desactualizado->registros_CPU->AX = pcb_nuevo->registros_CPU->AX;
+        pcb_desactualizado->registros_CPU->BX = pcb_nuevo->registros_CPU->BX;
+        pcb_desactualizado->registros_CPU->CX = pcb_nuevo->registros_CPU->CX;
+        pcb_desactualizado->registros_CPU->DX = pcb_nuevo->registros_CPU->DX;
+
+        pcb_desactualizado->tiempo_ejecutado =  pcb_nuevo->tiempo_ejecutado;
+        pcb_desactualizado->pedido_a_interfaz = pcb_nuevo->pedido_a_interfaz;
+
+    }
+    else{
+        log_error(kernel_logger,"Se intenó actualizar un pcb entre distintos procesos");
+    }
+
+}

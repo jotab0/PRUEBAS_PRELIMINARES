@@ -19,7 +19,8 @@ void _check_interrupt_pcp();
 void _check_interrupt_plp();
 void manejar_bloqueo_de_proceso(pcb* un_pcb);
 void manejar_pedido_a_interfaz (pcb* un_pcb);
-void _evaluar_diponibilidad_pedido (pcb* un_pcb);
-bool coinciden_strings(pcb* un_pcb,pedido_interfaz* interfaz);
+bool _evaluar_diponibilidad_pedido (pcb* un_pcb);
+void planificar_lista_exit(int pid);
+interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
 #endif

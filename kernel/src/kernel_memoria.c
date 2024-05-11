@@ -58,3 +58,16 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
     // Espero a la respuesta de memoria
     sem_wait(&sem_estructura_iniciada_en_memoria);
 }
+
+void liberar_memoria(pcb* un_pcb){
+    
+    t_paquete* paquete = NULL;
+    paquete = crear_paquete_con_buffer(LIBERAR_ESTRUCTURAS);
+    
+    //Debería mandarle el path de los archivos que tiene que cerrar o memoria ya debería saberlo?
+    cargar_int_a_paquete(paquete,un_pcb->pid);
+    enviar_paquete(paquete,fd_memoria);
+
+    destruir_paquete(paquete);
+
+}

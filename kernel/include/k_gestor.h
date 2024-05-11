@@ -98,6 +98,9 @@ typedef struct{ //
 typedef struct{
 	char* nombre_interfaz;
 	t_list* instrucciones_disponibles;
+	int* fd_conexion;
+	pthread_mutex_t mutex_interfaz;
+	sem_t sem_interfaz;
 }interfaz;
 
 
