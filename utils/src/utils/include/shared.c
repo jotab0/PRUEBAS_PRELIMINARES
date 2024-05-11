@@ -318,8 +318,8 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	// Guardo el tamaño nuevo (sizeof(int) + tamaño del mensaje que saqué)
 	int tam_nuevo = buffer->size - sizeof(int) - tam_mensaje;
 	
-	// Si es 0 destruyo buffer
 	if (tam_nuevo == 0){
+		buffer->size = tam_nuevo;
 		return mensaje;
 	}
 

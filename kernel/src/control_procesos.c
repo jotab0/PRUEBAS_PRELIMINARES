@@ -107,6 +107,29 @@ void planificador_largo_plazo() {
     }
 }
 
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
@@ -298,26 +321,58 @@ Puedo usar semáforos entre módulos?
 
 */
 
+/*
 
-void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN PROCESO
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN PROCESO QUE LLEGA DESDE LA CPU
 	
 	// Cuando CPU me pide que lo bloquee tengo que sacarlo de exec si cumple con las siguientes condiciones
 	// 		- La interfaz existe y se encuentra conectada (Tengo que tener lista de interfaces con su nombre como índice y
 	//		  luego socket correspondiente)
 	//		- La interfaz admite la operacion solicitada (En la lista anterior tambiém instrucciones que puede manejar?)
 	//				-> Base de datos con nombres, sockets (dinámico) y instrucciones que pueden aceptar?
+	
+	// =========================================================================================================================
+	
+	// Decidí poner el mutez de la lista exec acá porque cada vez que quiera atender un bloqueo, no quiero que se me modifique
+	// la lista exec, ya que podría llevar a errores, es por precaución. En un futuro podría cambiarse si puedo garantizar seguridad.
+	pthread_mutex_lock(&mutex_lista_exec);
 
 	switch (un_pcb->motivo_bloqueo)
 	{
 	case PEDIDO_A_INTERFAZ:
+
 		
 		pthread_mutex_lock(&mutex_lista_interfaces);
 		manejar_pedido_a_interfaz(un_pcb);
+		
 		break;
 
 	case RECURSO_FALTANTE:
 
 		break;
+
 	default:
 		break;
 	}
@@ -336,22 +391,23 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 		interfaz* interfaz_solicitada = NULL;
 		pcb* un_pcb = NULL;
 		
-		// Pregunta: Obtengo el pcb que se estaba ejecutando. puedo garantizar que es el que pidió el bloqueo?
-		pthread_mutex_lock(&mutex_lista_exec);
+		// Obtengo pcb ejecutando
 		un_pcb = list_remove(execute, 0); 
+		// Libero lista exec y le mando señal a planificador corto plazo
 		pthread_mutex_unlock(&mutex_lista_exec);
 		sem_post(&sem_lista_execute);
-
+		// Actualizo pcb con lo que me devolvió la cpu
 		actualizar_pcb(un_pcb,pcb_recibido);
 
 		interfaz_solicitada = _traer_interfaz_solicitada(un_pcb);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
 
-		int estado_solicitud = solicitar_instruccion_a_interfaz(un_pcb);
+		int estado_solicitud = solicitar_instruccion_a_interfaz(un_pcb,interfaz_solicitada);
 		sem_wait(&interfaz_solicitada->sem_interfaz);
 
-		if(estado_solicitud == 1){
+		if(estado_solicitud == ERROR){
 			planificar_lista_exit(un_pcb->pid);
+			log_error(kernel_logger,"ERROR: La interfaz solicitada no pudo realizar la operacion");
 		}
 		else{
 			switch (ALGORITMO_PCP_SELECCIONADO)
@@ -374,6 +430,7 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 				}
 				break;
 			}
+			// Aviso a planificador corto plazo
 			sem_post(&sem_listas_ready);
 		}
 	}	
@@ -436,6 +493,30 @@ bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
 	return una_interfaz = list_find(interfaces_conectadas,(void*)_buscar_interfaz); 
  }
 
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 void planificar_lista_exit(int pid){
 	// A TENER EN CUENTA:
 	// Cuando un proceso sale a exit?

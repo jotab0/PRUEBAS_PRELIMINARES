@@ -8,7 +8,7 @@
 void esperar_entradasalida_kernel(int *fd_conexion_entradasalida);
 void esperar_conexiones_entradasalida();
 interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida);
-int solicitar_instruccion_a_interfaz(pcb* un_pcb);
-interfaz* _obtener_interfaz_con_nombre(pcb* un_pcb);
+int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz);
+
 
 #endif /* KERNEL_ENTRADASALIDA_H_ */

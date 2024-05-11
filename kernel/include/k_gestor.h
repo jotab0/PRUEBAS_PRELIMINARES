@@ -55,6 +55,7 @@ typedef enum{
 	EXIT
 }estado_pcb;
 
+
 typedef enum{
 	FIFO,
 	RR,
@@ -89,7 +90,7 @@ typedef struct{ //
 	int size;
 	char* path;
 	registrosCPU* registros_CPU;
-	estado_pcb estado;
+	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas
 	motivo_bloqueo motivo_bloqueo; 
 	pedido_interfaz* pedido_a_interfaz;
 	
@@ -98,9 +99,11 @@ typedef struct{ //
 typedef struct{
 	char* nombre_interfaz;
 	t_list* instrucciones_disponibles;
-	int* fd_conexion;
+	int* fd_conexion; // Consultar si tiene que ser puntero o debe ser int
+	resultado_operacion resultado_operacion_solicitada;
 	pthread_mutex_t mutex_interfaz;
 	sem_t sem_interfaz;
+	sem_t sem_instruccion_interfaz;
 }interfaz;
 
 

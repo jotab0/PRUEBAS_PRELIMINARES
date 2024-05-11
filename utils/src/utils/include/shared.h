@@ -33,7 +33,7 @@ typedef enum {
     
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
-    SOLICITAR_INSTRUCCION_KES,
+    RESPUESTA_INSTRUCCION_KES,
 
     //**ES-MEMORIA**
 
@@ -51,6 +51,11 @@ typedef struct
     int size;
     void* stream; // TAM + MSJE + ...
 }t_buffer;
+
+typedef enum{
+	OK,
+	ERROR
+}resultado_operacion;
 
 typedef struct{
     op_code codigo_operacion;
