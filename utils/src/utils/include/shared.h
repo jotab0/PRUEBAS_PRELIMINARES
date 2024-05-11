@@ -26,12 +26,15 @@ typedef enum {
     RTA_CREAR_PROCESO,
     INICIAR_ESTRUCTURA,
     RTA_INICIAR_ESTRUCTURA,
+    LIBERAR_ESTRUCTURAS,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
     EJECUTAR_PROCESO_KCPU,
     
     //**KERNEL-ES**
-    
+    HANDSHAKE_K_ES,
+    RESPUESTA_INSTRUCCION_KES,
+
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**
@@ -48,6 +51,11 @@ typedef struct
     int size;
     void* stream; // TAM + MSJE + ...
 }t_buffer;
+
+typedef enum{
+	OK,
+	ERROR
+}resultado_operacion;
 
 typedef struct{
     op_code codigo_operacion;

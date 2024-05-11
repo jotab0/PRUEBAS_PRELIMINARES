@@ -5,5 +5,8 @@
 
 int asignar_pid();
 int generar_ticket();
+void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex);
+void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo);
+interfaz* obtener_interfaz_con_nombre(char* nombre_interfaz);
 
 #endif

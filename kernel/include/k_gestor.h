@@ -55,6 +55,7 @@ typedef enum{
 	EXIT
 }estado_pcb;
 
+
 typedef enum{
 	FIFO,
 	RR,
@@ -89,11 +90,22 @@ typedef struct{ //
 	int size;
 	char* path;
 	registrosCPU* registros_CPU;
-	estado_pcb estado;
+	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas
 	motivo_bloqueo motivo_bloqueo; 
 	pedido_interfaz* pedido_a_interfaz;
 	
 }pcb;
+
+typedef struct{
+	char* nombre_interfaz;
+	t_list* instrucciones_disponibles;
+	int* fd_conexion; // Consultar si tiene que ser puntero o debe ser int
+	resultado_operacion resultado_operacion_solicitada;
+	pthread_mutex_t mutex_interfaz;
+	sem_t sem_interfaz;
+	sem_t sem_instruccion_interfaz;
+}interfaz;
+
 
 // LISTAS Y VARIABLES DE PLANIFICACIÓN
 
@@ -104,18 +116,20 @@ extern pthread_mutex_t mutex_lista_new;
 extern pthread_mutex_t mutex_lista_blocked;
 extern pthread_mutex_t mutex_lista_exit;
 extern pthread_mutex_t mutex_procesos_en_core;
+extern pthread_mutex_t mutex_lista_interfaces;
 
 
 extern pthread_mutex_t mutex_ticket;
 extern pthread_mutex_t mutex_pid;
 
 
-extern t_list* ready;			// mutex: mutex_lista_ready
-extern t_list* ready_plus;		// mutex: mutex_lista_ready_plus
-extern t_list* execute;			// mutex: mutex_lista_exec
-extern t_list* new;				// mutex: mutex_lista_new
-extern t_list* blocked;			// mutex: mutex_lista_blocked
-extern t_list* lista_exit;		// mutex: mutex_lista_exit
+extern t_list* ready;						// mutex: mutex_lista_ready
+extern t_list* ready_plus;					// mutex: mutex_lista_ready_plus
+extern t_list* execute;						// mutex: mutex_lista_exec
+extern t_list* new;							// mutex: mutex_lista_new
+extern t_list* blocked;						// mutex: mutex_lista_blocked
+extern t_list* lista_exit;					// mutex: mutex_lista_exit
+extern t_list* interfaces_conectadas;		// mutex: mutex_lista_interfaces
 
 extern sem_t sem_enviar_interrupcion;
 extern sem_t sem_interrupt_pcp;
@@ -123,6 +137,10 @@ extern sem_t sem_estructura_iniciada_en_memoria;
 extern sem_t sem_interrupt_plp;
 extern sem_t sem_multiprogramacion;
 extern sem_t sem_listas_ready;
+extern sem_t sem_lista_new;
+extern sem_t sem_lista_execute;
+extern sem_t sem_solicitud_interfaz;
+
 
 extern int ALGORITMO_PCP_SELECCIONADO;
 

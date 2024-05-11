@@ -52,7 +52,8 @@ void esperar_cpu_dispatch_kernel(){
 
 void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 
-	t_paquete* un_paquete = crear_paquete_con_buffer(EJECUTAR_PROCESO_KCPU);
+	t_paquete* un_paquete = NULL;
+	un_paquete = crear_paquete_con_buffer(EJECUTAR_PROCESO_KCPU);
 	cargar_int_a_paquete(un_paquete, un_pcb->pid);
 	cargar_int_a_paquete(un_paquete, un_pcb->program_counter);
 	cargar_int_a_paquete(un_paquete, un_pcb->tiempo_ejecutado);
