@@ -2,21 +2,51 @@
 
 void realizarCicloInstruccion(){
 
-    // FETCH (solicita y recibe instruccion de memoria)
-    // solicitar
+    //FETCH
+    ciclo_de_instruccion_fetch();
 
-    // recibir
-    // tipo? instruccion = recibirInstruccion();
+    //DECODE 
+    ciclo_de_instruccion_decode();
 
-    // DECODE Y EXECUTE
-    // decodeYExecute(instruccion);
+    //EXECUTE 
+    ciclo_de_instruccion_execute();
 
-    // CHECK INTERRUPTION
-
-    // AUMENTAR PC
-    // if(la instruccion NO fue JNZ){
-    //      registro.PC ++;
-    //}
-
+    //CHECK INTERRUPTION
+    ciclo_de_instruccion_check_interruption();
 }
 
+void atender_recepcion_de_instruccion(t_buffer* unBuffer){
+//sem_control_fetch_decode
+}
+
+void ciclo_de_instruccion_fetch{
+//Fetch Instrucción: “PID: <PID> - FETCH - Program Counter: <PROGRAM_COUNTER>”.
+
+    log_info(cpu_log_obligatorio, "PID: <PID> - FETCH - Program Counter: <PROGRAM_COUNTER>", contexto->proceso_PC, contexto->proceso_PID);
+    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
+    cargar_int_a_paquete(un_paquete, contexto->PC);
+    cargar_int_a_paquete(un_paquete, contexto->PID);
+    enviar_paquete(un_paquete, fd_memoria);
+    eliminar_paquete(un_paquete);
+}
+
+void ciclo_de_instruccion_decode(){
+    if(validador_de_header_instruccion(instruccion_elements[0])){
+        log_info(cpu_logger, "Instruccion validada: [%s] OK", instruccion_elements[0]); //ej instruccion_elements[0]=MOV, instruccion_elements[1]=AX, instruccion_elements[2]=BX
+        sem_post(&sem_control_decode_execute);
+    }
+}
+
+//verificar si una instrucción recibida es válida o no
+void validador_de_header_instruccion(char* header_instruccion){
+    log_info(cpu_logger, "Header a evaluar: %s", header_instruccion);
+    bool respuesta=false;
+    int i=0;
+        while(opcode_headers[i] != NULL){
+            if(strcmp(opcode_headers[i], header_instruccion) == 0){
+                respuesta = true;
+            }
+            i++;
+        }
+    return respuesta;
+}
