@@ -10,7 +10,7 @@ void encargarse_kernel(int cliente_socket_kernel){
             switch(codigo_operacion){
 
                 case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_paquete(cliente_socket_kernel);
+                unBuffer = recibir_un_paquete(cliente_socket_kernel);
                 iniciar_estructura_proceso(unBuffer);
                 break;
 
@@ -130,8 +130,9 @@ t_list* procesar_archivo(const char* path_archivo){
         list_add(instrucciones, instruccion);
 
         free_string_array(l_instrucciones);
-        fclose(archivo);
-        return instrucciones;
-  }}
+        fclose(archivo); 
+  }
+  return instrucciones;
+}
 
 

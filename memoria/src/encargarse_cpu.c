@@ -12,7 +12,7 @@ void encargarse_cpu(int cliente_socket_cpu){
 		    int codigo_operacion = recibir_operacion(cliente_socket_cpu);
             switch(codigo_operacion){
                 case SOLICITUD_INSTRUCCION:
-                    unBuffer = recibir_paquete(fd_cpu);
+                    unBuffer = recibir_un_paquete(fd_cpu);
 					resolver_solicitud_instruccion(unBuffer);
                     break;
 
@@ -120,7 +120,7 @@ void encargarse_cpu(int cliente_socket_cpu){
 // Implementación de funciones de manejo de operaciones
 
 void solicitud_info_memoria(t_buffer *unBuffer) {
-   unBuffer = recibir_paquete(fd_cpu);
+   unBuffer = recibir_buffer(fd_cpu);
 }
 
 
