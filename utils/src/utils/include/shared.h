@@ -25,13 +25,14 @@ typedef enum {
     RTA_CREAR_PROCESO,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
-    EJECUTAR_PROCESO_KCPU
+    EJECUTAR_PROCESO_KCPU,
     
     //**KERNEL-ES**
     
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**
+    SOLICITUD_INSTRUCCION
 
 }op_code;
 

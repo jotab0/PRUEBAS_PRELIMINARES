@@ -33,6 +33,10 @@ extern int fd_kernel_dispatch;
 extern int fd_kernel_interrupt;
 extern int fd_memoria;
 
+// CICLO INSTRUCCION
+
+extern char** instruccion_dividida;
+
 #endif
 
 

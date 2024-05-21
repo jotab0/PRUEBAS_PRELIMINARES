@@ -4,6 +4,7 @@ void iterator(char* value){
 	log_info(cpu_logger,"%s",value);
 }
 
+
 void esperar_kernel_cpu_interrupt(){
     int estado_while = 1;
 	t_list* lista;
@@ -85,6 +86,6 @@ void recibir_instruccion(t_buffer* unBuffer){
 	char* instruccion = extraer_string_del_buffer(unBuffer);
 	log_warning(cpu_logger, "Instruccion recibida: [%s]", instruccion);
 	// string split divide una cadena en subcadenas (para dividir el cod_op de los operadores?)
-	instruction_dividida = string_split(instruccion, " ");
+	instruccion_dividida = string_split(instruccion, " ");
 	free(instruccion);
 }

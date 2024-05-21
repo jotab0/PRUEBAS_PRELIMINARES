@@ -4,5 +4,8 @@
 #include "c_gestor.h"
 
 void realizarCicloInstruccion();
+void decodeYExecute();
+
+uint32_t* detectar_registro();
 
 #endif
