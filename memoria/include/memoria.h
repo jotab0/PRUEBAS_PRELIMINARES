@@ -4,6 +4,7 @@
 #include "m_gestor.h"
 #include "../include/inicializar_memoria.h"
 #include "../include/comunicaciones_memoria.h"
+#include "../include/encargarse_cpu.h"
 #include <utils/include/shared.h>
 #include <pthread.h>
 

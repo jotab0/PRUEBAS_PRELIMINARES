@@ -1,4 +1,4 @@
-#include "../include/servicios_kernel.h"
+#include "../include/shared_kernel.h"
 
 int asignar_pid(){
     int valor_pid;
@@ -19,3 +19,4 @@ int generar_ticket(){
 	pthread_mutex_unlock(&mutex_ticket);
 	return valor_ticket;
 }
+

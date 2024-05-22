@@ -6,6 +6,8 @@ void inicializar_kernel(){
     crear_listas();
     inicializar_semaforos();
     inicializar_mutexes();
+    establecer_algoritmo_seleccionado();
+    inicializar_planificadores();
 }
 
 void inicializar_logs(){
@@ -44,8 +46,22 @@ void inicializar_configs(){
         GRADO_MULTIPROGRAMACION = config_get_int_value(kernel_config,"GRADO_MULTIPROGRAMACION");
 }
 
+void establecer_algoritmo_seleccionado(){
+    if (strcmp(ALGORITMO_PLANIFICACION, "FIFO") == 0) {
+       ALGORITMO_PCP_SELECCIONADO = FIFO;
+    } else if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0) {
+        ALGORITMO_PCP_SELECCIONADO = RR;
+    } else if (strcmp(ALGORITMO_PLANIFICACION, "VRR") == 0) {
+        ALGORITMO_PCP_SELECCIONADO = VRR;
+    } else {
+        log_error(kernel_logger_extra,"ERROR: El algoritmo seleccionado en la configuración no es válido");
+    }
+}
+
+
 void crear_listas(){
 	ready = list_create();
+    ready_plus = list_create();
 	execute = list_create();
 	new = list_create();
 	blocked = list_create();
@@ -54,15 +70,29 @@ void crear_listas(){
 
 void inicializar_semaforos(){
 	sem_init(&sem_enviar_interrupcion, 0, 0);
+    sem_init(&sem_interrupt_pcp, 0, 0);
+    sem_init(&sem_interrupt_plp, 0, 0);
+    sem_init(&sem_estructura_iniciada_en_memoria,0,0);
+    sem_init(&sem_multiprogramacion,0,GRADO_MULTIPROGRAMACION - 1);
+    sem_init(&sem_listas_ready,0,0);
 }
 
 void inicializar_mutexes(){
 	pthread_mutex_init(&mutex_lista_ready, NULL);
+    pthread_mutex_init(&mutex_lista_ready_plus, NULL);
 	pthread_mutex_init(&mutex_lista_exec, NULL);
+    pthread_mutex_init(&mutex_lista_new, NULL);
+    pthread_mutex_init(&mutex_lista_blocked, NULL);
+    pthread_mutex_init(&mutex_lista_exit, NULL);
+    pthread_mutex_init(&mutex_procesos_en_core, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
-    pthread_mutex_init(&mutex_flag_exit, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
 }
 
+void inicializar_planificadores(){
     
+    ejecutar_en_hilo_detach((void*)planificador_largo_plazo,NULL);
+    ejecutar_en_hilo_detach((void*)planificador_corto_plazo,NULL);
+
+}

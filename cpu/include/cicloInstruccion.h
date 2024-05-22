@@ -4,8 +4,40 @@
 #include "c_gestor.h"
 
 void realizarCicloInstruccion();
+void ciclo_de_instruccion_fetch();
 void decodeYExecute();
 
-uint32_t* detectar_registro();
+uint32_t* detectar_registro(char*);
+void enviarContextoAKernel(t_paquete*);
+
+bool hayQueDesalojar;
+bool hay_interrupcion_quantum;
+
+char* motivo_bloqueo;
+
+t_log* cpu_logger;
+t_log* cpu_log_obligatorio;
+
+char** opcode_headers;
+
+char** instruccion_elements;
+
+//Semaforos
+sem_t sem_control_fetch_decode;
+sem_t sem_control_decode_execute;
+sem_t sem_control_execute_checkinterruption; //hace falta este?
+
+typedef struct{
+    int proceso_pid;
+    int proceso_pc;
+    int proceso_tiempo_ejecutado;
+    int proceso_ticket;
+    uint32_t AX;
+    uint32_t BX; 
+    uint32_t CX;
+    uint32_t DX;
+}t_contexto;
+
+t_contexto* contexto;
 
 #endif

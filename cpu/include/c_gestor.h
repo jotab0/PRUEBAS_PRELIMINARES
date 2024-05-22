@@ -18,6 +18,9 @@ extern t_config* cpu_config;
 
 extern char* path_config_CPU;
 
+extern t_log* cpu_logger;
+extern t_log* cpu_log_obligatorio;
+
 // Variables de config
 extern char* IP_MEMORIA;
 extern char* PUERTO_MEMORIA;
@@ -36,6 +39,10 @@ extern int fd_memoria;
 // CICLO INSTRUCCION
 
 extern char** instruccion_dividida;
+
+extern char* motivo_bloqueo;
+
+extern bool hay_interrupcion_quantum;
 
 #endif
 
