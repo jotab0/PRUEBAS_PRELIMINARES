@@ -25,14 +25,16 @@ typedef enum {
     RTA_CREAR_PROCESO,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
-    EJECUTAR_PROCESO_KCPU
-    
+    EJECUTAR_PROCESO_KCPU,
+    INTERRUPCION,
+    ATENDER_INSTRUCCION_CPU,
+    ATENDER_INTERRUPCION,
     //**KERNEL-ES**
     
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**
-
+    SOLICITUD_INSTRUCCION
 }op_code;
 
 typedef struct 
