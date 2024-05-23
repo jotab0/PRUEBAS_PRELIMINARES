@@ -84,6 +84,15 @@ void esperar_memoria_cpu(){
 	}
 }
 
+void solicitar_instruccion_de_memoria(){
+	log_info(cpu_log_obligatorio, "PID: <%d> - Program Counter: <%d>", contexto->proceso_pid, contexto->proceso_pc);
+	t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
+	cargar_int_a_paquete(un_paquete, contexto->proceso_pid);
+	cargar_int_a_paquete(un_paquete, contexto->proceso_pc);
+	enviar_paquete(un_paquete, fd_memoria);
+	eliminar_paquete(un_paquete);
+}
+
 void recibir_pcb_del_kernel(t_buffer* unBuffer){
 	pthread_mutex_lock(&mutex_manejo_contexto);
 	iniciar_estructuras_para_recibir_pcb(unBuffer);
@@ -91,13 +100,8 @@ void recibir_pcb_del_kernel(t_buffer* unBuffer){
 
 	mostrar_pcb();
 
-	log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
-
-	while(1){
-		
-	}
+	//log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
 }
-
 
 void mostrar_pcb(){
 	log_warning(cpu_logger, "[PID: %d] [PC: %d] [TIEMPO EJECUTADO: %u] [REGISTROS: %u|%u|%u|%u]",
