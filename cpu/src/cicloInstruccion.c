@@ -18,6 +18,8 @@ void realizarCicloInstruccion(){
 
     iniciar_tiempo();
 
+    hayQueDesalojar = false;
+
     //contexto->proceso_tiempo_ejecutado++;
 
     // FETCH (solicita y recibe instruccion de memoria)
@@ -29,6 +31,8 @@ void realizarCicloInstruccion(){
         //DECODE 
     //ciclo_de_instruccion_decode();
 
+    // semaforo wait para esperar que llegue la instruccion
+
     // DECODE Y EXECUTE
     decodeYExecute(); 
 
@@ -38,18 +42,14 @@ void realizarCicloInstruccion(){
          contexto->PC++;
     }
 */
-
     if(hayQueDesalojar){ //llamada a IO, desaloja voluntariamente
         break;
     }
 
-
+    // mutex
     // CHECK INTERRUPTION
-    if(hay_interrupcion_quantum){ // bool que le llega de comunicaciones
+    if(hay_interrupcion){ // bool que le llega de comunicaciones
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
-
-        motivo_bloqueo = "Interrupcion quantum";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
@@ -108,29 +108,30 @@ void validador_de_header_instruccion(char* header_instruccion){
 
 void decodeYExecute(){ 
     // strcmp compara cadenas
+    //mutex por cada instruccion dividida?
     if(strcmp(instruccion_dividida[0], "SET") == 0) { //SET(registro, valor)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
-        uint32_t* registro = detectar_registro(instruccion_dividida[1]); //registro
-        *registro = atoi(instruccion_dividida[2]); //convierte el valor de la instruction_split[2] a un int y lo guarda en el registro
+        uint32_t registro = detectar_registro(instruccion_dividida[1]); //registro
+        registro = atoi(instruccion_dividida[2]); //convierte el valor de la instruction_split[2] a un int y lo guarda en el registro
         contexto->proceso_pc++; // aumenta PC
 
     } else if(strcmp(instruccion_dividida[0], "SUM") == 0){ //SUM(registroDestino, registroOrigen)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
-        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
-        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
-        *registro_destino = *registro_destino + *registro_origen;
+        uint32_t registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        registro_destino = registro_destino + registro_origen;
         contexto->proceso_pc++; // aumenta PC
 
     } else if(strcmp(instruccion_dividida[0], "SUB") == 0){ //SUB(registroDestino, registroOrigen)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
-        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
-        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
-        *registro_destino = *registro_destino - *registro_origen;
+        uint32_t registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        registro_destino = registro_destino - registro_origen;
         contexto->proceso_pc++; // aumenta PC
 
     } else if(strcmp(instruccion_dividida[0], "JNZ") == 0){ //JNZ(registro, instruccion)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
-        uint32_t* registro = detectar_registro(instruccion_dividida[1]);
+        uint32_t registro = detectar_registro(instruccion_dividida[1]);
         int valorNuevoPC = atoi(instruccion_dividida[2]);
         if(registro != 0){
             contexto->proceso_pc = valorNuevoPC;
@@ -144,9 +145,6 @@ void decodeYExecute(){
         cargar_string_a_paquete(unPaquete, instruccion_dividida[0]); // instruccion
         cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
         cargar_int_a_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
-        
-        motivo_bloqueo = "Llamada a IO";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         contexto->proceso_pc++; // aumenta PC
 
@@ -156,7 +154,7 @@ void decodeYExecute(){
     }
 }
 
-uint32_t* detectar_registro(char* registro){
+uint32_t detectar_registro(char* registro){
     if(strcmp(registro, "AX") == 0){
         return contexto->AX;
     }
@@ -189,6 +187,9 @@ void enviarContextoAKernel(t_paquete* unPaquete){
 
     enviar_paquete(unPaquete, fd_kernel_dispatch); 
     eliminar_paquete(unPaquete);
+
+    //mutex
+    hay_interrupcion = false;
 
 }
 

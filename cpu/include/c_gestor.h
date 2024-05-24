@@ -38,9 +38,9 @@ extern int fd_memoria;
 
 extern char** instruccion_dividida;
 
-extern char* motivo_bloqueo;
+//extern char* motivo_bloqueo;
 
-extern bool hay_interrupcion_quantum;
+extern bool hay_interrupcion;
 
 #endif
 

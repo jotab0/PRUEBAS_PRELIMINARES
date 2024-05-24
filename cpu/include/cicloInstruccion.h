@@ -10,11 +10,11 @@ void realizarCicloInstruccion();
 void ciclo_de_instruccion_fetch();
 void decodeYExecute();
 
-uint32_t* detectar_registro(char*);
+uint32_t detectar_registro(char*);
 void enviarContextoAKernel(t_paquete*);
 
 bool hayQueDesalojar;
-bool hay_interrupcion_quantum;
+bool hay_interrupcion;
 
 //char* motivo_bloqueo;
 
