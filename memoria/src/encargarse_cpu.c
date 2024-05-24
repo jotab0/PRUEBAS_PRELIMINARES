@@ -54,67 +54,6 @@ void enviar_tamanio_pagina(int cliente_socket){
     eliminar_paquete(un_paquete);
 }
 
-/*
- // DEFINICION DE TIPO FUNCION DE PUNTERO PARA LAS OPERACIONES DE CPU
- typedef void (*operacion_handler_t)(t_buffer*);
-
- // FUNCIONES DE MANEJO DE OPERACIONES 
- 
- void solicitud_info_memoria(t_buffer *unBuffer);
- void resolver_solicitud_instruccion(t_buffer* unBuffer);
- void resolver_solicitud_ejecucion(t_buffer* unBuffer);
- void resolver_solicitud_consulta_pagina(t_buffer* unBuffer);
- void resolver_solicitud_leer_bloque(t_buffer* unBuffer);
- void resolver_solicitud_escribir_bloque(t_buffer* unBuffer);
-
-
- // ARRAY DE PUNTEROS A FUNCIONES 
-
- operacion_handler_t funcion_handler[] ={
-    [SOLICITUD_INFO_MEMORIA]   = solicitud_info_memoria,
-    [SOLICITUD_INSTRUCCION]    = resolver_solicitud_instruccion,
-    [SOLICITUD_EJECUCION]      = resolver_solicitud_ejecucion,
-    [SOLICITUD_CONSULTA_PAG]   = resolver_solicitud_consulta_pagina,
-    [SOLICITUD_LECTURA_MEMORIA_BLOQUE]   = resolver_solicitud_leer_bloque,
-    [SOLICITUD_ESCRITURA_MEMORIA_BLOQUE] = resolver_solicitud_escribir_bloque
- };
-
-
-
-void encargarse_cpu(int cliente_socket_cpu){
-    enviar_tamanio_pagina(cliente_socket_cpu);
-
-    while (true) {
-        int codigo_operacion;
-        t_buffer* unBuffer;
-
-        codigo_operacion = recibir_operacion(cliente_socket_cpu);
-        if (codigo_operacion == -1) {
-            log_error(memoria_logger, "SE DESCONECTO CPU");
-            close(cliente_socket_cpu);
-            return;
-        }
-
-        unBuffer = recibir_paquete_completo(cliente_socket_cpu);
-        if (unBuffer == NULL) {
-            log_error(memoria_logger, "Error al recibir el paquete");
-            close(cliente_socket_cpu);
-            return;
-        }
-
-        if (codigo_operacion >= 0 && codigo_operacion < sizeof(funcion_handler) / sizeof(operacion_handler_t)) {
-            if (funcion_handler[codigo_operacion]) {
-                funcion_handler[codigo_operacion](unBuffer);
-            } else {
-                log_error(memoria_logger, "ERROR: No se conoce la operacion: %d", codigo_operacion);
-                close(cliente_socket_cpu);
-                free(unBuffer);
-                return;
-            }
-        }
-        free(unBuffer); 
-    }
-}*/
 
 //---------------------------------------------------------------------------------------------------------
 // Implementación de funciones de manejo de operaciones
