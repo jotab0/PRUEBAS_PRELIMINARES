@@ -3,7 +3,7 @@
 
 #include "c_gestor.h"
 
-char** instruccion_dividida;
+//char** instruccion_dividida;
 
 void esperar_kernel_cpu_dispatch();
 void esperar_kernel_cpu_interrupt();
@@ -32,9 +32,9 @@ typedef struct{
 
 t_contexto* contexto;
 
-t_log* cpu_logger;
-t_log* cpu_log_obligatorio;
+//t_log* cpu_logger;
+//t_log* cpu_log_obligatorio;
 
-char* motivo_bloqueo;
+//char* motivo_bloqueo;
 
 #endif

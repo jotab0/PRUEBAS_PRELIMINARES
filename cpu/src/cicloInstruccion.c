@@ -1,11 +1,24 @@
 #include "../include/cicloInstruccion.h"
 
+void iniciar_tiempo(){
+    gettimeofday(&inicio, NULL);
+}
+
+void calcularTiempoEjecutado(){
+    gettimeofday(&fin, NULL);
+    long segundos = fin.tv_sec - inicio.tv_sec;
+    long microsegundos = fin.tv_usec - inicio.tv_usec;
+    double tiempo_transcurrido = segundos * 1000000 + microsegundos;
+    contexto->proceso_tiempo_ejecutado += tiempo_transcurrido;
+}
 
 void realizarCicloInstruccion(){
 
     while(1){
 
-    contexto->proceso_tiempo_ejecutado++;
+    iniciar_tiempo();
+
+    //contexto->proceso_tiempo_ejecutado++;
 
     // FETCH (solicita y recibe instruccion de memoria)
     // solicitar
@@ -36,7 +49,7 @@ void realizarCicloInstruccion(){
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
 
         motivo_bloqueo = "Interrupcion quantum";
-        cargar_string_a_super_paquete(unPaquete, motivo_bloqueo);
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
@@ -55,6 +68,8 @@ void realizarCicloInstruccion(){
         break;
     }
 */
+    calcularTiempoEjecutado();
+
     }
 }
 
@@ -126,12 +141,12 @@ void decodeYExecute(){
         
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
-        cargar_string_a_super_paquete(unPaquete, instruccion_dividida[0]); // instruccion
-        cargar_string_a_super_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
-        cargar_int_a_super_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[0]); // instruccion
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+        cargar_int_a_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
         
         motivo_bloqueo = "Llamada a IO";
-        cargar_string_a_super_paquete(unPaquete, motivo_bloqueo);
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         contexto->proceso_pc++; // aumenta PC
 
@@ -154,21 +169,25 @@ uint32_t* detectar_registro(char* registro){
     else if(strcmp(registro, "DX") == 0){
         return contexto->DX;
     }
+    return NULL;
 }
 
 void enviarContextoAKernel(t_paquete* unPaquete){
     
-    cargar_int_a_super_paquete(unPaquete, contexto->proceso_pc);
+    cargar_int_a_paquete(unPaquete, contexto->proceso_pc);
 
-    cargar_uint32_a_super_paquete(unPaquete, contexto->AX);
-    cargar_uint32_a_super_paquete(unPaquete, contexto->BX);
-    cargar_uint32_a_super_paquete(unPaquete, contexto->CX);
-    cargar_uint32_a_super_paquete(unPaquete, contexto->DX);
+    cargar_uint32_a_paquete(unPaquete, contexto->AX);  // si es puntero a uint32_t:(uint32_t)(uintptr_t) 
+    cargar_uint32_a_paquete(unPaquete, contexto->BX);
+    cargar_uint32_a_paquete(unPaquete, contexto->CX);
+    cargar_uint32_a_paquete(unPaquete, contexto->DX);
     
-    cargar_int_a_super_paquete(unPaquete, contexto->proceso_tiempo_ejecutado);
-    cargar_int_a_super_paquete(unPaquete, contexto->proceso_ticket);
+    cargar_int_a_paquete(unPaquete, contexto->proceso_ticket);
 
-    int resultado_envio = enviar_paquete_con_buffer(unPaquete, fd_kernel_dispatch); 
+    calcularTiempoEjecutado();
+
+    cargar_int_a_paquete(unPaquete, contexto->proceso_tiempo_ejecutado);
+
+    enviar_paquete(unPaquete, fd_kernel_dispatch); 
     eliminar_paquete(unPaquete);
 
 }

@@ -3,6 +3,9 @@
 
 #include "c_gestor.h"
 
+#include <sys/time.h>
+#include <stdint.h>
+
 void realizarCicloInstruccion();
 void ciclo_de_instruccion_fetch();
 void decodeYExecute();
@@ -13,19 +16,23 @@ void enviarContextoAKernel(t_paquete*);
 bool hayQueDesalojar;
 bool hay_interrupcion_quantum;
 
-char* motivo_bloqueo;
+//char* motivo_bloqueo;
 
-t_log* cpu_logger;
-t_log* cpu_log_obligatorio;
+struct timeval inicio, fin;
+
+//t_log* cpu_logger;
+//t_log* cpu_log_obligatorio;
 
 char** opcode_headers;
 
-char** instruccion_elements;
+//char** instruccion_dividida;
 
+/*
 //Semaforos
 sem_t sem_control_fetch_decode;
 sem_t sem_control_decode_execute;
 sem_t sem_control_execute_checkinterruption; //hace falta este?
+*/
 
 typedef struct{
     int proceso_pid;
