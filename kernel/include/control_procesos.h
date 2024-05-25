@@ -28,6 +28,8 @@ bool _evaluar_diponibilidad_pedido (pcb* un_pcb);
 interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
 
-void planificar_lista_exit(int pid);
+void planificar_proceso_exit(pcb* un_pcb);
+
+
 
 #endif

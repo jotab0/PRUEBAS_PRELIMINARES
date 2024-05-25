@@ -36,9 +36,8 @@ void esperar_cpu_interrupt_kernel(){
 	}
 }
 
-// CASOS DE INTERRUPCIÓN:
-//		- Por consola
-//		- Por fin de quantum
+
+// ENVÍA SEÑAL PARA DESALOJAR PROCESO, LUEGO SACA PCB DE LISTA EXEC Y LO RETORNA
 pcb* _gestionar_interrupcion(){
 
 

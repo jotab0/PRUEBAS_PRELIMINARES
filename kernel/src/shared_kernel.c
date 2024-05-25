@@ -69,3 +69,51 @@ interfaz* obtener_interfaz_con_nombre(char* nombre_interfaz){
 		return NULL;
 	}
 }
+
+
+void destruir_pcb(pcb* un_pcb){
+	free(un_pcb->registros_CPU);
+	free(un_pcb->pedido_a_interfaz);
+	free(un_pcb);
+}
+
+
+// Chequea de forma sincronizada si
+// pcb se encuentra en la lista
+bool pcb_esta_en_lista(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex){
+
+	bool coincide_pid (pcb* posible_pcb){
+		return un_pcb->pid == posible_pcb->pid;
+	}
+	
+    pthread_mutex_lock(mutex);
+    if(list_any_satisfy(una_lista,(void*)coincide_pid)){
+        pthread_mutex_unlock(mutex);
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+// Elimina pcb de lista y devuelve true si pudo hacerlo
+bool _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex){
+
+	bool coincide_pid (pcb* posible_pcb){
+		return un_pcb->pid == posible_pcb->pid;
+	}
+	
+	pthread_mutex_lock(mutex);
+	if(list_any_satisfy(una_lista,(void*)coincide_pid)){
+        
+		list_remove_by_condition(una_lista,(void*)coincide_pid);
+		pthread_mutex_unlock(mutex);
+		return true;
+
+	}
+
+	return false;
+}
+
+
+

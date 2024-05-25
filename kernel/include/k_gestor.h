@@ -145,6 +145,7 @@ extern sem_t sem_pcp;
 
 extern int ALGORITMO_PCP_SELECCIONADO;
 
+
 extern int identificador_PID;	// mutex: mutex_pid
 extern int contador_pcbs;
 extern int ticket_actual;		// mutex: mutex_ticket

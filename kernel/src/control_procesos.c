@@ -8,7 +8,7 @@ pcb* crear_pcb(char* path, int size){
     
 	nuevo_PCB->program_counter = 0;
 	
-	nuevo_PCB->quantum = QUANTUM;
+	nuevo_PCB->quantum = QUANTUM * 1000; // Multiplico por mil para pasarlo de milisegundos a microsegundos
 	nuevo_PCB->tiempo_ejecutado = 0;
 	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
 
@@ -230,13 +230,14 @@ void _poner_en_ejecucion(pcb* un_pcb){ // ATENCIÓN!!! ESTA FUNCIÓN DEBE SER LL
 
 void _programar_interrupcion_por_quantum_RR(pcb* un_pcb){ // Que pasa si el proceso salió antes porque abortó? Se envía el interrupt igual, como resuelvo?
 	int ticket_referencia = un_pcb->ticket;
-	usleep(un_pcb -> quantum);
+	usleep(un_pcb -> quantum); // Multiplicar porque lo que me dan está en milisegundos
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ // Esto es posible porque el ticket varía globalmente
 											// Evita que se interrumpa un proceso que no debería ser interrumpido
 		un_pcb = _gestionar_interrupcion();	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
 		// Debería llegar mensaje de si se quitó proceso en ejecución?
 		agregar_a_ready(un_pcb);
+		sem_post(&sem_pcp);
 	
 	}
 	pthread_mutex_unlock(&mutex_ticket);
@@ -252,6 +253,7 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 		un_pcb = _gestionar_interrupcion();
 
 		agregar_a_ready(un_pcb);
+		sem_post(&sem_pcp);
 
 	}
 	pthread_mutex_unlock(&mutex_ticket);
@@ -287,14 +289,17 @@ void agregar_a_ready(pcb* un_pcb){
 	{
 	case VRR:
 		if(QUANTUM > un_pcb -> tiempo_ejecutado && un_pcb -> tiempo_ejecutado != 0){
+			cambiar_estado_pcb(un_pcb,READY);
 			list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
 		}
 		else{
+			cambiar_estado_pcb(un_pcb,READY);
 			list_add_sync(ready,un_pcb,&mutex_lista_ready);
 		}
 		break;
 	
 	default:
+		cambiar_estado_pcb(un_pcb,READY);
 		list_add_sync(ready,un_pcb,&mutex_lista_ready);
 		break;
 	}
@@ -343,7 +348,7 @@ Puedo usar semáforos entre módulos?
 
 */
 
-void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN PROCESO QUE LLEGA DESDE LA CPU
+void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN PROCESO QUE LLEGA DESDE LA CPU Y TIENE MOTIVO DE BLOQUEO
 	
 	// Cuando CPU me pide que lo bloquee tengo que sacarlo de exec si cumple con las siguientes condiciones
 	// 		- La interfaz existe y se encuentra conectada (Tengo que tener lista de interfaces con su nombre como índice y
@@ -361,9 +366,7 @@ void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN P
 	{
 	case PEDIDO_A_INTERFAZ:
 
-		
-		pthread_mutex_lock(&mutex_lista_interfaces);
-		manejar_pedido_a_interfaz(un_pcb);
+		ejecutar_en_hilo_detach((void*)manejar_pedido_a_interfaz,un_pcb);
 		
 		break;
 
@@ -380,9 +383,12 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 	
 	// Se evalúa si es posible, sino lo manda a exit
 
+	pthread_mutex_lock(&mutex_lista_interfaces);
+
 	if(_evaluar_diponibilidad_pedido(pcb_recibido)==0){
 		log_info(kernel_logger, "Terminando proceso con PID: %d. Solicitud de instrucción inválida", pcb_recibido->pid);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
+		pthread_mutex_unlock(&mutex_lista_exec);
 		// No se hace más nada porque proceso se va a exit
 	}else{
 		// IMPORTANTE: Una vez que se entró acá, la interfaz está bloqueada (Se bloquea al evaluar su disponibilidad)
@@ -393,9 +399,11 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 		un_pcb = list_remove(execute, 0); 
 		// Libero lista exec y le mando señal a planificador corto plazo
 		pthread_mutex_unlock(&mutex_lista_exec);
-		sem_post(&sem_lista_execute);
-		// Actualizo pcb con lo que me devolvió la cpu
+		sem_post(&sem_pcp);
+		// Actualizo pcb con lo que me devolvió la cpu y lo muevo a lista blocked
 		actualizar_pcb(un_pcb,pcb_recibido);
+		cambiar_estado_pcb(un_pcb,BLOCKED);
+		list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
 
 		interfaz_solicitada = _traer_interfaz_solicitada(un_pcb);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
@@ -404,32 +412,36 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 		sem_wait(&interfaz_solicitada->sem_interfaz);
 
 		if(estado_solicitud == ERROR){
-			planificar_lista_exit(un_pcb->pid);
+			planificar_proceso_exit(un_pcb);
 			log_error(kernel_logger,"ERROR: La interfaz solicitada no pudo realizar la operacion");
 		}
 		else{
-			switch (ALGORITMO_PCP_SELECCIONADO)
-			{
-			case FIFO:
-				list_add_sync(ready,un_pcb,&mutex_lista_ready);
-				break;
-			
-			case RR:
-				list_add_sync(ready,un_pcb,&mutex_lista_ready);
-				break;
-			
-			case VRR: 	// Lo hago de esta manera porque siempre va a ocurrir que si lo interrumpo y está ejecutando es porque no terminó el quantum
-						// Esto lo hago por si ocurre alguna anomalía
-				if (un_pcb->tiempo_ejecutado>=QUANTUM){
-					un_pcb->tiempo_ejecutado=(QUANTUM*99)/100;
-					list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
-				}else{
-					list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+			if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+				switch (ALGORITMO_PCP_SELECCIONADO)
+				{
+				case FIFO:
+					cambiar_estado_pcb(un_pcb,READY);
+					list_add_sync(ready,un_pcb,&mutex_lista_ready);
+					break;
+				
+				case RR:
+					cambiar_estado_pcb(un_pcb,READY);
+					list_add_sync(ready,un_pcb,&mutex_lista_ready);
+					break;
+				
+				case VRR: 	// !!!!!!!CORREGIR ESTO!!!!!!!
+					if (un_pcb->tiempo_ejecutado>=QUANTUM){
+						un_pcb->tiempo_ejecutado=(QUANTUM*99)/100;
+						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+					}else{
+						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+					}
+					cambiar_estado_pcb(un_pcb,READY);
+					break;
 				}
-				break;
+				// Aviso a planificador corto plazo
+				sem_post(&sem_pcp);
 			}
-			// Aviso a planificador corto plazo
-			sem_post(&sem_listas_ready);
 		}
 	}	
 }
@@ -459,7 +471,7 @@ bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
 		una_interfaz = list_find(interfaces_conectadas,(void*)_buscar_interfaz); 
 	}
 	else{
-		planificar_lista_exit(un_pcb->pid);
+		planificar_proceso_exit(un_pcb);
 		return false;
 	}
 
@@ -471,7 +483,7 @@ bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
 		return true;
 	}
 	else{
-		planificar_lista_exit(un_pcb->pid);
+		planificar_proceso_exit(un_pcb);
 		return false;
 	}
 
@@ -515,7 +527,7 @@ bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
 
 
 */
-void planificar_lista_exit(int pid){
+void planificar_proceso_exit(pcb* un_pcb){
 	// A TENER EN CUENTA:
 	// Cuando un proceso sale a exit?
 	// Cuando termina su ejecución (Me avisa CPU?)
@@ -523,6 +535,89 @@ void planificar_lista_exit(int pid){
 	// Cuando lo pido por consola
 	// !!!! IMPORTANTE !!!! Cuando proceso salga por exit, grado de multiprogramación debe aumentar
 
+	switch (un_pcb->estado)
+	{
+	
+	case NEW:
+	
+		if(_eliminar_pcb_de_lista_sync(un_pcb,new,&mutex_lista_new)){
+				
+				destruir_pcb(un_pcb);
+				
+		}
 
-	sem_post(&sem_multiprogramacion);
+		break;
+
+	case READY:
+
+		switch (ALGORITMO_PCP_SELECCIONADO)
+		{
+		case VRR:
+			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+				break;
+			}
+			
+			else if(_eliminar_pcb_de_lista_sync(un_pcb,ready_plus,&mutex_lista_ready_plus)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+				break;	
+			}
+
+			break;
+
+		default:
+
+			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+			}
+		break;
+		}
+	
+	break;
+
+	case BLOCKED:
+	
+		if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+		}
+
+	break;
+
+	case EXEC: 	// Este caso es para cuando consola me pide que haga exit de un proceso
+		
+		un_pcb = _gestionar_interrupcion(); 
+		liberar_memoria(un_pcb);
+		destruir_pcb(un_pcb);
+		sem_post(&sem_multiprogramacion);
+		sem_post(&sem_pcp);
+
+	break;
+	
+	case EXIT: 	// Este caso lo voy a dejar para cuando CPU me pida hacer exit de un proceso
+				// El sem_post para el pcp lo hago en el momento que me llega el mensaje de CPU
+				// Porque antes de llamar a esta función saco el pcb de exec, lo paso a exit y lo mando a esta función
+
+		if(_eliminar_pcb_de_lista_sync(un_pcb,lista_exit,&mutex_lista_exit)){
+			liberar_memoria(un_pcb);
+			destruir_pcb(un_pcb);
+			sem_post(&sem_multiprogramacion);
+		}
+		
+	break;
+	
+	default:
+		break;
+	}
 }
+
+
+
+
