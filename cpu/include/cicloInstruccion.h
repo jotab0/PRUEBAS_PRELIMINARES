@@ -4,7 +4,7 @@
 #include "c_gestor.h"
 
 t_log* cpu_logger;
-t_log* cpu_log_obligatorio;
+
 
 char** opcode_headers;
 

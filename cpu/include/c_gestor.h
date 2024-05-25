@@ -33,7 +33,7 @@ typedef struct{
 }t_contexto;
 
 extern t_contexto* contexto;
-
+extern t_list* lista;
 extern pthread_mutex_t mutex_manejo_contexto;
 
 extern t_log* cpu_logger;

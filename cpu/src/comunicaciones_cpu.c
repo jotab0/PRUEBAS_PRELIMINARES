@@ -15,9 +15,6 @@ void esperar_kernel_cpu_interrupt(){
 			recibir_mensaje_tp0(fd_kernel_interrupt, cpu_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_interrupt);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(cpu_logger, "KERNEL se desconecto de cpu interrupt. Terminando servidor");
@@ -42,9 +39,6 @@ void esperar_kernel_cpu_dispatch(){
 		 	recibir_mensaje_tp0(fd_kernel_dispatch,cpu_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_dispatch);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(cpu_logger, "KERNEL se desconecto de cpu dispatch. Terminando servidor");
@@ -69,9 +63,6 @@ void esperar_memoria_cpu(){
 		 	recibir_mensaje_tp0(fd_memoria,cpu_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_memoria);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		case -1:
 			log_error(cpu_logger, "MEMORIA se desconecto. Terminando servidor");
@@ -93,16 +84,6 @@ void solicitar_instruccion_de_memoria(){
 	eliminar_paquete(un_paquete);
 }
 
-void recibir_pcb_del_kernel(t_buffer* unBuffer){
-	pthread_mutex_lock(&mutex_manejo_contexto);
-	iniciar_estructuras_para_recibir_pcb(unBuffer);
-	pthread_mutex_unlock(&mutex_manejo_contexto);
-
-	mostrar_pcb();
-
-	//log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
-}
-
 void mostrar_pcb(){
 	log_warning(cpu_logger, "[PID: %d] [PC: %d] [TIEMPO EJECUTADO: %u] [REGISTROS: %u|%u|%u|%u]",
 	contexto->proceso_pid,
@@ -112,6 +93,16 @@ void mostrar_pcb(){
 	contexto->BX,
 	contexto->CX,
 	contexto->DX);
+}
+
+void recibir_pcb_del_kernel(t_buffer* unBuffer){
+	pthread_mutex_lock(&mutex_manejo_contexto);
+	iniciar_estructuras_para_recibir_pcb(unBuffer);
+	pthread_mutex_unlock(&mutex_manejo_contexto);
+
+	mostrar_pcb();
+
+	//log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
 }
 
 void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
