@@ -43,4 +43,7 @@ void imprimir_config(){
     // Agregar los para debugear
 }
 
+void inicializar_mutexes(){
+	pthread_mutex_init(&mutex_manejo_contexto, NULL);
+}
    

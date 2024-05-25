@@ -10,7 +10,7 @@ void encargarse_kernel(int cliente_socket_kernel){
             switch(codigo_operacion){
 
                 case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_paquete(cliente_socket_kernel);
+                unBuffer = recibir_un_paquete(cliente_socket_kernel);
                 iniciar_estructura_proceso(unBuffer);
                 break;
 
@@ -66,23 +66,23 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
 
 //-------------------------------------------------------------------------------------
 
-char** string_split(const char* str, const char* delim) {
-    char** result = NULL;
-    size_t count = 0;
-    char* token = strtok((char*)str, delim);
+char** dividir_cadena(const char* cadena, const char* delimitador) {
+    char** resultado = NULL;
+    size_t contador = 0;
+    char* token = strtok((char*)cadena, delimitador);
 
     while (token) {
-        result = realloc(result, sizeof(char*) * ++count);
-        if (!result) {
-            fprintf(stderr, "Error al asignar memoria para string_split\n");
+        resultado = realloc(resultado, sizeof(char*) * ++contador);
+        if (!resultado) {
+            fprintf(stderr, "Error al asignar memoria para dividir_cadena\n");
             exit(EXIT_FAILURE);
         }
-        result[count - 1] = strdup(token);
-        token = strtok(NULL, delim);
+        resultado[contador - 1] = strdup(token);
+        token = strtok(NULL, delimitador);
     }
-    result = realloc(result, sizeof(char*) * (count + 1));
-    result[count] = NULL;
-    return result;
+    resultado = realloc(resultado, sizeof(char*) * (contador + 1));
+    resultado[contador] = NULL;
+    return resultado;
 }
 
 void free_string_array(char** array) {
@@ -110,7 +110,7 @@ t_list* procesar_archivo(const char* path_archivo){
             linea_instruccion[size_linea_actual - 1] = '\0'; // Eliminar el salto de línea
         }
 
-        char** l_instrucciones = string_split(linea_instruccion, " ");
+        char** l_instrucciones = dividir_cadena(linea_instruccion, " ");
         if (!l_instrucciones) {
             fprintf(stderr, "Error al dividir la línea de instrucción: %s\n", linea_instruccion);
             continue;
@@ -130,8 +130,9 @@ t_list* procesar_archivo(const char* path_archivo){
         list_add(instrucciones, instruccion);
 
         free_string_array(l_instrucciones);
-        fclose(archivo);
-        return instrucciones;
-  }}
+        fclose(archivo); 
+  }
+  return instrucciones;
+}
 
 

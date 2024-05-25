@@ -403,10 +403,34 @@ void ejecutar_en_un_hilo_nuevo_join(void (*f)(void*) ,void* struct_arg){
 }
 
 
-t_buffer* recibir_paquete(int conexion){
+t_buffer* recibir_un_paquete(int conexion){
 	t_buffer* unBuffer = malloc(sizeof(t_buffer));
 	int size;
 	unBuffer->stream =  recibir_buffer_tp0(&size, conexion);
 	unBuffer->size = size;
 	return unBuffer;
+}
+
+
+t_list* recibir_paquete(int socket_cliente)
+{
+	int posición = 0;
+	int size;
+	void * buffer;
+	t_list* valores = list_create();
+	int tamanio;
+
+	buffer = recibir_buffer_tp0(&size, socket_cliente);
+
+	while(posición < size)
+	{
+		memcpy(&tamanio, buffer + posición, sizeof(int));
+		posición+=sizeof(int);
+		char* valor = malloc(tamanio);
+		memcpy(valor, buffer+posición, tamanio);
+		posición+=tamanio;
+		list_add(valores, valor);
+	}
+	free(buffer);
+	return valores;
 }

@@ -30,7 +30,12 @@ typedef enum {
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
     EJECUTAR_PROCESO_KCPU,
+
     DESALOJAR_PROCESO_KCPU,
+    INTERRUPCION,
+    ATENDER_INSTRUCCION_CPU,
+    ATENDER_INTERRUPCION,
+
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
     RESPUESTA_INSTRUCCION_KES,
@@ -46,8 +51,7 @@ typedef enum {
     SOLICITUD_ESCRITURA_MEMORIA_BLOQUE
 }op_code;
 
-typedef struct 
-{
+typedef struct {
     int size;
     void* stream; // TAM + MSJE + ...
 }t_buffer;
@@ -103,7 +107,7 @@ void enviar_paquete(t_paquete* paquete, int fd);
 t_buffer* recibir_buffer(int socket_cliente);
 // LITERAL tp0
 void recibir_mensaje_tp0(int socket_cliente, t_log* logger);
-
+t_list* recibir_paquete(int socket_cliente);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 void* recibir_buffer_tp0(int* size, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
@@ -115,7 +119,7 @@ void cargar_string_a_paquete(t_paquete* paquete, char* string);
 //FUNCIONES VARIAS
 void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento);
 void ejecutar_en_hilo_join(void (*f)(void*) ,void* struct_arg);
-t_buffer* recibir_paquete(int conexion);
+t_buffer* recibir_un_paquete(int conexion);
 
 
 #endif
