@@ -3,6 +3,7 @@
 void encargarse_kernel(int cliente_socket_kernel){
 
         int numero = 1; 
+        
         while(numero){
             t_buffer* unBuffer;
             int codigo_operacion = recibir_operacion(cliente_socket_kernel);
@@ -10,7 +11,7 @@ void encargarse_kernel(int cliente_socket_kernel){
             switch(codigo_operacion){
 
                 case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_un_paquete(cliente_socket_kernel);
+                unBuffer = recibir_buffer(cliente_socket_kernel);
                 iniciar_estructura_proceso(unBuffer);
                 break;
 
@@ -30,12 +31,11 @@ void encargarse_kernel(int cliente_socket_kernel){
 
 t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
     char* path  = extraer_string_del_buffer(unBuffer);
-    int tamanio = extraer_int_del_buffer(unBuffer);
     int pid     = extraer_int_del_buffer(unBuffer);
         
     t_proceso* nuevo_proceso = malloc(sizeof(t_proceso));
     nuevo_proceso->pid_proceso = pid;
-    nuevo_proceso->size = tamanio;
+    nuevo_proceso->size = NULL;
     nuevo_proceso->pathInstrucciones = path;
     nuevo_proceso->lista_de_instrucciones = obtener_instrucciones_del_archivo(nuevo_proceso->pathInstrucciones);
 

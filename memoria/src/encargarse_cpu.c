@@ -4,15 +4,17 @@ void enviar_tamanio_pagina(int cliente_socket);
 void resolver_solicitud_instruccion(t_buffer *unBuffer);
 
 void encargarse_cpu(int cliente_socket_cpu){
+        
         enviar_tamanio_pagina(cliente_socket_cpu);
-
         int numero =1;
+
         while(numero){
             t_buffer* unBuffer;
 		    int codigo_operacion = recibir_operacion(cliente_socket_cpu);
+
             switch(codigo_operacion){
                 case SOLICITUD_INSTRUCCION:
-                    unBuffer = recibir_un_paquete(fd_cpu);
+                    unBuffer = recibir_buffer(fd_cpu);
 					resolver_solicitud_instruccion(unBuffer);
                     break;
 
@@ -35,8 +37,12 @@ void encargarse_cpu(int cliente_socket_cpu){
 //FUNCIONES NECESARIAS
 
 
+void retardo_respuesta_cpu(){
+    sleep(RETARDO_RESPUESTA);
+}
+
 void mandar_instruccion_a_cpu(char* instruccion){
-    //retardo_respuesta_cpu_fs();
+    retardo_respuesta_cpu();
     t_paquete* paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
     cargar_string_a_paquete(paquete, instruccion);
     enviar_paquete(paquete, fd_cpu);
@@ -143,7 +149,7 @@ void resolver_solicitud_instruccion(t_buffer *unBuffer) {
         log_error(memoria_logger, "No se encontró la instrucción en el IP: %d para el PID: %d", ip, pid);
         return;   
     }
-    // Registrar información del proceso y la instrucción
+    // Registro la información del proceso y de la instrucción
     log_info(memoria_logger, "Proceso [PID: %d, IP: %d]: %s", pid, ip, instruccion);
     mandar_instruccion_a_cpu(instruccion);
 }
