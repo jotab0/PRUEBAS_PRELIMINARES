@@ -140,9 +140,11 @@ extern sem_t sem_listas_ready;
 extern sem_t sem_lista_new;
 extern sem_t sem_lista_execute;
 extern sem_t sem_solicitud_interfaz;
+extern sem_t sem_pcp;
 
 
 extern int ALGORITMO_PCP_SELECCIONADO;
+
 
 extern int identificador_PID;	// mutex: mutex_pid
 extern int contador_pcbs;
