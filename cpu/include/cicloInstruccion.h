@@ -34,6 +34,7 @@ sem_t sem_control_decode_execute;
 sem_t sem_control_execute_checkinterruption; //hace falta este?
 */
 
+/*
 typedef struct{
     int proceso_pid;
     int proceso_pc;
@@ -46,5 +47,6 @@ typedef struct{
 }t_contexto;
 
 t_contexto* contexto;
+*/
 
 #endif

@@ -19,6 +19,21 @@ extern t_config* cpu_config;
 
 extern char* path_config_CPU;
 
+typedef struct{
+    int proceso_pid;
+    int proceso_pc;
+    int proceso_tiempo_ejecutado;
+    int proceso_ticket;
+    uint32_t AX;
+    uint32_t BX; 
+    uint32_t CX;
+    uint32_t DX;
+}t_contexto;
+
+extern t_contexto* contexto;
+//extern t_list* lista;
+extern pthread_mutex_t mutex_manejo_contexto;
+
 // Variables de config
 extern char* IP_MEMORIA;
 extern char* PUERTO_MEMORIA;
@@ -36,7 +51,7 @@ extern int fd_memoria;
 
 // CICLO INSTRUCCION
 
-extern char** instruccion_dividida;
+extern char** instruccion_dividida[];
 
 //extern char* motivo_bloqueo;
 

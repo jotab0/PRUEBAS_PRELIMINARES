@@ -16,9 +16,6 @@ void esperar_kernel_cpu_interrupt(){
 			recibir_mensaje_tp0(fd_kernel_interrupt, cpu_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_interrupt);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		*/
 		case INTERRUPCION:
@@ -54,9 +51,6 @@ void esperar_kernel_cpu_dispatch(){
 		 	recibir_mensaje_tp0(fd_kernel_dispatch,cpu_logger);
 			break;
 		case PAQUETE:
-			lista = recibir_paquete(fd_kernel_dispatch);
-			log_info(cpu_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
 			break;
 		*/
 		case -1:
@@ -106,21 +100,15 @@ void recibir_instruccion(t_buffer* unBuffer){
 }
 
 // atender kernel
-
-void recibir_pcb_del_kernel(t_buffer* unBuffer){
-	pthread_mutex_lock(&mutex_manejo_contexto);
-	iniciar_estructuras_para_recibir_pcb(unBuffer);
-	pthread_mutex_unlock(&mutex_manejo_contexto);
-
-	mostrar_pcb();
-
-	log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
-
-	while(1){
-		
-	}
+/*void solicitar_instruccion_de_memoria(){
+	log_info(cpu_log_obligatorio, "PID: <%d> - Program Counter: <%d>", contexto->proceso_pid, contexto->proceso_pc);
+	t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
+	cargar_int_a_paquete(un_paquete, contexto->proceso_pid);
+	cargar_int_a_paquete(un_paquete, contexto->proceso_pc);
+	enviar_paquete(un_paquete, fd_memoria);
+	eliminar_paquete(un_paquete);
 }
-
+*/
 
 void mostrar_pcb(){
 	log_warning(cpu_logger, "[PID: %d] [PC: %d] [TIEMPO EJECUTADO: %u] [REGISTROS: %u|%u|%u|%u]",
@@ -133,6 +121,16 @@ void mostrar_pcb(){
 	contexto->DX);
 }
 
+void recibir_pcb_del_kernel(t_buffer* unBuffer){
+	pthread_mutex_lock(&mutex_manejo_contexto);
+	iniciar_estructuras_para_recibir_pcb(unBuffer);
+	pthread_mutex_unlock(&mutex_manejo_contexto);
+
+	mostrar_pcb();
+
+	//log_info(cpu_logger, "PID del proceso antes del WHILE, %d", contexto->proceso_pid);
+}
+
 void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
 	contexto = malloc(sizeof(t_contexto));
 
@@ -141,17 +139,10 @@ void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
 	contexto->proceso_tiempo_ejecutado=extraer_int_del_buffer(unBuffer);
 	contexto->proceso_ticket=extraer_int_del_buffer(unBuffer);
 	
-	u_int32_t* registro_cpu = (u_int32_t*)extraer_uint32_del_buffer(unBuffer);
-	contexto->AX = *registro_cpu;
-	
-	registro_cpu = (u_int32_t*)extraer_uint32_del_buffer(unBuffer);
-	contexto->BX = *registro_cpu;
-
-	registro_cpu = (u_int32_t*)extraer_uint32_del_buffer(unBuffer);
-	contexto->CX = *registro_cpu;
-
-	registro_cpu = (u_int32_t*)extraer_uint32_del_buffer(unBuffer);
-	contexto->DX = *registro_cpu;
+	contexto->AX = extraer_uint32_del_buffer(unBuffer);
+	contexto->BX = extraer_uint32_del_buffer(unBuffer);
+	contexto->CX = extraer_uint32_del_buffer(unBuffer);
+	contexto->DX = extraer_uint32_del_buffer(unBuffer);
 
 	free(unBuffer);
 }

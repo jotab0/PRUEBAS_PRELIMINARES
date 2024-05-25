@@ -10,8 +10,11 @@
 // VARIABLES GLOBALES
 t_log* cpu_logger;
 t_log* cpu_logger_extra;
-
+t_contexto* contexto;
 t_config* cpu_config;
+t_log* cpu_log_obligatorio;
+
+pthread_mutex_t mutex_manejo_contexto;
 
 char* path_config_CPU = "/home/utnso/Documents/tp-2024-1c-ubuntunel/cpu/CPU.config";
 
