@@ -26,6 +26,7 @@ typedef enum {
     RTA_CREAR_PROCESO,
     INICIAR_ESTRUCTURA,
     RTA_INICIAR_ESTRUCTURA,
+    LIBERAR_ESTRUCTURAS,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
     EJECUTAR_PROCESO_KCPU,
@@ -34,7 +35,9 @@ typedef enum {
     ATENDER_INTERRUPCION,
     
     //**KERNEL-ES**
-    
+    HANDSHAKE_K_ES,
+    RESPUESTA_INSTRUCCION_KES,
+
     //**ES-MEMORIA**
 
     //**CPU-MEMORIA**
@@ -50,6 +53,11 @@ typedef struct {
     int size;
     void* stream; // TAM + MSJE + ...
 }t_buffer;
+
+typedef enum{
+	OK,
+	ERROR
+}resultado_operacion;
 
 typedef struct{
     op_code codigo_operacion;
@@ -68,6 +76,14 @@ typedef enum{
     IO_STDIN_READ,
     INSTRUCCION_IO_NO_DEFINIDA
 }instruccion_interfaz;
+
+typedef struct{
+	char* pseudo_codigo;
+    char* primer_parametro;
+    char* segundo_parametro;
+}t_instruccion_codigo;
+
+
 
 int crear_conexion(char *ip, char* puerto);
 int iniciar_servidor(char* puerto,t_log* logger,char* mensaje);
@@ -101,6 +117,7 @@ void cargar_string_a_paquete(t_paquete* paquete, char* string);
 //FUNCIONES VARIAS
 void ejecutar_en_hilo_detach(void (*una_funcion)(void*) ,void* struct_argumento);
 void ejecutar_en_hilo_join(void (*f)(void*) ,void* struct_arg);
+t_buffer* recibir_un_paquete(int conexion);
 
 
 #endif

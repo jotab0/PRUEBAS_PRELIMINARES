@@ -3,6 +3,7 @@
 
 #include "k_gestor.h"
 #include "kernel_cpu_dispatch.h"
+#include "kernel_entradasalida.h"
 #include "kernel_memoria.h"
 #include "shared_kernel.h"
 
@@ -14,9 +15,12 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb);
 void _poner_en_ejecucion(pcb* un_pcb);
 void planificador_corto_plazo();
 void planificador_largo_plazo();
-void planificar_lista_blocked(motivo_bloqueo motivo);
-
 void _check_interrupt_pcp();
 void _check_interrupt_plp();
+void manejar_bloqueo_de_proceso(pcb* un_pcb);
+void manejar_pedido_a_interfaz (pcb* un_pcb);
+bool _evaluar_diponibilidad_pedido (pcb* un_pcb);
+void planificar_lista_exit(int pid);
+interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
 #endif

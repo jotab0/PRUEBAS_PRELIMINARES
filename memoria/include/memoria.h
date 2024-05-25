@@ -5,6 +5,8 @@
 #include "../include/inicializar_memoria.h"
 #include "../include/comunicaciones_memoria.h"
 #include "../include/encargarse_cpu.h"
+#include "../include/encargarse_kernel.h"
+#include "../include/operaciones_proceso.h"
 #include <utils/include/shared.h>
 #include <pthread.h>
 
@@ -18,6 +20,9 @@ int fd_memoria;
 int fd_cpu;
 int fd_es;
 int fd_kernel;
+
+// Variable de procesos en memoria
+t_list* lista_procesos;
 
 // Variables de config
 char* PUERTO_ESCUCHA;

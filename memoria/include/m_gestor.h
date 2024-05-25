@@ -29,7 +29,7 @@ extern int fd_cpu;
 extern int fd_es;
 extern int fd_kernel;
 
-
+extern t_list* lista_procesos;
 //PROCESO
 typedef struct 
 {

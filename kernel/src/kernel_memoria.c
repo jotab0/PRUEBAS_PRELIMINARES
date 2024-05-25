@@ -26,6 +26,7 @@ void esperar_memoria_kernel(){
             case RTA_INICIAR_ESTRUCTURA:
 
                 t_buffer* un_buffer = recibir_buffer(fd_memoria);
+                // Si me devuelve el flag con valor igual a 0, no pudo crearse
                 flag_respuesta_creacion_proceso = extraer_int_del_buffer(un_buffer);
                 sem_post(&sem_estructura_iniciada_en_memoria);
                 
@@ -56,4 +57,17 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
     destruir_paquete(paquete);
     // Espero a la respuesta de memoria
     sem_wait(&sem_estructura_iniciada_en_memoria);
+}
+
+void liberar_memoria(pcb* un_pcb){
+    
+    t_paquete* paquete = NULL;
+    paquete = crear_paquete_con_buffer(LIBERAR_ESTRUCTURAS);
+    
+    //Debería mandarle el path de los archivos que tiene que cerrar o memoria ya debería saberlo?
+    cargar_int_a_paquete(paquete,un_pcb->pid);
+    enviar_paquete(paquete,fd_memoria);
+
+    destruir_paquete(paquete);
+
 }

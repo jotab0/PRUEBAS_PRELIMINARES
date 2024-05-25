@@ -13,24 +13,24 @@ void mandar_mensajes(){
 
 int main(int argc, char* argv[]) {
     
-     // Inicializar estructuras de memoria
+    // 1) Inicializar estructuras de memoria
+   //  2) Iniciar servidor de memoria
+  //   3) Concectar con clientes
+	
     inicializar_memoria();
-
-    // Iniciar servidor de memoria
+	
     fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"!! Servidor MEMORIA iniciada !!");  
-    
-    //CONECTAR CON CLIENTES
-    // Esperar conexion de CPU
     fd_cpu = esperar_cliente(fd_memoria, memoria_logger,"CPU");
-
-    // Esperar conexion de kernel 
     fd_kernel = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
-    
-    // Esperar conexion de entrada y salida
     fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
-  
-  
-///// HILOS /////
+
+//-------------------------------------------------------------------------------------------------------
+// Procesos
+
+    t_list* lista_procesos = list_create();
+
+//-------------------------------------------------------------------------------------------------------
+// Hilos 
 
     pthread_t hilo_cpu;
     int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
@@ -67,10 +67,6 @@ int main(int argc, char* argv[]) {
     
     //int fd_kernel = iniciar_servidor()
 
- ///// PROCESOS /////
-
-    t_list* list_procesos_recibidos = list_create();
-
     return 0;
 }
 
@@ -79,15 +75,20 @@ int main(int argc, char* argv[]) {
 
     
     void cliente_segun_modulo(int conexion, t_buffer* unBuffer){
-        int identificador_modulo = int_del_buffer(unBuffer);
+        int identificador_modulo = extraer_int_del_buffer(unBuffer);
 
         switch (identificador_modulo) {
 		case CPU:
 			fd_cpu = conexion;
 			log_info(memoria_logger, "CPU se conecto correctamente");
 			encargarse_cpu(fd_cpu);
-
 			break; 
+
+        case KERNEL:
+            fd_kernel = conexion;
+            log_info(memoria_logger, "Kernel se conecto correctamente");
+            encargarse_kernel(fd_kernel);    
+            break;
         }
     }
 

@@ -96,6 +96,7 @@ void recibir_mensaje_tp0(int socket_cliente,t_log* logger)
 	free(buffer);
 }
 
+
 void enviar_mensaje(char* mensaje, int socket_cliente) //Esta función manda string como mensaje
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -317,8 +318,8 @@ void* extraer_mensaje_de_buffer(t_buffer* buffer){ //EXTRAE BUFFER DE A PARTES
 	// Guardo el tamaño nuevo (sizeof(int) + tamaño del mensaje que saqué)
 	int tam_nuevo = buffer->size - sizeof(int) - tam_mensaje;
 	
-	// Si es 0 destruyo buffer
 	if (tam_nuevo == 0){
+		buffer->size = tam_nuevo;
 		return mensaje;
 	}
 
@@ -399,4 +400,37 @@ void ejecutar_en_un_hilo_nuevo_join(void (*f)(void*) ,void* struct_arg){
 	pthread_t thread;
 	pthread_create(&thread, NULL, (void*)f, struct_arg);
 	pthread_join(thread, NULL);
+}
+
+
+t_buffer* recibir_un_paquete(int conexion){
+	t_buffer* unBuffer = malloc(sizeof(t_buffer));
+	int size;
+	unBuffer->stream =  recibir_buffer_tp0(&size, conexion);
+	unBuffer->size = size;
+	return unBuffer;
+}
+
+
+t_list* recibir_paquete(int socket_cliente)
+{
+	int posición = 0;
+	int size;
+	void * buffer;
+	t_list* valores = list_create();
+	int tamanio;
+
+	buffer = recibir_buffer_tp0(&size, socket_cliente);
+
+	while(posición < size)
+	{
+		memcpy(&tamanio, buffer + posición, sizeof(int));
+		posición+=sizeof(int);
+		char* valor = malloc(tamanio);
+		memcpy(valor, buffer+posición, tamanio);
+		posición+=tamanio;
+		list_add(valores, valor);
+	}
+	free(buffer);
+	return valores;
 }
