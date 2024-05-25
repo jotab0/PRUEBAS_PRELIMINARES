@@ -35,3 +35,23 @@ void esperar_cpu_interrupt_kernel(){
 		}
 	}
 }
+
+// CASOS DE INTERRUPCIÓN:
+//		- Por consola
+//		- Por fin de quantum
+pcb* _gestionar_interrupcion(){
+
+
+		pthread_mutex_lock(&mutex_lista_exec);
+		pcb* un_pcb = list_get(execute, 0);
+		pthread_mutex_unlock(&mutex_lista_exec);
+
+		
+		t_paquete* paquete = NULL;
+		paquete = crear_paquete_con_buffer(DESALOJAR_PROCESO_KCPU);
+		enviar_paquete(paquete,fd_cpu_interrupt);
+    	destruir_paquete(paquete);
+
+		return un_pcb;
+
+}

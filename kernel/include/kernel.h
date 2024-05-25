@@ -73,6 +73,7 @@ sem_t sem_listas_ready;
 sem_t sem_lista_new;
 sem_t sem_lista_execute;
 sem_t sem_solicitud_interfaz;
+sem_t sem_pcp;
 
 int ALGORITMO_PCP_SELECCIONADO;
   

@@ -38,7 +38,7 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 
 // PLANIFICADOR LARGO PLAZO
-
+// Agrega a ready cuando proceso llega a new (Solamente por consola)
 void planificador_largo_plazo() { 
 
     while (1) {
@@ -76,7 +76,9 @@ void planificador_largo_plazo() {
 				pthread_mutex_lock(&mutex_lista_new);
 					list_add(new,un_pcb);
 				pthread_mutex_lock(&mutex_lista_new);
-				
+
+
+				sem_post(&sem_lista_new);
 				// Reinicio la bendera
 				flag_respuesta_creacion_proceso = 1; // Asumo que no necesito mutex porque plp es el único que accede a este flag y son ejecuciones secuenciales
 				
@@ -96,7 +98,7 @@ void planificador_largo_plazo() {
 			pthread_mutex_unlock(&mutex_procesos_en_core);
 
 			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
-			sem_post(&sem_listas_ready);
+			sem_post(&sem_pcp);
 			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
 			// Debe haber sem_post en: Exit
 			sem_wait(&sem_multiprogramacion);
@@ -149,54 +151,24 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 		// Espero a que se agregue algo a ready
 		// Pensar que pasa si tengo proceso en blocked que entra y sale de readyplus, se me va a terminar bloqueando
 		// Claro entonces en el que maneje la lista blocked va a mandar un sem_post de que agrego a readyplus !!!! IMPORTANTE !!!!
-		sem_wait(&sem_listas_ready);
-		sem_wait(&sem_lista_execute);
+		sem_wait(&sem_pcp);
 		switch(ALGORITMO_PCP_SELECCIONADO){
+		// Este switch me parece que no lo necesito, hace siempre lo mismo en cada case y no lo voy a expandir
 			case FIFO:
 
-				pthread_mutex_lock(&mutex_lista_ready); 
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready)){
-					
-					planificar_corto_plazo();
-				
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
 			case RR:
-								
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
 
-				if (!list_is_empty(ready)){
-
-					planificar_corto_plazo();
-					
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
 			case VRR:
 
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
-
-					planificar_corto_plazo();
-
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready); // nota
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
@@ -204,14 +176,15 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
 				// Debería romer la ejecución?
 		}
-		// Esto es para reducir un poco la carga de la CPU
-		sleep(1); 
+ 
 	}
 
 }
 
 void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 
+	pthread_mutex_lock(&mutex_lista_ready); 
+	pthread_mutex_lock(&mutex_lista_ready_plus);
 	pthread_mutex_lock(&mutex_lista_exec); //Todo lo que afecte a las listas compartidas deberá ir entre sus mutexes
 	if(list_is_empty(execute)){
 		
@@ -228,6 +201,8 @@ void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 		_poner_en_ejecucion(un_pcb);
 
 	}
+	pthread_mutex_unlock(&mutex_lista_ready); 
+	pthread_mutex_unlock(&mutex_lista_ready_plus);
 	pthread_mutex_unlock(&mutex_lista_exec);
 }
 
@@ -259,7 +234,10 @@ void _programar_interrupcion_por_quantum_RR(pcb* un_pcb){ // Que pasa si el proc
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ // Esto es posible porque el ticket varía globalmente
 											// Evita que se interrumpa un proceso que no debería ser interrumpido
-		sem_post(&sem_enviar_interrupcion);	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
+		un_pcb = _gestionar_interrupcion();	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
+		// Debería llegar mensaje de si se quitó proceso en ejecución?
+		agregar_a_ready(un_pcb);
+	
 	}
 	pthread_mutex_unlock(&mutex_ticket);
 }
@@ -271,7 +249,9 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ 
 
-		sem_post(&sem_enviar_interrupcion);	
+		un_pcb = _gestionar_interrupcion();
+
+		agregar_a_ready(un_pcb);
 
 	}
 	pthread_mutex_unlock(&mutex_ticket);
@@ -300,6 +280,24 @@ void _check_interrupt_plp(){
             // Aquí puedes manejar otros valores de flag_interrupt_pcp si es necesario
             break;
     }
+}
+
+void agregar_a_ready(pcb* un_pcb){
+	switch (ALGORITMO_PCP_SELECCIONADO)
+	{
+	case VRR:
+		if(QUANTUM > un_pcb -> tiempo_ejecutado && un_pcb -> tiempo_ejecutado != 0){
+			list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+		}
+		else{
+			list_add_sync(ready,un_pcb,&mutex_lista_ready);
+		}
+		break;
+	
+	default:
+		list_add_sync(ready,un_pcb,&mutex_lista_ready);
+		break;
+	}
 }
 
 // DUDAS:
