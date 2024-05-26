@@ -108,4 +108,3 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 
 	return una_interfaz->resultado_operacion_solicitada;
 }
-
