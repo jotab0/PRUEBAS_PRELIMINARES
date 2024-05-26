@@ -10,10 +10,27 @@ void mandar_mesajes(){
     enviar_mensaje("Hola kernel, soy E/S",fd_kernel);
 }
 
+void enviar_handshake(int socket, char* nombre_interfaz, char* tipo_interfaz);
+configuracion_t cargar_configuracion(char* archivo_configuracion);
+
+
 int main(int argc, char* argv[]) {
 
     // Inicializar estructuras de ES
     inicializar_es();
+
+    if (argc != 3) {
+        fprintf(stderr, "Uso: %s <nombre_interfaz> <archivo_configuracion>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    char* nombre_interfaz = argv[1];
+    char* archivo_configuracion = argv[2];
+
+    configuracion_t config = cargar_configuracion(archivo_configuracion);
+
+    enviar_handshake(fd_kernel, nombre_interfaz, config.tipo_interfaz);
+
 
     //Me conecto como Cliente a MEMORIA
     fd_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
@@ -49,3 +66,6 @@ int main(int argc, char* argv[]) {
 
     return 0; 
 }
+
+
+
