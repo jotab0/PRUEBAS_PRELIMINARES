@@ -49,7 +49,6 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
     paquete = crear_paquete_con_buffer(INICIAR_ESTRUCTURA);
 
     cargar_string_a_paquete(paquete,un_pcb->path);
-    cargar_int_a_paquete(paquete,un_pcb->size);
     cargar_int_a_paquete(paquete,un_pcb->pid);
 
     log_info(kernel_logger, "Solicitud de creación de proceso enviada a memoria");

@@ -38,19 +38,14 @@ void esperar_cpu_interrupt_kernel(){
 
 
 // ENVÍA SEÑAL PARA DESALOJAR PROCESO, LUEGO SACA PCB DE LISTA EXEC Y LO RETORNA
-pcb* _gestionar_interrupcion(){
-
-
-		pthread_mutex_lock(&mutex_lista_exec);
-		pcb* un_pcb = list_get(execute, 0);
-		pthread_mutex_unlock(&mutex_lista_exec);
-
+void _gestionar_interrupcion(pcb* un_pcb){
 		
 		t_paquete* paquete = NULL;
-		paquete = crear_paquete_con_buffer(DESALOJAR_PROCESO_KCPU);
+		
+		paquete = crear_paquete_con_buffer(INTERRUPCION);
+		cargar_int_a_paquete(paquete,un_pcb->pid);
+		
 		enviar_paquete(paquete,fd_cpu_interrupt);
     	destruir_paquete(paquete);
-
-		return un_pcb;
 
 }

@@ -5,6 +5,6 @@
 
 void esperar_cpu_interrupt_kernel();
 void esperar_conexiones_cpu_interrupt();
-pcb* _gestionar_interrupcion();
+void _gestionar_interrupcion(pcb* un_pcb);
 
 #endif /* KERNEL_CPU_INTERRUPT_H_ */
