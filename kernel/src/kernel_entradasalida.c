@@ -102,9 +102,6 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 	
 	// Desbloqueo interfaz que bloquie en "_evaluar_diponibilidad_pedido"
 	pthread_mutex_unlock(&una_interfaz->mutex_interfaz);
-	
-	// Aviso que se realizó instrucción
-	sem_post(&una_interfaz->sem_interfaz); 
 
 	return una_interfaz->resultado_operacion_solicitada;
 }

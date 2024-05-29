@@ -359,62 +359,44 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 		log_info(kernel_logger, "Terminando proceso con PID: %d. Solicitud de instrucción inválida", pcb_recibido->pid);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
 		// No se hace más nada porque proceso se va a exit
-	}else{
+		}
+	else{
 		// IMPORTANTE: Una vez que se entró acá, la interfaz está bloqueada (Se bloquea al evaluar su disponibilidad)
 		interfaz* interfaz_solicitada = NULL;
 		pcb* un_pcb = NULL;
 		
+		// Cambio esto porque voy a pasar de exec a blocked cuando recibo el proceso de CPU
+		/*
 		pthread_mutex_lock(&mutex_lista_exec);
 		// Obtengo pcb ejecutando
 		un_pcb = list_remove(execute, 0); 
 		// Libero lista exec y le mando señal a planificador corto plazo
 		pthread_mutex_unlock(&mutex_lista_exec);
 		sem_post(&sem_pcp);
+		
 		// Actualizo pcb con lo que me devolvió la cpu y lo muevo a lista blocked
 		actualizar_pcb(un_pcb,pcb_recibido);
 		cambiar_estado_pcb(un_pcb,BLOCKED);
 		list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+		*/
+
 
 		interfaz_solicitada = _traer_interfaz_solicitada(un_pcb);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
 
 		int estado_solicitud = solicitar_instruccion_a_interfaz(un_pcb,interfaz_solicitada);
-		sem_wait(&interfaz_solicitada->sem_interfaz);
 
 		if(estado_solicitud == ERROR){
 			planificar_proceso_exit(un_pcb);
 			log_error(kernel_logger,"ERROR: La interfaz solicitada no pudo realizar la operacion");
 		}
-		else{
-			if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
-				switch (ALGORITMO_PCP_SELECCIONADO)
-				{
-				case FIFO:
-					cambiar_estado_pcb(un_pcb,READY);
-					list_add_sync(ready,un_pcb,&mutex_lista_ready);
-					break;
-				
-				case RR:
-					cambiar_estado_pcb(un_pcb,READY);
-					list_add_sync(ready,un_pcb,&mutex_lista_ready);
-					break;
-				
-				case VRR: 	// !!!!!!!CORREGIR ESTO!!!!!!!
-					if (un_pcb->tiempo_ejecutado>=QUANTUM){
-						un_pcb->tiempo_ejecutado=(QUANTUM*99)/100;
-						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
-					}else{
-						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
-					}
-					cambiar_estado_pcb(un_pcb,READY);
-					break;
-				}
-				// Aviso a planificador corto plazo
-				sem_post(&sem_pcp);
-			}
-		}
-	}	
+		
+		agregar_a_ready(un_pcb);
+
+	}
+
 }
+
 
 bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
 
