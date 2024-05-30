@@ -80,6 +80,7 @@ void inicializar_semaforos(){
     sem_init(&sem_lista_execute,0,1);
     sem_init(&sem_solicitud_interfaz,0,0);
     sem_init(&sem_pcp,0,0);
+    sem_init(&sem_cpu_libre,0,1);
 }
 
 void inicializar_mutexes(){

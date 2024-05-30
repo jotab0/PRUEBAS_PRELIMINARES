@@ -32,7 +32,8 @@ pcb* crear_pcb(char* path, int size){
 	return nuevo_PCB;
 }
 
-
+// Semáforos que necesita para funcionar:
+// - sem_lista_new
 
 // PLANIFICADOR LARGO PLAZO
 // Agrega a ready cuando proceso llega a new (Solamente por consola)
@@ -138,6 +139,7 @@ void planificador_largo_plazo() {
 // 	- Salida por I/O				(Osea salida de exec)
 // 	- Salida por fin de proceso		(Osea salida de exec)
 // 	- Salida por fin de quantum		(Osea salida de exec)
+//  - Salida por interrupción desde consola
 //	- => CUANDO EXEC ESTÁ VACÍA
 
 void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y ready_plus en caso de VRR
@@ -147,6 +149,7 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 		_check_interrupt_pcp();
 		// Espero a que se agregue algo a ready
 		sem_wait(&sem_pcp);
+		sem_wait(&sem_cpu_libre);
 
 		switch(ALGORITMO_PCP_SELECCIONADO){
 		// Este switch me parece que no lo necesito, hace siempre lo mismo en cada case y no lo voy a expandir
@@ -174,7 +177,7 @@ void planificar_corto_plazo(){
 	// BLOQUEO LISTA EXEC HASTA QUE TERMINE EL PCP
 	pthread_mutex_lock(&mutex_lista_exec); 
 
-	if(list_is_empty(execute)){
+	if(list_is_empty(execute)){ // ESTO NO SÉ SI LO NECESITO CON EL SEMÁFORO sem_cpu_libre, CONSULTAR
 		
 		pcb* un_pcb = NULL;
 
@@ -349,6 +352,7 @@ void manejar_bloqueo_de_proceso(pcb* un_pcb){
 	}
 }
 
+// Recibe pcb actualizado y gestiona el pedido a la interfaz
 void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 	
 	// Se evalúa si es posible, sino lo manda a exit
@@ -363,7 +367,6 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 	else{
 		// IMPORTANTE: Una vez que se entró acá, la interfaz está bloqueada (Se bloquea al evaluar su disponibilidad)
 		interfaz* interfaz_solicitada = NULL;
-		pcb* un_pcb = NULL;
 		
 		// Cambio esto porque voy a pasar de exec a blocked cuando recibo el proceso de CPU
 		/*
@@ -381,17 +384,18 @@ void manejar_pedido_a_interfaz (pcb* pcb_recibido){
 		*/
 
 
-		interfaz_solicitada = _traer_interfaz_solicitada(un_pcb);
+		interfaz_solicitada = _traer_interfaz_solicitada(pcb_recibido);
 		pthread_mutex_unlock(&mutex_lista_interfaces);
 
-		int estado_solicitud = solicitar_instruccion_a_interfaz(un_pcb,interfaz_solicitada);
+		int estado_solicitud = solicitar_instruccion_a_interfaz(pcb_recibido,interfaz_solicitada);
 
 		if(estado_solicitud == ERROR){
-			planificar_proceso_exit(un_pcb);
+			planificar_proceso_exit(pcb_recibido);
 			log_error(kernel_logger,"ERROR: La interfaz solicitada no pudo realizar la operacion");
 		}
 		
-		agregar_a_ready(un_pcb);
+		agregar_a_ready(pcb_recibido);
+		sem_post(&sem_pcp);
 
 	}
 
@@ -490,84 +494,83 @@ void planificar_proceso_exit(pcb* un_pcb){
 	switch (un_pcb->estado)
 	{
 	
-	case NEW:
-	
-		if(_eliminar_pcb_de_lista_sync(un_pcb,new,&mutex_lista_new)){
-				
-				destruir_pcb(un_pcb);
-				
-		}
-
-		break;
-
-	case READY:
-
-		switch (ALGORITMO_PCP_SELECCIONADO)
-		{
-		case VRR:
-			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
-				liberar_memoria(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
-				break;
-			}
-			
-			else if(_eliminar_pcb_de_lista_sync(un_pcb,ready_plus,&mutex_lista_ready_plus)){
-				liberar_memoria(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
-				break;	
+		case NEW:
+		
+			if(_eliminar_pcb_de_lista_sync(un_pcb,new,&mutex_lista_new)){
+					
+					destruir_pcb(un_pcb);
+					
 			}
 
 			break;
 
-		default:
+		case READY:
 
-			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+			switch (ALGORITMO_PCP_SELECCIONADO)
+			{
+			case VRR:
+				if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+					liberar_memoria(un_pcb);
+					destruir_pcb(un_pcb);
+					sem_post(&sem_multiprogramacion);
+					break;
+				}
+				
+				else if(_eliminar_pcb_de_lista_sync(un_pcb,ready_plus,&mutex_lista_ready_plus)){
+					liberar_memoria(un_pcb);
+					destruir_pcb(un_pcb);
+					sem_post(&sem_multiprogramacion);
+					break;	
+				}
+
+				break;
+
+			default:
+
+				if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+					liberar_memoria(un_pcb);
+					destruir_pcb(un_pcb);
+					sem_post(&sem_multiprogramacion);
+				}
+				break;
+			}
+		
+		break;
+
+		case BLOCKED:
+		
+			if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+					liberar_memoria(un_pcb);
+					destruir_pcb(un_pcb);
+					sem_post(&sem_multiprogramacion);
+			}
+
+		break;
+
+		case EXEC: 	// Este caso es para cuando consola me pide que haga exit de un proceso
+			
+			_gestionar_interrupcion(un_pcb); 
+			liberar_memoria(un_pcb);
+			destruir_pcb(un_pcb);
+			sem_post(&sem_multiprogramacion);
+
+		break;
+		
+		case EXIT: 	// Este caso lo voy a dejar para cuando CPU me pida hacer exit de un proceso
+					// El sem_post para el pcp lo hago en el momento que me llega el mensaje de CPU
+					// Porque antes de llamar a esta función saco el pcb de exec, lo paso a exit y lo mando a esta función
+
+			if(_eliminar_pcb_de_lista_sync(un_pcb,lista_exit,&mutex_lista_exit)){
 				liberar_memoria(un_pcb);
 				destruir_pcb(un_pcb);
 				sem_post(&sem_multiprogramacion);
 			}
+			
 		break;
-		}
-	
-	break;
-
-	case BLOCKED:
-	
-		if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
-				liberar_memoria(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
-		}
-
-	break;
-
-	case EXEC: 	// Este caso es para cuando consola me pide que haga exit de un proceso
 		
-		_gestionar_interrupcion(un_pcb); 
-		liberar_memoria(un_pcb);
-		destruir_pcb(un_pcb);
-		sem_post(&sem_multiprogramacion);
-		sem_post(&sem_pcp);
-
-	break;
-	
-	case EXIT: 	// Este caso lo voy a dejar para cuando CPU me pida hacer exit de un proceso
-				// El sem_post para el pcp lo hago en el momento que me llega el mensaje de CPU
-				// Porque antes de llamar a esta función saco el pcb de exec, lo paso a exit y lo mando a esta función
-
-		if(_eliminar_pcb_de_lista_sync(un_pcb,lista_exit,&mutex_lista_exit)){
-			liberar_memoria(un_pcb);
-			destruir_pcb(un_pcb);
-			sem_post(&sem_multiprogramacion);
+		default:
+			break;
 		}
-		
-	break;
-	
-	default:
-		break;
-	}
 }
 
 

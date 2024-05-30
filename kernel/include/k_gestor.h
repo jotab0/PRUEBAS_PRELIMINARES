@@ -141,6 +141,7 @@ extern sem_t sem_lista_new;
 extern sem_t sem_lista_execute;
 extern sem_t sem_solicitud_interfaz;
 extern sem_t sem_pcp;
+extern sem_t sem_cpu_libre;
 
 
 extern int ALGORITMO_PCP_SELECCIONADO;

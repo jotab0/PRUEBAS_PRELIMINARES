@@ -74,6 +74,7 @@ sem_t sem_lista_new;
 sem_t sem_lista_execute;
 sem_t sem_solicitud_interfaz;
 sem_t sem_pcp;
+sem_t sem_cpu_libre;
 
 int ALGORITMO_PCP_SELECCIONADO;
   
