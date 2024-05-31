@@ -23,26 +23,38 @@ void esperar_cpu_dispatch_kernel(){
     while (estado_while) {
 		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE CPU DISPATCH...");
         // COD_OP + TAM + STREAM
+		
 		int cod_op = recibir_operacion(fd_cpu_dispatch);
 		switch (cod_op) {
 		// TAM + STREAM
-		case RTA_CREAR_PROCESO:
-		 	t_buffer* un_buffer = recibir_buffer(fd_cpu_dispatch);
-			// Buffer 	-> size = TAM
-			//			-> stream = STREAM 
+		
+		case ATENDER_INSTRUCCION_CPU:
+		 	
+			t_buffer* un_buffer = recibir_buffer(fd_cpu_dispatch);
+			
+			char* instruccion_solicitada = extraer_string_del_buffer(un_buffer);
+			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);	
 
-			/*
-			TU CODIGO DE EXTRACCION o PROCEDIMIENTO
-			*/
+			pcb* pcb_recibido = NULL;
+			pcb_recibido = obtener_contexto_pcb(un_buffer);
+
+			pcb* un_pcb = buscar_pcb_en_sistema(un_pcb->pid);
+
+			actualizar_pcb(pcb_recibido,un_pcb);
+			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+
+			manejar_bloqueo_de_proceso(un_pcb);	
+			sem_post(&sem_pcp);	
 
 			destruir_buffer(un_buffer);
+
 			break;
-		case PAQUETE:
-			break;
+
 		case -1:
 			log_error(kernel_logger, "CPU DISPATCH se desconecto. Terminando servidor");
 			estado_while = 0;
             break;
+		
 		default:
 			log_warning(kernel_logger,"Operacion desconocida de CPU DISPATCH");
 			break;

@@ -54,6 +54,12 @@ typedef struct {
     void* stream; // TAM + MSJE + ...
 }t_buffer;
 
+typedef enum {
+    CONSOLA_INTERRUPT,
+    QUANTUM_INTERRUPT,
+    EXIT_PROCESS
+}interrupcion;
+
 typedef enum{
 	OK,
 	ERROR

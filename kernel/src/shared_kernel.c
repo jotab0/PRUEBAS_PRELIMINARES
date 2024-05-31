@@ -1,4 +1,5 @@
 #include "../include/shared_kernel.h"
+#include "../include/kernel_memoria.h"
 
 int asignar_pid(){
     int valor_pid;
@@ -212,4 +213,13 @@ void agregar_a_ready(pcb* un_pcb){
 
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 	un_pcb->estado = nuevo_estado;
+}
+
+void liberar_recursos_pcb (pcb* un_pcb){
+	liberar_memoria(un_pcb);
+}
+
+pcb* obtener_contexto_pcb(t_buffer* un_buffer){
+	pcb* un_pcb = NULL;
+	return un_pcb;
 }

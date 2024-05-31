@@ -22,5 +22,7 @@ pcb* buscar_pcb_en_sistema(int pid);
 
 void agregar_a_ready(pcb* un_pcb);
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
+void liberar_recursos_pcb (pcb* un_pcb);
+pcb* obtener_contexto_pcb(t_buffer* un_buffer);
 
 #endif
