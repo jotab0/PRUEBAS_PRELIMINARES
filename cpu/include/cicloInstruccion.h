@@ -16,7 +16,7 @@ void enviarContextoAKernel(t_paquete*);
 bool hayQueDesalojar;
 bool hay_interrupcion;
 
-//char* motivo_bloqueo;
+char* motivo_bloqueo;
 
 struct timeval inicio, fin;
 

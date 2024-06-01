@@ -71,6 +71,8 @@ int main(void){
 
     // CICLO DE INSTRUCCION
 
+    // semaforo para esperar a que me llegue un proceso?
+
     //realizarCicloInstruccion();
 
     

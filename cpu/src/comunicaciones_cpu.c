@@ -148,9 +148,15 @@ void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
 }
 
 void atender_interrupcion(t_buffer* unBuffer){
-	// mutex
-	hay_interrupcion = true;
-	// si llegan varias interrupciones ?
+
+	// verifico que el pid del proceso interrumpido sea el mismo que el del proceso actual, si lo es lo interrumpo y sino no hago nada
+	pid_interrumpido = extraer_int_del_buffer(unBuffer);
+
+	if(pid_interrumpido == contexto->proceso_pid){
+			// mutex
+		hay_interrupcion = true;
+	}
+
 	// que cada tipo de interrupcion sea un case y tenga una flag distinta?
 }
 
