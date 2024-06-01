@@ -20,9 +20,7 @@ void esperar_memoria_kernel(){
         log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE MEMORIA...");
         int cod_op = recibir_operacion(fd_memoria);
         switch (cod_op){
-            case MENSAJE:
-                recibir_mensaje_tp0(fd_memoria,kernel_logger);
-            break;
+            
             case RTA_INICIAR_ESTRUCTURA:
 
                 t_buffer* un_buffer = recibir_buffer(fd_memoria);
@@ -31,14 +29,17 @@ void esperar_memoria_kernel(){
                 sem_post(&sem_estructura_iniciada_en_memoria);
                 
 			break;
+
             case -1:
                 log_error(kernel_logger, "MEMORIA se desconecto. Terminando servidor");
                 control_key = 0;
                 //exit(EXIT_FAILURE);
-                break;
-            default:
-            log_warning(kernel_logger, "Operacion desconocida de MEMORIA");
             break;
+
+            default:
+                log_warning(kernel_logger, "Operacion desconocida de MEMORIA");
+            break;
+            
         }
     }
 }

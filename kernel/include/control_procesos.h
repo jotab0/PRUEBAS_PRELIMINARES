@@ -29,6 +29,7 @@ interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
 
 void planificar_proceso_exit(pcb* un_pcb);
+void planificar_proceso_exit_en_hilo(pcb* un_pcb);
 
 
 

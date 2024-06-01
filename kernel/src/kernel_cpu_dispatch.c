@@ -44,7 +44,8 @@ void esperar_cpu_dispatch_kernel(){
 			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
 
 			manejar_bloqueo_de_proceso(un_pcb);	
-			sem_post(&sem_pcp);	
+			sem_post(&sem_pcp);
+			sem_post(&sem_cpu_libre);	
 
 			destruir_buffer(un_buffer);
 

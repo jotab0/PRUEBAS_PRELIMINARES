@@ -71,11 +71,12 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 }
 
 // LA IDEA ES CREAR HILO POR PEDIDO
-interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida){
+interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida){ // CONSULTAR: Si está bien creada la instancia 
 	
 	interfaz* una_interfaz = NULL; 
 	una_interfaz->nombre_interfaz = extraer_string_del_buffer(buffer);
 	una_interfaz->resultado_operacion_solicitada = OK;
+	una_interfaz->instrucciones_disponibles = list_create();
 	
 	while(buffer->size > 0){
 		instruccion_interfaz una_instruccion = extraer_int_del_buffer(buffer);
@@ -98,10 +99,10 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 	cargar_int_a_paquete(paquete,un_pcb->pid);
 	
 	enviar_paquete(paquete,*(una_interfaz->fd_conexion));
-	sem_wait(&una_interfaz->sem_instruccion_interfaz);
+	sem_wait(&una_interfaz->sem_instruccion_interfaz); 
 	
 	// Desbloqueo interfaz que bloquie en "_evaluar_diponibilidad_pedido"
-	pthread_mutex_unlock(&una_interfaz->mutex_interfaz);
+	pthread_mutex_unlock(&una_interfaz->mutex_interfaz); //CONSULTAR: Si está bien como manejo este bloqueo
 
 	return una_interfaz->resultado_operacion_solicitada;
 }
