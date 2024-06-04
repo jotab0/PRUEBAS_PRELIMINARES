@@ -75,6 +75,21 @@ void esperar_memoria_cpu(){
 			recibir_instruccion(unBuffer);
 			destruir_buffer(unBuffer);
 			break;
+		case SOLICITUD_CONSULTA_PAG:
+			t_buffer* unBuffer = recibir_buffer(fd_memoria);
+			int marco = extraer_int_del_buffer(unBuffer);
+			destruir_buffer(unBuffer);
+			break;
+		case SOLICITUD_INFO_MEMORIA:
+			t_buffer* unBuffer = recibir_buffer(fd_memoria);
+			int tamanio_pagina = extraer_int_del_buffer(unBuffer);
+			destruir_buffer(unBuffer);
+			break;
+		case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
+			t_buffer* unBuffer = recibir_buffer(fd_memoria);
+			int valor_marco = extraer_int_del_buffer(unBuffer);
+			destruir_buffer(unBuffer);
+			break;
 		case -1:
 			log_error(cpu_logger, "MEMORIA se desconecto. Terminando servidor");
 			estado_while= 0;
@@ -150,11 +165,21 @@ void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
 void atender_interrupcion(t_buffer* unBuffer){
 
 	// verifico que el pid del proceso interrumpido sea el mismo que el del proceso actual, si lo es lo interrumpo y sino no hago nada
-	pid_interrumpido = extraer_int_del_buffer(unBuffer);
+	int pid_interrumpido = extraer_int_del_buffer(unBuffer);
+	int motivo_interrupcion = extraer_int_del_buffer(unBuffer);
 
 	if(pid_interrumpido == contexto->proceso_pid){
+
+		if(motivo_interrupcion == 0){
+			//mutex
+			hay_interrupcion_consola = true;
+		} else if(motivo_interrupcion == 1){
+			//mutex
+			hay_interrupcion_quantum = true;
+		} else {
 			// mutex
-		hay_interrupcion = true;
+			hay_interrupcion_exit = true;
+		}
 	}
 
 	// que cada tipo de interrupcion sea un case y tenga una flag distinta?

@@ -48,30 +48,34 @@ void realizarCicloInstruccion(){
 
     // mutex
     // CHECK INTERRUPTION
-    if(hay_interrupcion){ // bool que le llega de comunicaciones
+    if(hay_interrupcion_consola){ // bool que le llega de comunicaciones
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
 
-        motivo_bloqueo = "Interrupcion";
+        motivo_bloqueo = "Consola";
         cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
         break;                 
-    }
-
-/*
-    if(hay_interrupcion_IO){
+    } else if(hay_interrupcion_quantum){
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
 
-        motivo_bloqueo = "Interrupcion IO";
-        cargar_string_a_super_paquete(unPaquete, motivo_bloqueo);
+        motivo_bloqueo = "Quantum";
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+
+        enviarContextoAKernel(unPaquete);
+        
+        break;
+    } else if(hay_interrupcion_exit){
+        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
+
+        motivo_bloqueo = "Exit";
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
         break;
     }
-*/
-    calcularTiempoEjecutado();
 
     }
 }
@@ -155,10 +159,12 @@ void decodeYExecute(){
         
         contexto->proceso_pc++; // aumenta PC
 
+        int instruccion_interfaz = 0;
+
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
-        cargar_string_a_paquete(unPaquete, instruccion_dividida[0]); // instruccion
-        cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+        cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+        cargar_int_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
         cargar_int_a_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
 
         motivo_bloqueo = "IO";
@@ -243,6 +249,8 @@ void decodeYExecute(){
 
         contexto->proceso_pc++; // aumenta PC
 
+        int instruccion_interfaz = 1;
+
         uint32_t registro_direccion = detectar_registro(instruccion_dividida[2]);
         int direccion_logica = (int)registro_direccion;
         uint32_t registro_tamanio = detectar_registro(instruccion_dividida[3]);
@@ -254,7 +262,7 @@ void decodeYExecute(){
 
             t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
-            cargar_string_a_paquete(unPaquete, instruccion_dividida[0]); // instruccion
+            cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
             cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
@@ -272,6 +280,8 @@ void decodeYExecute(){
 
         contexto->proceso_pc++; // aumenta PC
 
+         int instruccion_interfaz = 2;
+
         uint32_t registro_direccion = detectar_registro(instruccion_dividida[2]);
         int direccion_logica = (int)registro_direccion;
         uint32_t registro_tamanio = detectar_registro(instruccion_dividida[3]);
@@ -283,7 +293,7 @@ void decodeYExecute(){
 
             t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
-            cargar_string_a_paquete(unPaquete, instruccion_dividida[0]); // instruccion
+            cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
             cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
@@ -295,6 +305,38 @@ void decodeYExecute(){
 
             hayQueDesalojar = true;
         }
+
+    } else if(strcmp(instruccion_dividida[0], "WAIT") == 0){ //WAIT(recurso)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
+        
+        contexto->proceso_pc++; // aumenta PC
+
+        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // recurso 
+
+        motivo_bloqueo = "Wait";
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+
+        enviarContextoAKernel(unPaquete);
+
+        hayQueDesalojar = true;
+
+    } else if(strcmp(instruccion_dividida[0], "SIGNAL") == 0){ //SIGNAL(recurso)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
+        
+        contexto->proceso_pc++; // aumenta PC
+
+        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // recurso 
+
+        motivo_bloqueo = "Signal";
+        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+
+        enviarContextoAKernel(unPaquete);
+
+        hayQueDesalojar = true;
 
     }
 }
@@ -334,12 +376,14 @@ void enviarContextoAKernel(t_paquete* unPaquete){
     eliminar_paquete(unPaquete);
 
     //mutex
-    hay_interrupcion = false;
+    hay_interrupcion_consola = false;
+    hay_interrupcion_quantum = false;
+    hay_interrupcion_exit = false;
 
 }
 
 int leer_valor_memoria(int direccion_logica){
-    int direcion_fisica = traducir(direccion_logica);
+    int direccion_fisica = traducir(direccion_logica);
 
     if(direccion_fisica == -1){
        
@@ -388,7 +432,14 @@ void escribir_valor_memoria(int direccion_logica, uint32_t valor){
 }
 
 int traducir(int direccion_logica){
-    // obtener tamanio de pagina de memoria?
+
+    // le solicito a memoria el tamanio de las pags
+    t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
+    cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
+    enviar_paquete(unPaquete, fd_memoria);
+    eliminar_paquete(unPaquete);
+
+    // semaforo wait envio_info de memoria
     int numero_pagina = floor(direccion_logica/tamanio_pagina);
 
     int direccion_TLB = buscar_en_TLB(numero_pagina);
@@ -396,7 +447,7 @@ int traducir(int direccion_logica){
     if(direccion_TLB == -1){
         log_info(cpu_logger, "PID: <%d> - TLB MISS - Pagina: <%d>", contexto->proceso_pid, numero_pagina);
 
-        int direccion_mmu = mmu(direccion_logica);
+        int direccion_mmu = mmu(direccion_logica, numero_pagina, tamanio_pagina);
 
         return direccion_mmu;
 
@@ -407,10 +458,9 @@ int traducir(int direccion_logica){
     }
 }
 
-int mmu(int direccion_logica){
+int mmu(int direccion_logica, int numero_pagina, int tamanio_pagina){
      
     // obtener tamanio de pagina de memoria?
-    int numero_pagina = floor(direccion_logica/tamanio_pagina);
     int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
 
     // le pido la pag a memoria, si la tiene devuelve el marco y sino PF (-1)
@@ -445,7 +495,18 @@ int mmu(int direccion_logica){
 
 int buscar_en_TLB(int numero_pagina){
     //TODO
+    // (aca no iria esto pero no se en donde) crear TLB (tendria que ser parecido a crear la tabla de paginas) con numero de entradas y algoritmo de reemplazo (FIFO?)
+    // buscar en TLB:
+    // fijarse si el numero de pagina esta (list_find()?)
+    // si no esta devuelve -1 
+    //      y tiene que hacer cargar_pagina(numero_pagina) que carga la pagina solicitada 
+    //      que no encontro (si hay espacio la carga y listo y sino tiene que usar el algoritmo de reemplazo para sacar una y cargar esta)
+    // si esta devuelve la direccion fisica que esta en la TLB
+    
 }
+
+// SOLICITUDES A MEMORIA
+
 
 
 
