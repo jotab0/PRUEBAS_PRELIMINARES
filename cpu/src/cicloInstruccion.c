@@ -203,7 +203,7 @@ void decodeYExecute(){
         escribir_valor_memoria(direccion_logica, registro_datos); // se fija aca adentro si hubo PF
 
     } else if (strcmp(instruccion_dividida[0], "RESIZE" == 0)){ // RESIZE(tamaño)
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
 
         contexto->proceso_pc++; // aumenta PC
 
@@ -229,7 +229,7 @@ void decodeYExecute(){
         eliminar_paquete(unPaquete);
 
     } else if (strcmp(instruccion_dividida[0], "COPY_STRING" == 0)){ // COPY_STRING(tamaño)
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
 
         contexto->proceso_pc++; // aumenta PC
 
@@ -245,7 +245,7 @@ void decodeYExecute(){
         }
 
     } else if (strcmp(instruccion_dividida[0], "IO_STDIN_READ" == 0)){ // IO_STDIN_READ(interfaz, registro direccion, registro tamanio )
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3]);
 
         contexto->proceso_pc++; // aumenta PC
 
@@ -276,7 +276,7 @@ void decodeYExecute(){
         }
 
     } else if (strcmp(instruccion_dividida[0], "IO_STDOUT_WRITE" == 0)){ // IO_STDOUT_WRITE(interfaz, registro direccion, registro tamanio )
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3]);
 
         contexto->proceso_pc++; // aumenta PC
 
