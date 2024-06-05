@@ -71,6 +71,8 @@ typedef enum{
 typedef struct{
 	char* nombre_interfaz;
 	instruccion_interfaz instruccion_a_interfaz;
+	void* recurso_necesario;
+	int tamanio_recurso;
 }pedido_interfaz;
 
 typedef struct{
@@ -79,6 +81,11 @@ typedef struct{
 	uint32_t CX;
 	uint32_t DX;
 }registrosCPU;
+
+typedef struct{
+	char* nombre_recurso;
+	int instancias_en_uso;
+}recursos;
 
 typedef struct{ //
 	
@@ -93,6 +100,8 @@ typedef struct{ //
 	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas
 	motivo_bloqueo motivo_bloqueo; 
 	pedido_interfaz* pedido_a_interfaz;
+	// Lista de recursos
+	t_list* recursos_en_uso;
 	
 }pcb;
 
@@ -142,6 +151,9 @@ extern sem_t sem_lista_execute;
 extern sem_t sem_solicitud_interfaz;
 extern sem_t sem_pcp;
 extern sem_t sem_cpu_libre;
+extern sem_t sem_RB;
+extern sem_t sem_RA;
+extern sem_t sem_RC;
 
 
 extern int ALGORITMO_PCP_SELECCIONADO;

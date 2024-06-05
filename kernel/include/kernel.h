@@ -76,6 +76,10 @@ sem_t sem_solicitud_interfaz;
 sem_t sem_pcp;
 sem_t sem_cpu_libre;
 
+sem_t sem_RA;
+sem_t sem_RB;
+sem_t sem_RC;
+
 int ALGORITMO_PCP_SELECCIONADO;
   
 int identificador_PID = 0;

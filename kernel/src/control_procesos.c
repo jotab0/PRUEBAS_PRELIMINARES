@@ -29,6 +29,10 @@ pcb *crear_pcb(char *path, int size)
 	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO;
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz = NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
+	nuevo_PCB->pedido_a_interfaz->recurso_necesario = NULL;
+	nuevo_PCB->pedido_a_interfaz->tamanio_recurso = 0;
+
+	nuevo_PCB->recursos_en_uso = list_create();
 
 	return nuevo_PCB;
 }
@@ -328,6 +332,8 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 
 	case RECURSO_FALTANTE:
 
+		ejecutar_en_hilo_detach((void *)manejar_solicitud_de_recurso, un_pcb);
+
 		break;
 
 	default:
@@ -432,6 +438,10 @@ interfaz* _traer_interfaz_solicitada(pcb *un_pcb)
 
 	interfaz *una_interfaz = NULL;
 	return una_interfaz = list_find(interfaces_conectadas, (void *)_buscar_interfaz);
+}
+
+void manejar_solicitud_de_recurso(pcb *un_pcb){
+
 }
 
 /*

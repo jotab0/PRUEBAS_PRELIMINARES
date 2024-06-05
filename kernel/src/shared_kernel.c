@@ -221,5 +221,17 @@ void liberar_recursos_pcb (pcb* un_pcb){
 
 pcb* obtener_contexto_pcb(t_buffer* un_buffer){
 	pcb* un_pcb = NULL;
+
+	un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
+
+	un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
+	un_pcb -> registros_CPU -> BX = extraer_uint32_del_buffer(un_buffer);
+	un_pcb -> registros_CPU -> CX = extraer_uint32_del_buffer(un_buffer);
+	un_pcb -> registros_CPU -> DX = extraer_uint32_del_buffer(un_buffer);
+
+	un_pcb -> ticket = extraer_int_del_buffer(un_buffer);
+	
+	un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
+
 	return un_pcb;
 }

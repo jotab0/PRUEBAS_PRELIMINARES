@@ -33,6 +33,8 @@ typedef enum {
     INTERRUPCION,
     ATENDER_INSTRUCCION_CPU,
     ATENDER_INTERRUPCION,
+    WAIT,
+    SIGNAL,
 
     //**KERNEL-ES**
     HANDSHAKE_K_ES,

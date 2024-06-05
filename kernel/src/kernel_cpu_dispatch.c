@@ -32,8 +32,11 @@ void esperar_cpu_dispatch_kernel(){
 		 	
 			t_buffer* un_buffer = recibir_buffer(fd_cpu_dispatch);
 			
-			char* instruccion_solicitada = extraer_string_del_buffer(un_buffer);
-			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);	
+			instruccion_interfaz instruccion_solicitada = extraer_int_del_buffer(un_buffer);
+			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);
+			// Podría ser una lista?
+			void* recurso_necesario_de_instruccion = extraer_mensaje_de_buffer(un_buffer);
+			int tamanio_recurso_necesario = extraer_int_del_buffer(un_buffer);
 
 			pcb* pcb_recibido = NULL;
 			pcb_recibido = obtener_contexto_pcb(un_buffer);
@@ -41,7 +44,14 @@ void esperar_cpu_dispatch_kernel(){
 			pcb* un_pcb = buscar_pcb_en_sistema(un_pcb->pid);
 
 			actualizar_pcb(pcb_recibido,un_pcb);
+			cambiar_estado_pcb(un_pcb, BLOCKED);
 			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+			
+			un_pcb -> motivo_bloqueo = PEDIDO_A_INTERFAZ;
+			un_pcb -> pedido_a_interfaz -> nombre_interfaz = interfaz_solicitada;
+			un_pcb -> pedido_a_interfaz -> instruccion_a_interfaz = instruccion_solicitada;
+			un_pcb -> pedido_a_interfaz -> recurso_necesario = recurso_necesario_de_instruccion;
+			un_pcb -> pedido_a_interfaz -> tamanio_recurso = tamanio_recurso_necesario;
 
 			manejar_bloqueo_de_proceso(un_pcb);	
 			sem_post(&sem_pcp);

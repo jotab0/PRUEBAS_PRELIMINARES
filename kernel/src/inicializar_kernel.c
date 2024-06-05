@@ -8,6 +8,7 @@ void inicializar_kernel(){
     inicializar_mutexes();
     establecer_algoritmo_seleccionado();
     inicializar_planificadores();
+    establecer_recursos();
 }
 
 void inicializar_logs(){
@@ -96,6 +97,19 @@ void inicializar_mutexes(){
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
 }
+
+ void establecer_recursos(){
+    
+    int recurso_A = atoi(INSTANCIAS_RECURSOS[0]);
+    sem_init(&sem_RA,0,recurso_A);
+
+    int recurso_B = atoi(INSTANCIAS_RECURSOS[1]);
+    sem_init(&sem_RB,0,recurso_B);
+
+    int recurso_C = atoi(INSTANCIAS_RECURSOS[2]);
+    sem_init(&sem_RC,0,recurso_C);
+    
+ }
 
 void inicializar_planificadores(){
     

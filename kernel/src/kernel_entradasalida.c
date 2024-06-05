@@ -98,6 +98,10 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 	paquete = crear_paquete_con_buffer(un_pcb->pedido_a_interfaz->instruccion_a_interfaz);
 	cargar_int_a_paquete(paquete,un_pcb->pid);
 	
+	if(un_pcb->pedido_a_interfaz->recurso_necesario != NULL){
+		cargar_mensaje_a_buffer(paquete->buffer,un_pcb->pedido_a_interfaz->recurso_necesario,un_pcb->pedido_a_interfaz->tamanio_recurso);
+	}
+	
 	enviar_paquete(paquete,*(una_interfaz->fd_conexion));
 	sem_wait(&una_interfaz->sem_instruccion_interfaz); 
 	
