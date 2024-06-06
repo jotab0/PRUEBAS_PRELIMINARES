@@ -8,11 +8,11 @@ pcb* crear_pcb(char* path, int size){
     
 	nuevo_PCB->program_counter = 0;
 	
-	nuevo_PCB->quantum = QUANTUM;
+	nuevo_PCB->quantum = QUANTUM * 1000; // Multiplico por mil para pasarlo de milisegundos a microsegundos
 	nuevo_PCB->tiempo_ejecutado = 0;
 	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
-	
-	nuevo_PCB->ticket = -1; // Ver si puede traer problemas
+
+	nuevo_PCB->ticket = -1; // Inicializa en -1 porque el valor del primer ticket global es 0
 	
 	nuevo_PCB->size = size;
 	nuevo_PCB->path = path; //Que pasa si cambia o sucesde algo con lo que apunta
@@ -24,7 +24,8 @@ pcb* crear_pcb(char* path, int size){
 	nuevo_PCB->registros_CPU->DX = 0;
 
 	nuevo_PCB->estado = NEW;
-	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO; // Esto entra en conflicto con el enum?
+	// *****CONSULTAR:
+	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO; 
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz=NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz=INSTRUCCION_IO_NO_DEFINIDA;
 	
@@ -37,12 +38,8 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 
 // PLANIFICADOR LARGO PLAZO
-
-void planificador_largo_plazo() { // Controla todo el tiempo la lista new
-// MODIFICAR PARA QUE AGREGUE A READY_PLUS
-// VOY A AGREGAR SWITCH PARA QUE SE HAGA UNA SOLA VEZ AL EJECUTAR EL KERNEL
-// NO HACE FALTA PORQUE LA UNICA VEZ QUE SE VA A AGREAGAR A READY +  ES CUANDO VUELVE DE BLOQUEO UN PROCESO QUE NO LLEGÓ A EJECUTAR QUANTUM
-// OSEA SE VA A ENCARGAR DE ESO LA FUNCION QUE MANEJE LA COLA DE BLOCKED
+// Agrega a ready cuando proceso llega a new (Solamente por consola)
+void planificador_largo_plazo() { 
 
     while (1) {
         
@@ -50,15 +47,21 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 
 		// Chequeo condiciones para crear proceso
 		// Acá podría haber un sem_wait para controlar grado de multiprogramación
+		/*
 		pthread_mutex_lock(&mutex_lista_new);
         if (list_is_empty(new)) {
             pthread_mutex_unlock(&mutex_lista_new);
             sleep(1); 
 			// Ejecuto el while nuevamente 
             continue; 
-        }
+        }*/
+		// Espera a que ingrese un nuevo proceso por consola
+		//*****CONSTULTAR SI EL ÚNICO QUE AGREGA A NEW ES LA CONSOLA
+		sem_wait(&sem_lista_new);
 
 		pcb* un_pcb = NULL;
+
+		pthread_mutex_lock(&mutex_lista_new);
         un_pcb = list_remove(new, 0);
         pthread_mutex_unlock(&mutex_lista_new);
 		
@@ -73,7 +76,9 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 				pthread_mutex_lock(&mutex_lista_new);
 					list_add(new,un_pcb);
 				pthread_mutex_lock(&mutex_lista_new);
-				
+
+
+				sem_post(&sem_lista_new);
 				// Reinicio la bendera
 				flag_respuesta_creacion_proceso = 1; // Asumo que no necesito mutex porque plp es el único que accede a este flag y son ejecuciones secuenciales
 				
@@ -93,8 +98,9 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
 			pthread_mutex_unlock(&mutex_procesos_en_core);
 
 			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
-			sem_post(&sem_listas_ready);
+			sem_post(&sem_pcp);
 			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
+			// Debe haber sem_post en: Exit
 			sem_wait(&sem_multiprogramacion);
 		}
 		else{
@@ -103,6 +109,29 @@ void planificador_largo_plazo() { // Controla todo el tiempo la lista new
     }
 }
 
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 // PLANIFICADOR CORTO PLAZO
 // Método de planificación: FIFO, RR, VRR.
@@ -122,53 +151,24 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 		// Espero a que se agregue algo a ready
 		// Pensar que pasa si tengo proceso en blocked que entra y sale de readyplus, se me va a terminar bloqueando
 		// Claro entonces en el que maneje la lista blocked va a mandar un sem_post de que agrego a readyplus !!!! IMPORTANTE !!!!
-		sem_wait(&sem_listas_ready);
+		sem_wait(&sem_pcp);
 		switch(ALGORITMO_PCP_SELECCIONADO){
+		// Este switch me parece que no lo necesito, hace siempre lo mismo en cada case y no lo voy a expandir
 			case FIFO:
 
-				pthread_mutex_lock(&mutex_lista_ready); 
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready)){
-					
-					planificar_corto_plazo();
-				
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
 			case RR:
-								
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
 
-				if (!list_is_empty(ready)){
-
-					planificar_corto_plazo();
-					
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready);
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
 			case VRR:
 
-				pthread_mutex_lock(&mutex_lista_ready);
-				pthread_mutex_lock(&mutex_lista_ready_plus);
-
-				if (!list_is_empty(ready) || !list_is_empty(ready_plus)){
-
-					planificar_corto_plazo();
-
-				}
-
-				pthread_mutex_unlock(&mutex_lista_ready); // nota
-				pthread_mutex_unlock(&mutex_lista_ready_plus);
+				planificar_corto_plazo();
 
 			break;
 
@@ -176,14 +176,15 @@ void planificador_corto_plazo(){ // Controla todo el tiempo la lista ready y rea
 				log_error(kernel_logger_extra,"ERROR: Este algoritmo de planificación no es reconocido.");
 				// Debería romer la ejecución?
 		}
-		// Esto es para reducir un poco la carga de la CPU
-		sleep(1); 
+ 
 	}
 
 }
 
 void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 
+	pthread_mutex_lock(&mutex_lista_ready); 
+	pthread_mutex_lock(&mutex_lista_ready_plus);
 	pthread_mutex_lock(&mutex_lista_exec); //Todo lo que afecte a las listas compartidas deberá ir entre sus mutexes
 	if(list_is_empty(execute)){
 		
@@ -200,6 +201,8 @@ void planificar_corto_plazo(){ // ESTO PROBABLEMENTE SE EJECUTE CONSTANTEMENTE
 		_poner_en_ejecucion(un_pcb);
 
 	}
+	pthread_mutex_unlock(&mutex_lista_ready); 
+	pthread_mutex_unlock(&mutex_lista_ready_plus);
 	pthread_mutex_unlock(&mutex_lista_exec);
 }
 
@@ -227,11 +230,15 @@ void _poner_en_ejecucion(pcb* un_pcb){ // ATENCIÓN!!! ESTA FUNCIÓN DEBE SER LL
 
 void _programar_interrupcion_por_quantum_RR(pcb* un_pcb){ // Que pasa si el proceso salió antes porque abortó? Se envía el interrupt igual, como resuelvo?
 	int ticket_referencia = un_pcb->ticket;
-	usleep(un_pcb -> quantum);
+	usleep(un_pcb -> quantum); // Multiplicar porque lo que me dan está en milisegundos
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ // Esto es posible porque el ticket varía globalmente
 											// Evita que se interrumpa un proceso que no debería ser interrumpido
-		sem_post(&sem_enviar_interrupcion);	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
+		un_pcb = _gestionar_interrupcion();	// FALTA AGREGAR: FUNCION EN kernel_cpu_interrupt QUE ENVÍE LA INTERRUPT
+		// Debería llegar mensaje de si se quitó proceso en ejecución?
+		agregar_a_ready(un_pcb);
+		sem_post(&sem_pcp);
+	
 	}
 	pthread_mutex_unlock(&mutex_ticket);
 }
@@ -243,7 +250,10 @@ void _programar_interrupcion_por_quantum_VRR(pcb* un_pcb){
 	pthread_mutex_lock(&mutex_ticket);
 	if(ticket_referencia == ticket_actual){ 
 
-		sem_post(&sem_enviar_interrupcion);	
+		un_pcb = _gestionar_interrupcion();
+
+		agregar_a_ready(un_pcb);
+		sem_post(&sem_pcp);
 
 	}
 	pthread_mutex_unlock(&mutex_ticket);
@@ -274,6 +284,27 @@ void _check_interrupt_plp(){
     }
 }
 
+void agregar_a_ready(pcb* un_pcb){
+	switch (ALGORITMO_PCP_SELECCIONADO)
+	{
+	case VRR:
+		if(QUANTUM > un_pcb -> tiempo_ejecutado && un_pcb -> tiempo_ejecutado != 0){
+			cambiar_estado_pcb(un_pcb,READY);
+			list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+		}
+		else{
+			cambiar_estado_pcb(un_pcb,READY);
+			list_add_sync(ready,un_pcb,&mutex_lista_ready);
+		}
+		break;
+	
+	default:
+		cambiar_estado_pcb(un_pcb,READY);
+		list_add_sync(ready,un_pcb,&mutex_lista_ready);
+		break;
+	}
+}
+
 // DUDAS:
 /*
 1)
@@ -293,39 +324,300 @@ Puedo usar semáforos entre módulos?
 
 */
 
-// FALTA:
-// PLANIFICACIÓN BLOCKED A READY
-// PLANIFICACIÓN BLOCKED A EXIT
+/*
 
-void planificar_lista_blocked(motivo_bloqueo motivo){
-	// A TENER EN CUENTA:
-	// Cuando un proceso se bloquea?
-	// CPU me va a pedir que bloquee un proceso (olor a semáforo)
-	// Proceso pidió recurso que no dispone
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+void manejar_bloqueo_de_proceso(pcb* un_pcb){  // PASA DE EXECUTE A BLOCKED UN PROCESO QUE LLEGA DESDE LA CPU Y TIENE MOTIVO DE BLOQUEO
+	
 	// Cuando CPU me pide que lo bloquee tengo que sacarlo de exec si cumple con las siguientes condiciones
 	// 		- La interfaz existe y se encuentra conectada (Tengo que tener lista de interfaces con su nombre como índice y
 	//		  luego socket correspondiente)
 	//		- La interfaz admite la operacion solicitada (En la lista anterior tambiém instrucciones que puede manejar?)
 	//				-> Base de datos con nombres, sockets (dinámico) y instrucciones que pueden aceptar?
 	
-	// Implementar semáforo de bloqueo
-	switch (motivo)
+	// =========================================================================================================================
+	
+	// Decidí poner el mutez de la lista exec acá porque cada vez que quiera atender un bloqueo, no quiero que se me modifique
+	// la lista exec, ya que podría llevar a errores, es por precaución. En un futuro podría cambiarse si puedo garantizar seguridad.
+	pthread_mutex_lock(&mutex_lista_exec);
+
+	switch (un_pcb->motivo_bloqueo)
 	{
 	case PEDIDO_A_INTERFAZ:
+
+		ejecutar_en_hilo_detach((void*)manejar_pedido_a_interfaz,un_pcb);
+		
 		break;
+
 	case RECURSO_FALTANTE:
+
 		break;
+
 	default:
 		break;
 	}
 }
 
-void planificar_lista_exit(){
+void manejar_pedido_a_interfaz (pcb* pcb_recibido){
+	
+	// Se evalúa si es posible, sino lo manda a exit
+
+	pthread_mutex_lock(&mutex_lista_interfaces);
+
+	if(_evaluar_diponibilidad_pedido(pcb_recibido)==0){
+		log_info(kernel_logger, "Terminando proceso con PID: %d. Solicitud de instrucción inválida", pcb_recibido->pid);
+		pthread_mutex_unlock(&mutex_lista_interfaces);
+		pthread_mutex_unlock(&mutex_lista_exec);
+		// No se hace más nada porque proceso se va a exit
+	}else{
+		// IMPORTANTE: Una vez que se entró acá, la interfaz está bloqueada (Se bloquea al evaluar su disponibilidad)
+		interfaz* interfaz_solicitada = NULL;
+		pcb* un_pcb = NULL;
+		
+		// Obtengo pcb ejecutando
+		un_pcb = list_remove(execute, 0); 
+		// Libero lista exec y le mando señal a planificador corto plazo
+		pthread_mutex_unlock(&mutex_lista_exec);
+		sem_post(&sem_pcp);
+		// Actualizo pcb con lo que me devolvió la cpu y lo muevo a lista blocked
+		actualizar_pcb(un_pcb,pcb_recibido);
+		cambiar_estado_pcb(un_pcb,BLOCKED);
+		list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+
+		interfaz_solicitada = _traer_interfaz_solicitada(un_pcb);
+		pthread_mutex_unlock(&mutex_lista_interfaces);
+
+		int estado_solicitud = solicitar_instruccion_a_interfaz(un_pcb,interfaz_solicitada);
+		sem_wait(&interfaz_solicitada->sem_interfaz);
+
+		if(estado_solicitud == ERROR){
+			planificar_proceso_exit(un_pcb);
+			log_error(kernel_logger,"ERROR: La interfaz solicitada no pudo realizar la operacion");
+		}
+		else{
+			if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+				switch (ALGORITMO_PCP_SELECCIONADO)
+				{
+				case FIFO:
+					cambiar_estado_pcb(un_pcb,READY);
+					list_add_sync(ready,un_pcb,&mutex_lista_ready);
+					break;
+				
+				case RR:
+					cambiar_estado_pcb(un_pcb,READY);
+					list_add_sync(ready,un_pcb,&mutex_lista_ready);
+					break;
+				
+				case VRR: 	// !!!!!!!CORREGIR ESTO!!!!!!!
+					if (un_pcb->tiempo_ejecutado>=QUANTUM){
+						un_pcb->tiempo_ejecutado=(QUANTUM*99)/100;
+						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+					}else{
+						list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+					}
+					cambiar_estado_pcb(un_pcb,READY);
+					break;
+				}
+				// Aviso a planificador corto plazo
+				sem_post(&sem_pcp);
+			}
+		}
+	}	
+}
+
+bool _evaluar_diponibilidad_pedido (pcb* un_pcb){
+
+	
+	bool _buscar_interfaz(interfaz* una_interfaz){
+		
+		char* nombre_encontrado = una_interfaz->nombre_interfaz;
+		char* nombre_buscado = un_pcb->pedido_a_interfaz->nombre_interfaz;
+		
+		return strcmp(nombre_encontrado,nombre_buscado)==1;
+	}
+
+	bool _buscar_instruccion(int instruccion_encontrada){
+		
+		int instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
+		return instruccion_buscada == instruccion_encontrada;
+
+	}
+
+	interfaz* una_interfaz = NULL;
+
+	// Evalúo si existe interfaz
+	if(list_any_satisfy(interfaces_conectadas,(void*)_buscar_interfaz)){
+		una_interfaz = list_find(interfaces_conectadas,(void*)_buscar_interfaz); 
+	}
+	else{
+		planificar_proceso_exit(un_pcb);
+		return false;
+	}
+
+	// Evalúo si la interfaz cuenta con la instrucción que estoy solicitando
+	if(list_any_satisfy(una_interfaz->instrucciones_disponibles,(void*)_buscar_instruccion)){
+		// Si se que la voy a usar la bloqueo
+		// Acá se empiezan a encolar procesos que quieran acceder a misma interfaz
+		pthread_mutex_lock(&una_interfaz->mutex_interfaz);
+		return true;
+	}
+	else{
+		planificar_proceso_exit(un_pcb);
+		return false;
+	}
+
+}
+
+ interfaz* _traer_interfaz_solicitada(pcb* un_pcb){
+
+	bool _buscar_interfaz(interfaz* una_interfaz){
+		
+		char* nombre_encontrado = una_interfaz->nombre_interfaz;
+		char* nombre_buscado = un_pcb->pedido_a_interfaz->nombre_interfaz;
+		
+		return strcmp(nombre_encontrado,nombre_buscado)==1;
+	}
+
+	interfaz* una_interfaz = NULL;
+	return una_interfaz = list_find(interfaces_conectadas,(void*)_buscar_interfaz); 
+ }
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+void planificar_proceso_exit(pcb* un_pcb){
 	// A TENER EN CUENTA:
 	// Cuando un proceso sale a exit?
 	// Cuando termina su ejecución (Me avisa CPU?)
 	// Cuando falla (Me avisa CPU?)
 	// Cuando lo pido por consola
 	// !!!! IMPORTANTE !!!! Cuando proceso salga por exit, grado de multiprogramación debe aumentar
+
+	switch (un_pcb->estado)
+	{
+	
+	case NEW:
+	
+		if(_eliminar_pcb_de_lista_sync(un_pcb,new,&mutex_lista_new)){
+				
+				destruir_pcb(un_pcb);
+				
+		}
+
+		break;
+
+	case READY:
+
+		switch (ALGORITMO_PCP_SELECCIONADO)
+		{
+		case VRR:
+			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+				break;
+			}
+			
+			else if(_eliminar_pcb_de_lista_sync(un_pcb,ready_plus,&mutex_lista_ready_plus)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+				break;	
+			}
+
+			break;
+
+		default:
+
+			if(_eliminar_pcb_de_lista_sync(un_pcb,ready,&mutex_lista_ready)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+			}
+		break;
+		}
+	
+	break;
+
+	case BLOCKED:
+	
+		if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+				liberar_memoria(un_pcb);
+				destruir_pcb(un_pcb);
+				sem_post(&sem_multiprogramacion);
+		}
+
+	break;
+
+	case EXEC: 	// Este caso es para cuando consola me pide que haga exit de un proceso
+		
+		un_pcb = _gestionar_interrupcion(); 
+		liberar_memoria(un_pcb);
+		destruir_pcb(un_pcb);
+		sem_post(&sem_multiprogramacion);
+		sem_post(&sem_pcp);
+
+	break;
+	
+	case EXIT: 	// Este caso lo voy a dejar para cuando CPU me pida hacer exit de un proceso
+				// El sem_post para el pcp lo hago en el momento que me llega el mensaje de CPU
+				// Porque antes de llamar a esta función saco el pcb de exec, lo paso a exit y lo mando a esta función
+
+		if(_eliminar_pcb_de_lista_sync(un_pcb,lista_exit,&mutex_lista_exit)){
+			liberar_memoria(un_pcb);
+			destruir_pcb(un_pcb);
+			sem_post(&sem_multiprogramacion);
+		}
+		
+	break;
+	
+	default:
+		break;
+	}
 }
+
+
+
+

@@ -34,4 +34,19 @@ extern int BLOCK_COUNT;
 extern int fd_kernel;
 extern int fd_memoria;
 
+typedef struct {
+    char* nombre_interfaz;
+    char* tipo_interfaz;
+    int tiempo_unidad_trabajo;
+    char* ip_kernel;
+    int puerto_kernel;
+} configuracion_interfaz;
+
+typedef struct {
+    char tipo_interfaz;
+    int tiempo_unidad_trabajo;
+    char ip_kernel;
+    int puerto_kernel;
+} configuracion_t;
+
 #endif

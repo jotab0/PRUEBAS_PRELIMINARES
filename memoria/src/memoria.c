@@ -20,9 +20,9 @@ int main(int argc, char* argv[]) {
     inicializar_memoria();
 	
     fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"!! Servidor MEMORIA iniciada !!");  
-    fd_cpu = esperar_cliente(fd_memoria, memoria_logger,"CPU");
-    fd_kernel = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
-    fd_es = esperar_cliente(fd_memoria, memoria_logger,"E/S");
+    fd_cpu     = esperar_cliente(fd_memoria, memoria_logger,"CPU");
+    fd_kernel  = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
+    fd_es      = esperar_cliente(fd_memoria, memoria_logger,"E/S");
 
 //-------------------------------------------------------------------------------------------------------
 // Procesos
@@ -64,8 +64,23 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_join(hilo_kernel,NULL);
-    
-    //int fd_kernel = iniciar_servidor()
+
+//-------------------------------------------------------------------------------------------------------
+// Creacion Espacio Usuario 
+
+    //  1) Iniciar espacio usuario 
+  ///   2) Se queda escuchando a los clientes 
+////    3) Finaliza cuando no hay más peticiones 
+
+
+
+    iniciar_espacio_usuario(); 
+
+    servidor_fd_memoria = iniciar_servidor(memoria_logger, IP_MEMORIA, PUERTO_ESCUCHA);
+
+	while(servidor_escucha())
+
+    finalizar_memoria();
 
     return 0;
 }

@@ -66,6 +66,7 @@ void crear_listas(){
 	new = list_create();
 	blocked = list_create();
 	lista_exit = list_create();
+    interfaces_conectadas = list_create();
 }
 
 void inicializar_semaforos(){
@@ -75,6 +76,10 @@ void inicializar_semaforos(){
     sem_init(&sem_estructura_iniciada_en_memoria,0,0);
     sem_init(&sem_multiprogramacion,0,GRADO_MULTIPROGRAMACION - 1);
     sem_init(&sem_listas_ready,0,0);
+    sem_init(&sem_lista_new,0,0);
+    sem_init(&sem_lista_execute,0,1);
+    sem_init(&sem_solicitud_interfaz,0,0);
+    sem_init(&sem_pcp,0,0);
 }
 
 void inicializar_mutexes(){
@@ -85,6 +90,7 @@ void inicializar_mutexes(){
     pthread_mutex_init(&mutex_lista_blocked, NULL);
     pthread_mutex_init(&mutex_lista_exit, NULL);
     pthread_mutex_init(&mutex_procesos_en_core, NULL);
+    pthread_mutex_init(&mutex_lista_interfaces, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);

@@ -6,8 +6,12 @@ void inicializar_memoria(){
     imprimir_config();
 }
 
+
+//-------------------------------------------------------------------------------------------------------
+///// FUNCIONES PARA INICIAIZAR
+
 void inicializar_logs(){
-    // INCIA MEMORIA
+    // INICIA MEMORIA
     memoria_logger = log_create("Memoria.log", "Memoria_log", 1, LOG_LEVEL_TRACE);
     if (memoria_logger == NULL){
         perror ("Error: No se pudo crear log para la memoria");
@@ -30,14 +34,16 @@ void iniciar_config(){
 		exit(EXIT_FAILURE);
 	}
 
-    PUERTO_ESCUCHA = config_get_string_value(memoria_config,"PUERTO_ESCUCHA");
-    TAM_MEMORIA = config_get_int_value(memoria_config,"TAM_MEMORIA");
-    TAM_PAGINA = config_get_int_value(memoria_config,"TAM_PAGINA");
-    PATH_INSTRUCCIONES= config_get_string_value(memoria_config,"PATH_INSTRUCCIONES");
-    RETARDO_RESPUESTA = config_get_int_value(memoria_config,"RETARDO_RESPUESTA");
-
+    PUERTO_ESCUCHA     = config_get_string_value(memoria_config,"PUERTO_ESCUCHA");
+    TAM_MEMORIA        = config_get_int_value(memoria_config,"TAM_MEMORIA");
+    TAM_PAGINA         = config_get_int_value(memoria_config,"TAM_PAGINA");
+    PATH_INSTRUCCIONES = config_get_string_value(memoria_config,"PATH_INSTRUCCIONES");
+    RETARDO_RESPUESTA  = config_get_int_value(memoria_config,"RETARDO_RESPUESTA");
+    IP_MEMORIA         = config_get_string_value(memoria_config, "IP_MEMORIA");
 }
 
 void imprimir_config(){
     log_info(memoria_logger,"PUERTO ESCUCHA: %s",PUERTO_ESCUCHA);
 }
+
+//-------------------------------------------------------------------------------------------------------

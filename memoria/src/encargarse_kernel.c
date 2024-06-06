@@ -37,6 +37,8 @@ t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
     nuevo_proceso->pid_proceso = pid;
     nuevo_proceso->size = NULL;
     nuevo_proceso->pathInstrucciones = path;
+    nuevo_proceso->tabla_paginas = list_create();
+	pthread_mutex_init(&(nuevo_proceso->mutex_tabla_paginas), NULL);
     nuevo_proceso->lista_de_instrucciones = obtener_instrucciones_del_archivo(nuevo_proceso->pathInstrucciones);
 
         

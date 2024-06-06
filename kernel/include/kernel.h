@@ -51,6 +51,7 @@ pthread_mutex_t mutex_lista_new;
 pthread_mutex_t mutex_lista_blocked;
 pthread_mutex_t mutex_lista_exit;
 pthread_mutex_t mutex_procesos_en_core;
+pthread_mutex_t mutex_lista_interfaces;
 
 pthread_mutex_t mutex_ticket;
 pthread_mutex_t mutex_pid;
@@ -61,6 +62,7 @@ t_list* execute;
 t_list* new;
 t_list* blocked;
 t_list* lista_exit;
+t_list* interfaces_conectadas;
 
 sem_t sem_enviar_interrupcion;
 sem_t sem_interrupt_pcp;
@@ -68,6 +70,10 @@ sem_t sem_interrupt_plp;
 sem_t sem_estructura_iniciada_en_memoria;
 sem_t sem_multiprogramacion;
 sem_t sem_listas_ready;
+sem_t sem_lista_new;
+sem_t sem_lista_execute;
+sem_t sem_solicitud_interfaz;
+sem_t sem_pcp;
 
 int ALGORITMO_PCP_SELECCIONADO;
   
