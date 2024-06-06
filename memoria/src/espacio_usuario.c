@@ -28,7 +28,7 @@ void iniciar_espacio_usuario(){
         exit(1);
     }
 
-    int cantidad_marcos = TAM_MEMORIA/TAM_PAGINA;
+    cantidad_marcos = TAM_MEMORIA/TAM_PAGINA;
 	for(int i=0;i< cantidad_marcos;i++){
 		t_marco* un_marco_nuevo  = crear_frame(TAM_PAGINA*i, true, i);
 
@@ -54,23 +54,16 @@ void iniciar_espacio_usuario(){
 
 //-------------------------------------------------------------------------------------------------------
 // FUNCIONES NECESARIAS 
-// FRAMES
 
-t_marco* crear_frame(int tamBase, bool disponible, int i){
-    t_marco *marco = malloc(sizeof(t_marco));
-	marco->nro_marco = i;
-	marco->base = tamBase;
-	marco->disponible = disponible;
-	marco->info_nuevo = NULL;
-	marco->info_anterior = NULL;
-	marco->orden_carga = 0;
-	marco->ultimo_uso = NULL;
+void * pedido_lectura(int dir_fisica){
 
-	return marco;
+
+
 }
 
+void* pedido_escritura(int dir_fisica){
 
-
+}
 //-------------------------------------------------------------------------------------------------------
 // FINALIZAR MEMORIA 
 
@@ -78,4 +71,8 @@ void finalizar_memoria(){
     log_destroy(memoria_logger);
 	log_destroy(memoria_log_obligatorio);
 	config_destroy(memoria_config);
+}
+
+void liberar_espacio_usuario(){
+    free(espacio_usuario);
 }

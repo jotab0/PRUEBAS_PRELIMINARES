@@ -28,3 +28,17 @@ char*  extraer_instruccion_por_ip(t_proceso* proceso, int ip_proceso){
     return instruccion;
 }
 
+//---------------------------------------------------------------------------------------
+
+void* ampliar_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
+	int tam_actual = proceso->size;
+
+    log_info(memoria_logger,  "PID <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>" ,proceso->pid_proceso, tam_actual,nuevo_tamanio);
+}
+
+void reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
+	int tam_actual = proceso->size;
+
+	log_info(memoria_logger,  "PID <%d> - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>" ,proceso->pid_proceso, tam_actual,nuevo_tamanio);
+
+}

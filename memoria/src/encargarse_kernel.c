@@ -32,6 +32,7 @@ void encargarse_kernel(int cliente_socket_kernel){
 t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
     char* path  = extraer_string_del_buffer(unBuffer);
     int pid     = extraer_int_del_buffer(unBuffer);
+    //int size    = extraer_int_del_buffer(unBuffer);
         
     t_proceso* nuevo_proceso = malloc(sizeof(t_proceso));
     nuevo_proceso->pid_proceso = pid;
@@ -41,8 +42,12 @@ t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
 	pthread_mutex_init(&(nuevo_proceso->mutex_tabla_paginas), NULL);
     nuevo_proceso->lista_de_instrucciones = obtener_instrucciones_del_archivo(nuevo_proceso->pathInstrucciones);
 
-        
+    inicializar_tabla_de_paginas(nuevo_proceso);    
     list_add(lista_procesos, nuevo_proceso);
+    
+    int cantidad_paginas = list_size(nuevo_proceso->tabla_paginas);
+    log_info(memoria_logger,"PID: <%d>- Tamaño: <%d>",nuevo_proceso->pid_proceso,cantidad_paginas);
+
     respuesta_kernel_de_solicitud_iniciar_proceso();
 
     return nuevo_proceso;
@@ -50,7 +55,7 @@ t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
 
 void  respuesta_kernel_de_solicitud_iniciar_proceso(){
     t_paquete* un_paquete = crear_paquete_con_buffer(RTA_INICIAR_ESTRUCTURA);
-    cargar_string_a_paquete(un_paquete, "Correcto");
+    cargar_int_a_paquete(un_paquete, 1);
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
 }

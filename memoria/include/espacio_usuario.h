@@ -4,6 +4,12 @@
 #include "m_gestor.h"
 
 
+void* espacio_usuario;
+t_dictionary *  tablas; 
+t_list *  lista_marcos;
+int  cantidad_marcos;
+
+
 //FUNCIONES QUE QUIERO COMPARTIR 
 
 void inciar_espacio_usuario();

@@ -41,7 +41,7 @@ extern t_list* lista_marcos;
 
 typedef struct {
     int pid_proceso;
-	int size;
+	int size; // preguntar el size de donde lo saco 
 	char* pathInstrucciones;
 	t_list* lista_de_instrucciones;
 	t_list* tabla_paginas;
@@ -52,29 +52,24 @@ typedef struct {
 /// Marcos y Pagina ///  
 
 typedef struct {
-	t_proceso* proceso;
-	int nro_pagina;
-}marco_info;
-
-typedef struct {
     int nro_marco;
     int base;
     bool disponible;
-    marco_info_info* info_nuevo;
-    marco_info* info_anterior;
-    int orden_carga;
-    t_temporal* ultimo_uso;
+	t_proceso* proceso;
+	int num_pagina;
 } t_marco;
 
 typedef struct {
-	int nro_pagina; //Set al inicio
+	int nro_pagina; 
 	int nro_marco;
-	bool presente;	//Set al inicio
-	bool modificado;//Set al inicio
-	int pos_en_swap;
+	
 } t_pagina;
 
+typedef struct{
+	int num_pagina;
+	int num_frame;
 
+}t_tabla_de_pagina;
 //-------------------------------------------------------------
 // SEMAFOROS 
 
