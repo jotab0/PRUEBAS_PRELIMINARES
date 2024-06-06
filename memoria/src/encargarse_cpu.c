@@ -2,6 +2,7 @@
 
 void enviar_tamanio_pagina(int cliente_socket);
 void resolver_solicitud_instruccion(t_buffer *unBuffer);
+void retardo_respuesta();
 
 void encargarse_cpu(int cliente_socket_cpu){
         enviar_tamanio_pagina(cliente_socket_cpu);
@@ -35,8 +36,9 @@ void encargarse_cpu(int cliente_socket_cpu){
 //FUNCIONES NECESARIAS
 
 
+
 void mandar_instruccion_a_cpu(char* instruccion){
-    //retardo_respuesta_cpu_fs();
+    
     t_paquete* paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
     cargar_string_a_paquete(paquete, instruccion);
     enviar_paquete(paquete, fd_cpu);
@@ -46,6 +48,9 @@ void mandar_instruccion_a_cpu(char* instruccion){
 
 //------------------------------------------------------------------------------------------------------------
 
+void retardo_respuesta(){
+    sleep(RETARDO_RESPUESTA);
+}
 
 void enviar_tamanio_pagina(int cliente_socket){
     t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
