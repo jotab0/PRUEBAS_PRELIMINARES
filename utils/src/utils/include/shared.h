@@ -33,8 +33,8 @@ typedef enum {
     INTERRUPCION,
     ATENDER_INSTRUCCION_CPU,
     ATENDER_INTERRUPCION,
-    WAIT,
-    SIGNAL,
+    WAIT_KCPU,
+    SIGNAL_KCPU,
 
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
@@ -84,6 +84,13 @@ typedef enum{
     IO_STDIN_READ,
     INSTRUCCION_IO_NO_DEFINIDA
 }instruccion_interfaz;
+
+typedef enum{
+	RA,
+    RB,
+    RC,
+    RECURSO_NO_DEFINIDO
+}recurso;
 
 typedef struct{
 	char* pseudo_codigo;

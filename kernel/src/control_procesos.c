@@ -33,6 +33,7 @@ pcb *crear_pcb(char *path, int size)
 	nuevo_PCB->pedido_a_interfaz->tamanio_recurso = 0;
 
 	nuevo_PCB->recursos_en_uso = list_create();
+	nuevo_PCB->pedido_recurso = RECURSO_NO_DEFINIDO;
 
 	return nuevo_PCB;
 }
@@ -328,13 +329,31 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 
 		ejecutar_en_hilo_detach((void *)manejar_pedido_a_interfaz, un_pcb);
 
-		break;
+	break;
 
-	case RECURSO_FALTANTE:
+	case WAIT:
+		ejecutar_en_hilo_detach((void *)manejar_pedido_de_recurso, un_pcb);
+	break;
 
-		ejecutar_en_hilo_detach((void *)manejar_solicitud_de_recurso, un_pcb);
+	case SIGNAL:
 
-		break;
+		switch (un_pcb->pedido_recurso)
+		{
+		case RA:
+			sem_post(&sem_RA);
+			break;
+		case RB:
+			sem_post(&sem_RB);
+			break;	
+		case RC:
+			sem_post(&sem_RC);
+			break;	
+		default:
+			planificar_proceso_exit_en_hilo(un_pcb);
+			break;
+		}
+
+	break;
 
 	default:
 		break;
@@ -440,7 +459,33 @@ interfaz* _traer_interfaz_solicitada(pcb *un_pcb)
 	return una_interfaz = list_find(interfaces_conectadas, (void *)_buscar_interfaz);
 }
 
-void manejar_solicitud_de_recurso(pcb *un_pcb){
+
+void manejar_pedido_de_recurso(pcb *pcb_recibido){
+	
+	switch (pcb_recibido->pedido_recurso)
+	{
+	case RA:
+		sem_wait(&sem_RA);
+		break;
+	
+	case RB:
+		sem_wait(&sem_RB);
+		break;
+
+	case RC:
+		sem_wait(&sem_RC);
+		break;
+
+	default:
+		planificar_proceso_exit_en_hilo(pcb_recibido);
+		break;
+	}
+
+	// CONSULTA: Está mal enviar dos sem_pcp? Uno es porque se libera lista exec y otro porque se agrega a ready
+	// CONSULTA: Está raro que pcb_recibido sea el mismo que se usa para buscar?
+	pcb_recibido = extraer_pcb_de_lista_sistema(pcb_recibido);
+	agregar_a_ready(pcb_recibido);
+	sem_post(&sem_pcp);
 
 }
 

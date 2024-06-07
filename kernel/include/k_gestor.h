@@ -64,7 +64,8 @@ typedef enum{
 
 typedef enum{
 	PEDIDO_A_INTERFAZ,
-	RECURSO_FALTANTE,
+	WAIT,
+	SIGNAL,
 	BLOQUEO_NO_DEFINIDO
 }motivo_bloqueo;
 
@@ -83,9 +84,9 @@ typedef struct{
 }registrosCPU;
 
 typedef struct{
-	char* nombre_recurso;
+	recurso nombre_recurso;
 	int instancias_en_uso;
-}recursos;
+}recursos_pcb;
 
 typedef struct{ //
 	
@@ -100,7 +101,8 @@ typedef struct{ //
 	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas
 	motivo_bloqueo motivo_bloqueo; 
 	pedido_interfaz* pedido_a_interfaz;
-	// Lista de recursos
+	recurso pedido_recurso;
+	// Lista de recursos_pcb 
 	t_list* recursos_en_uso;
 	
 }pcb;

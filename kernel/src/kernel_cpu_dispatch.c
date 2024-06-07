@@ -41,25 +41,73 @@ void esperar_cpu_dispatch_kernel(){
 			pcb* pcb_recibido = NULL;
 			pcb_recibido = obtener_contexto_pcb(un_buffer);
 
-			pcb* un_pcb = buscar_pcb_en_sistema(un_pcb->pid);
+			pcb* un_pcb = extraer_pcb_de_lista_sistema(pcb_recibido);
+
+			cambiar_estado_pcb(un_pcb, BLOCKED);
 
 			actualizar_pcb(pcb_recibido,un_pcb);
-			cambiar_estado_pcb(un_pcb, BLOCKED);
+
 			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
 			
 			un_pcb -> motivo_bloqueo = PEDIDO_A_INTERFAZ;
+
 			un_pcb -> pedido_a_interfaz -> nombre_interfaz = interfaz_solicitada;
 			un_pcb -> pedido_a_interfaz -> instruccion_a_interfaz = instruccion_solicitada;
 			un_pcb -> pedido_a_interfaz -> recurso_necesario = recurso_necesario_de_instruccion;
 			un_pcb -> pedido_a_interfaz -> tamanio_recurso = tamanio_recurso_necesario;
 
 			manejar_bloqueo_de_proceso(un_pcb);	
-			sem_post(&sem_pcp);
 			sem_post(&sem_cpu_libre);	
 
 			destruir_buffer(un_buffer);
 
-			break;
+		break;
+
+		case WAIT_KCPU:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+			recurso recurso_solicitado = extraer_int_del_buffer(un_buffer);
+
+			pcb_recibido = NULL;
+			pcb_recibido = obtener_contexto_pcb(un_buffer);
+
+			un_pcb = extraer_pcb_de_lista_sistema(pcb_recibido);
+
+			actualizar_pcb(pcb_recibido,un_pcb);
+			cambiar_estado_pcb(un_pcb, BLOCKED);
+			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+
+			un_pcb -> motivo_bloqueo = WAIT;
+			un_pcb -> pedido_recurso = recurso_solicitado;
+			agregar_recurso(un_pcb,recurso_solicitado);
+
+			manejar_bloqueo_de_proceso(un_pcb);	
+			sem_post(&sem_cpu_libre);	
+
+			destruir_buffer(un_buffer);
+
+		break;
+
+		case SIGNAL_KCPU:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+			recurso_solicitado = extraer_int_del_buffer(un_buffer);
+			int pid_recibido = extraer_int_del_buffer(un_buffer);
+
+			//CONSULTA: Puedo inicializarlo en NULL cuando tengo variables enum dentro?
+			un_pcb = NULL;
+			un_pcb->pid = pid_recibido;
+			
+			un_pcb = buscar_pcb_en_sistema_(un_pcb);
+			un_pcb -> motivo_bloqueo = SIGNAL;
+			un_pcb -> pedido_recurso = recurso_solicitado;
+
+			quitar_recurso(un_pcb,recurso_solicitado);
+			manejar_bloqueo_de_proceso(un_pcb);
+
+			destruir_buffer(un_buffer);
+
+		break;
 
 		case -1:
 			log_error(kernel_logger, "CPU DISPATCH se desconecto. Terminando servidor");
@@ -88,4 +136,63 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 
 	enviar_paquete(un_paquete, fd_cpu_dispatch); //RECORDAR: PAQUETE SE SERIALIZA ACÁ ADENTRO
 	destruir_paquete(un_paquete);
+}
+
+// CONSULTAR: Si están bien las siguientes funciones con listas
+void agregar_recurso (pcb* un_pcb, recurso un_recurso){
+
+	bool _buscar_recurso(recursos_pcb* recurso_encontrado)
+	{
+		return recurso_encontrado->nombre_recurso == un_recurso;
+	}
+
+	recursos_pcb* recurso = NULL;
+
+	if(list_is_empty(un_pcb->recursos_en_uso)){
+		
+		recurso->nombre_recurso = un_recurso;
+		recurso->instancias_en_uso = 1;
+		list_add(un_pcb->recursos_en_uso,recurso);
+
+	}
+	else{
+
+		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+		{
+			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+			recurso->instancias_en_uso += 1;
+		}
+		else
+		{
+			recurso->nombre_recurso = un_recurso;
+			recurso->instancias_en_uso = 1;
+			list_add(un_pcb->recursos_en_uso,recurso);
+		}
+	}
+}
+
+void quitar_recurso (pcb* un_pcb, recurso un_recurso){
+
+	bool _buscar_recurso(recursos_pcb* recurso_encontrado)
+	{
+		return recurso_encontrado->nombre_recurso == un_recurso;
+	}
+
+	recursos_pcb* recurso = NULL;
+
+	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+	{
+		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+		
+		if(recurso->instancias_en_uso > 0){
+
+			recurso->instancias_en_uso -= 1;
+
+		}
+		else
+		{
+			list_remove_element(un_pcb->recursos_en_uso,recurso);
+		}
+	}
+	
 }

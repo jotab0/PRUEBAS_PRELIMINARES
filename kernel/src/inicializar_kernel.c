@@ -100,6 +100,7 @@ void inicializar_mutexes(){
 
  void establecer_recursos(){
     
+    // CONSULTAR: Si está ok inicializado usando instancias_recursos como vector
     int recurso_A = atoi(INSTANCIAS_RECURSOS[0]);
     sem_init(&sem_RA,0,recurso_A);
 

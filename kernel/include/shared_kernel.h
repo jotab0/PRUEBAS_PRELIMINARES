@@ -18,7 +18,10 @@ bool pcb_esta_en_lista(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex);
 
 // Extrae pcb que coincida con pid
 pcb* extraer_pcb_de_lista(int pid, t_list* una_lista, pthread_mutex_t* mutex_lista);
-pcb* buscar_pcb_en_sistema(int pid);
+pcb* buscar_pcb_en_lista(int pid, t_list* una_lista, pthread_mutex_t* mutex_lista);
+
+pcb* extraer_pcb_de_lista_sistema(pcb* un_pcb);
+pcb* buscar_pcb_en_sistema_(pcb* un_pcb);
 
 void agregar_a_ready(pcb* un_pcb);
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
