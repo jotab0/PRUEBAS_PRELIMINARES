@@ -25,13 +25,15 @@ pcb *crear_pcb(char *path, int size)
 
 	nuevo_PCB->estado = NEW;
 	// *****CONSULTAR: Si está bien inicializar así los enum que no están definidos todavía
+	// INTERFACES
 	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO;
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz = NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
 	nuevo_PCB->pedido_a_interfaz->datos_auxiliares_interfaz = list_create();
-
+	
+	// RECURSOS
 	nuevo_PCB->recursos_en_uso = list_create();
-	nuevo_PCB->pedido_recurso = RECURSO_NO_DEFINIDO;
+	nuevo_PCB->pedido_recurso = NULL; 
 
 	return nuevo_PCB;
 }
@@ -337,21 +339,6 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 
 	case SIGNAL:
 
-		switch (un_pcb->pedido_recurso)
-		{
-		case RA:
-			sem_post(&sem_RA);
-			break;
-		case RB:
-			sem_post(&sem_RB);
-			break;	
-		case RC:
-			sem_post(&sem_RC);
-			break;	
-		default:
-			planificar_proceso_exit_en_hilo(un_pcb);
-			break;
-		}
 
 	break;
 
@@ -462,28 +449,26 @@ interfaz* _traer_interfaz_solicitada(pcb *un_pcb)
 
 void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	
-	switch (pcb_recibido->pedido_recurso)
+	bool _buscar_recurso(instancia_recurso *un_recurso)
 	{
-	case RA:
-		sem_wait(&sem_RA);
-		break;
-	
-	case RB:
-		sem_wait(&sem_RB);
-		break;
-
-	case RC:
-		sem_wait(&sem_RC);
-		break;
-
-	default:
-		planificar_proceso_exit_en_hilo(pcb_recibido);
-		break;
+		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 1;
 	}
 
-	pcb_recibido = extraer_pcb_de_lista(pcb_recibido->pid, blocked, &mutex_lista_blocked);
-	agregar_a_ready(pcb_recibido);
-	
+	instancia_recurso* un_recurso;
+
+	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
+		
+		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
+
+		sem_wait(&un_recurso->semaforo_recurso);
+
+		pcb_recibido = extraer_pcb_de_lista(pcb_recibido->pid, blocked, &mutex_lista_blocked);
+		agregar_a_ready(pcb_recibido);
+
+	}else{
+		planificar_proceso_exit_en_hilo(pcb_recibido);
+	}
+
 	sem_post(&sem_pcp);
 
 }
@@ -516,7 +501,8 @@ void planificar_proceso_exit_en_hilo(pcb* un_pcb){
 	ejecutar_en_hilo_detach((void *)planificar_proceso_exit, un_pcb);
 }
 
-void planificar_proceso_exit(pcb *un_pcb)
+//QUIZÁS SERÍA MEJOR QUE YO LE PASE EL ESTADO Y NO SE LO PREGUNTE AL PCB
+void planificar_proceso_exit(pcb *un_pcb) 
 {
 	// A TENER EN CUENTA:
 	// Cuando un proceso sale a exit?

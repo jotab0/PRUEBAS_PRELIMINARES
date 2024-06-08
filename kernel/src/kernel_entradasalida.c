@@ -73,7 +73,8 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 // LA IDEA ES CREAR HILO POR PEDIDO
 interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida){ // CONSULTAR: Si está bien creada la instancia 
 	
-	interfaz* una_interfaz = NULL; 
+	interfaz* una_interfaz = malloc(sizeof(interfaz)); 
+	
 	una_interfaz->nombre_interfaz = extraer_string_del_buffer(buffer);
 	una_interfaz->resultado_operacion_solicitada = OK;
 	una_interfaz->instrucciones_disponibles = list_create();

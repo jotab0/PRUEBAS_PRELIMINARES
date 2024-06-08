@@ -92,13 +92,6 @@ typedef enum{
 
 }instruccion_interfaz;
 
-typedef enum{
-	RA,
-    RB,
-    RC,
-    RECURSO_NO_DEFINIDO
-}recurso;
-
 typedef struct{
 	char* pseudo_codigo;
     char* primer_parametro;

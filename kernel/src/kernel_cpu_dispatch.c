@@ -66,7 +66,7 @@ void esperar_cpu_dispatch_kernel(){
 		case WAIT_KCPU:
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
-			recurso recurso_solicitado = extraer_int_del_buffer(un_buffer);
+			char* recurso_solicitado = extraer_string_del_buffer(un_buffer);
 
 			pcb_recibido = NULL;
 			pcb_recibido = obtener_contexto_pcb(un_buffer);
@@ -96,14 +96,13 @@ void esperar_cpu_dispatch_kernel(){
 		case SIGNAL_KCPU:
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
-			recurso_solicitado = extraer_int_del_buffer(un_buffer);
+			recurso_solicitado = extraer_string_del_buffer(un_buffer);
 			int pid_recibido = extraer_int_del_buffer(un_buffer);
 
 			//CONSULTA: Puedo inicializarlo en NULL cuando tengo variables enum dentro?
 			un_pcb = NULL;
 			un_pcb->pid = pid_recibido;
-			
-			un_pcb = buscar_pcb_en_sistema_(un_pcb);
+		
 			un_pcb -> motivo_bloqueo = SIGNAL;
 			un_pcb -> pedido_recurso = recurso_solicitado;
 
@@ -144,54 +143,59 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 }
 
 // CONSULTAR: Si están bien las siguientes funciones con listas
-void agregar_recurso (pcb* un_pcb, recurso un_recurso){
+void agregar_recurso (pcb* un_pcb, char* un_recurso){
 
-	bool _buscar_recurso(recursos_pcb* recurso_encontrado)
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
 	{
-		return recurso_encontrado->nombre_recurso == un_recurso;
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
 	}
 
-	recursos_pcb* recurso = NULL;
+	instancia_recurso_pcb* recurso = NULL;
 
 	if(list_is_empty(un_pcb->recursos_en_uso)){
-		
+
+		instancia_recurso_pcb* recurso = malloc(sizeof(instancia_recurso_pcb));
 		recurso->nombre_recurso = un_recurso;
-		recurso->instancias_en_uso = 1;
+		recurso->instancias_recurso = 1;
 		list_add(un_pcb->recursos_en_uso,recurso);
 
 	}
 	else{
-
+		
 		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
 		{
 			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
-			recurso->instancias_en_uso += 1;
+			recurso->instancias_recurso += 1;
 		}
 		else
 		{
+			recurso = malloc(sizeof(instancia_recurso_pcb));
 			recurso->nombre_recurso = un_recurso;
-			recurso->instancias_en_uso = 1;
+			recurso->instancias_recurso = 1;
 			list_add(un_pcb->recursos_en_uso,recurso);
 		}
 	}
+
+	free(recurso);
+
 }
 
-void quitar_recurso (pcb* un_pcb, recurso un_recurso){
+void quitar_recurso (pcb* un_pcb, char* un_recurso){
 
-	bool _buscar_recurso(recursos_pcb* recurso_encontrado)
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
 	{
-		return recurso_encontrado->nombre_recurso == un_recurso;
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
 	}
 
-	recursos_pcb* recurso = NULL;
+	instancia_recurso_pcb* recurso = NULL;
 
 	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
 	{
 		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
 		
-		if(recurso->instancias_en_uso > 0){
+		if(recurso->instancias_recurso > 0){
 
-			recurso->instancias_en_uso -= 1;
+			recurso->instancias_recurso -= 1;
 
 		}
 		else

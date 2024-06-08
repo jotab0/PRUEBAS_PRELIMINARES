@@ -68,6 +68,7 @@ void crear_listas(){
 	blocked = list_create();
 	lista_exit = list_create();
     interfaces_conectadas = list_create();
+    lista_recursos = list_create();
 }
 
 void inicializar_semaforos(){
@@ -99,17 +100,21 @@ void inicializar_mutexes(){
 }
 
  void establecer_recursos(){
-    
-    // CONSULTAR: Si está ok inicializado usando instancias_recursos como vector
-    int recurso_A = atoi(INSTANCIAS_RECURSOS[0]);
-    sem_init(&sem_RA,0,recurso_A);
 
-    int recurso_B = atoi(INSTANCIAS_RECURSOS[1]);
-    sem_init(&sem_RB,0,recurso_B);
+    int contador = 0;
+    while(INSTANCIAS_RECURSOS[contador] != NULL){
+        
+        instancia_recurso* un_recurso = malloc(sizeof(instancia_recurso));
 
-    int recurso_C = atoi(INSTANCIAS_RECURSOS[2]);
-    sem_init(&sem_RC,0,recurso_C);
-    
+        un_recurso->nombre_recurso = RECURSOS[contador];
+        sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
+
+        list_add(lista_recursos,un_recurso);
+        
+        free(un_recurso);
+        
+        contador += 1;
+    }
  }
 
 void inicializar_planificadores(){

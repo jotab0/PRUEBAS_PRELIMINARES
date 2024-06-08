@@ -63,6 +63,7 @@ t_list* new;
 t_list* blocked;
 t_list* lista_exit;
 t_list* interfaces_conectadas;
+t_list* lista_recursos;
 
 sem_t sem_enviar_interrupcion;
 sem_t sem_interrupt_pcp;
