@@ -82,7 +82,14 @@ typedef enum{
 typedef enum{
 	IO_GEN_SLEEP,
     IO_STDIN_READ,
+    IO_FS_CREATE,
+    IO_FS_DELETE,
+    IO_FS_TRUNCATE,
+    IO_FS_WRITE,
+    IO_FS_READ,
+    IO_STDOUT_WRITE,
     INSTRUCCION_IO_NO_DEFINIDA
+
 }instruccion_interfaz;
 
 typedef enum{

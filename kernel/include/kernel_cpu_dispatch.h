@@ -10,5 +10,6 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb);
 void esperar_conexiones_cpu_dispatch();
 void agregar_recurso (pcb* un_pcb, recurso un_recurso);
 void quitar_recurso (pcb* un_pcb, recurso un_recurso);
+t_list* extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada);
 
 #endif /* KERNEL_CPU_DISPATCH_H_ */

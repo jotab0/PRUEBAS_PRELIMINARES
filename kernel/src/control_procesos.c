@@ -15,7 +15,6 @@ pcb *crear_pcb(char *path, int size)
 
 	nuevo_PCB->ticket = -1; // Inicializa en -1 porque el valor del primer ticket global es 0
 
-	nuevo_PCB->size = size;
 	nuevo_PCB->path = path; // Que pasa si cambia o sucesde algo con lo que apunta
 
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
@@ -25,12 +24,11 @@ pcb *crear_pcb(char *path, int size)
 	nuevo_PCB->registros_CPU->DX = 0;
 
 	nuevo_PCB->estado = NEW;
-	// *****CONSULTAR:
+	// *****CONSULTAR: Si está bien inicializar así los enum que no están definidos todavía
 	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO;
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz = NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
-	nuevo_PCB->pedido_a_interfaz->recurso_necesario = NULL;
-	nuevo_PCB->pedido_a_interfaz->tamanio_recurso = 0;
+	nuevo_PCB->pedido_a_interfaz->datos_auxiliares_interfaz = list_create();
 
 	nuevo_PCB->recursos_en_uso = list_create();
 	nuevo_PCB->pedido_recurso = RECURSO_NO_DEFINIDO;
@@ -53,6 +51,7 @@ void planificador_largo_plazo()
 
 		sem_wait(&sem_lista_new);
 
+		// CONSULTA: Es necesario hacer malloc en este caso?
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_new);
@@ -209,12 +208,12 @@ void _poner_en_ejecucion(pcb *un_pcb)
 	{
 
 		list_add(execute, un_pcb);
+		cambiar_estado_pcb(un_pcb, EXEC);
 
 		log_info(kernel_logger, " PID: %d - SET: EXEC", un_pcb->pid);
 		un_pcb->ticket = generar_ticket();
 
 		enviar_pcb_CPU_dispatch(un_pcb);
-		cambiar_estado_pcb(un_pcb, EXEC);
 
 		if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0)
 		{
@@ -243,6 +242,7 @@ void _programar_interrupcion_por_quantum_RR(pcb *un_pcb)
 		_gestionar_interrupcion(un_pcb, QUANTUM_INTERRUPT);
 	}
 	pthread_mutex_unlock(&mutex_ticket);
+	
 }
 
 void _programar_interrupcion_por_quantum_VRR(pcb *un_pcb)
@@ -481,10 +481,9 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 		break;
 	}
 
-	// CONSULTA: Está mal enviar dos sem_pcp? Uno es porque se libera lista exec y otro porque se agrega a ready
-	// CONSULTA: Está raro que pcb_recibido sea el mismo que se usa para buscar?
-	pcb_recibido = extraer_pcb_de_lista_sistema(pcb_recibido);
+	pcb_recibido = extraer_pcb_de_lista(pcb_recibido->pid, blocked, &mutex_lista_blocked);
 	agregar_a_ready(pcb_recibido);
+	
 	sem_post(&sem_pcp);
 
 }

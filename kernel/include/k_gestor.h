@@ -72,8 +72,7 @@ typedef enum{
 typedef struct{
 	char* nombre_interfaz;
 	instruccion_interfaz instruccion_a_interfaz;
-	void* recurso_necesario;
-	int tamanio_recurso;
+	t_list* datos_auxiliares_interfaz;
 }pedido_interfaz;
 
 typedef struct{
@@ -95,7 +94,6 @@ typedef struct{ //
 	int quantum;
 	int tiempo_ejecutado;
 	int ticket;
-	int size;
 	char* path;
 	registrosCPU* registros_CPU;
 	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas

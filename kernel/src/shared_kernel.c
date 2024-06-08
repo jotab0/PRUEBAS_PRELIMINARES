@@ -263,6 +263,7 @@ void agregar_a_ready(pcb* un_pcb){
 	switch (ALGORITMO_PCP_SELECCIONADO)
 	{
 	case VRR:
+
 		if(QUANTUM > un_pcb -> tiempo_ejecutado && un_pcb -> tiempo_ejecutado != 0){
 			cambiar_estado_pcb(un_pcb,READY);
 			list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
@@ -274,6 +275,7 @@ void agregar_a_ready(pcb* un_pcb){
 		break;
 	
 	default:
+
 		cambiar_estado_pcb(un_pcb,READY);
 		list_add_sync(ready,un_pcb,&mutex_lista_ready);
 		break;

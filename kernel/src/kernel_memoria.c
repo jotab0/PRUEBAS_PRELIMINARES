@@ -57,6 +57,7 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
     destruir_paquete(paquete);
     // Espero a la respuesta de memoria
     sem_wait(&sem_estructura_iniciada_en_memoria);
+    
 }
 
 void liberar_memoria(pcb* un_pcb){

@@ -35,26 +35,26 @@ void esperar_cpu_dispatch_kernel(){
 			instruccion_interfaz instruccion_solicitada = extraer_int_del_buffer(un_buffer);
 			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);
 			// Podría ser una lista?
-			void* recurso_necesario_de_instruccion = extraer_mensaje_de_buffer(un_buffer);
-			int tamanio_recurso_necesario = extraer_int_del_buffer(un_buffer);
 
 			pcb* pcb_recibido = NULL;
 			pcb_recibido = obtener_contexto_pcb(un_buffer);
+			
+			pcb* un_pcb = NULL;
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
 
-			pcb* un_pcb = extraer_pcb_de_lista_sistema(pcb_recibido);
+			actualizar_pcb(un_pcb,pcb_recibido);
 
+			un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz = extraer_datos_auxiliares(un_buffer,instruccion_solicitada);
+			
 			cambiar_estado_pcb(un_pcb, BLOCKED);
-
-			actualizar_pcb(pcb_recibido,un_pcb);
-
 			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
 			
 			un_pcb -> motivo_bloqueo = PEDIDO_A_INTERFAZ;
 
 			un_pcb -> pedido_a_interfaz -> nombre_interfaz = interfaz_solicitada;
 			un_pcb -> pedido_a_interfaz -> instruccion_a_interfaz = instruccion_solicitada;
-			un_pcb -> pedido_a_interfaz -> recurso_necesario = recurso_necesario_de_instruccion;
-			un_pcb -> pedido_a_interfaz -> tamanio_recurso = tamanio_recurso_necesario;
 
 			manejar_bloqueo_de_proceso(un_pcb);	
 			sem_post(&sem_cpu_libre);	
@@ -71,17 +71,22 @@ void esperar_cpu_dispatch_kernel(){
 			pcb_recibido = NULL;
 			pcb_recibido = obtener_contexto_pcb(un_buffer);
 
-			un_pcb = extraer_pcb_de_lista_sistema(pcb_recibido);
+			un_pcb = NULL;
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
 
-			actualizar_pcb(pcb_recibido,un_pcb);
+			actualizar_pcb(un_pcb,pcb_recibido);
 			cambiar_estado_pcb(un_pcb, BLOCKED);
 			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
 
 			un_pcb -> motivo_bloqueo = WAIT;
 			un_pcb -> pedido_recurso = recurso_solicitado;
+
 			agregar_recurso(un_pcb,recurso_solicitado);
 
 			manejar_bloqueo_de_proceso(un_pcb);	
+			
 			sem_post(&sem_cpu_libre);	
 
 			destruir_buffer(un_buffer);
@@ -191,8 +196,49 @@ void quitar_recurso (pcb* un_pcb, recurso un_recurso){
 		}
 		else
 		{
-			list_remove_element(un_pcb->recursos_en_uso,recurso);
+			list_remove_by_condition(un_pcb->recursos_en_uso,(void *)_buscar_recurso);
 		}
 	}
 	
+}
+
+t_list* extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada){
+	
+	t_list* una_lista = list_create();
+
+	switch (instruccion_solicitada)
+	{
+		case IO_GEN_SLEEP:
+
+
+			int* un_tiempo = NULL;
+			int tiempo_extraido;
+
+			tiempo_extraido = extraer_int_del_buffer(un_buffer);
+			un_tiempo = &tiempo_extraido;
+
+			list_add(una_lista,un_tiempo);
+			break;
+		
+		case IO_STDIN_READ:
+		case IO_STDOUT_WRITE:
+		case IO_FS_CREATE:
+		case IO_FS_DELETE:
+		case IO_FS_TRUNCATE:
+		case IO_FS_WRITE:
+		case IO_FS_READ:
+			
+			char* una_direccion = NULL;
+			while(un_buffer->size > 0){
+				una_direccion = extraer_string_del_buffer(un_buffer);
+				list_add(una_lista,una_direccion);
+			} 
+			break;
+
+		default:
+			log_error(kernel_logger,"No llegó ninguna instrucción a interfaz conocida");
+			break;
+	}
+
+	return una_lista;
 }
