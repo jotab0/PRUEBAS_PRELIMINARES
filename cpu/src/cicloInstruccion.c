@@ -339,6 +339,17 @@ void decodeYExecute(){
         hayQueDesalojar = true;
 
     }
+    else if(strcmp(instruccion_dividida[0], "EXIT") == 0){
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0]);
+
+        t_paquete* unPaquete = crear_paquete_con_buffer(FINALIZAR_PROCESO);
+
+        cargar_string_a_paquete(unPaquete);
+
+        enviarContextoAKernel(unPaquete);
+
+        hayQueDesalojar = true;
+    }
 }
 
 uint32_t detectar_registro(char* registro){
