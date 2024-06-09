@@ -12,6 +12,7 @@ void inicializar_semaforos();
 void inicializar_mutexes();
 void establecer_algoritmo_seleccionado();
 void inicializar_planificadores();
+void establecer_recursos();
 
 
 #endif

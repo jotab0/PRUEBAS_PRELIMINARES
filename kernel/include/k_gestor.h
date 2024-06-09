@@ -64,13 +64,15 @@ typedef enum{
 
 typedef enum{
 	PEDIDO_A_INTERFAZ,
-	RECURSO_FALTANTE,
+	WAIT,
+	SIGNAL,
 	BLOQUEO_NO_DEFINIDO
 }motivo_bloqueo;
 
 typedef struct{
 	char* nombre_interfaz;
 	instruccion_interfaz instruccion_a_interfaz;
+	t_list* datos_auxiliares_interfaz;
 }pedido_interfaz;
 
 typedef struct{
@@ -80,6 +82,15 @@ typedef struct{
 	uint32_t DX;
 }registrosCPU;
 
+typedef struct{
+	char* nombre_recurso;
+    sem_t semaforo_recurso;
+}instancia_recurso;
+
+typedef struct{
+	char* nombre_recurso;
+    int instancias_recurso;
+}instancia_recurso_pcb;
 typedef struct{ //
 	
 	int pid;
@@ -87,12 +98,14 @@ typedef struct{ //
 	int quantum;
 	int tiempo_ejecutado;
 	int ticket;
-	int size;
 	char* path;
 	registrosCPU* registros_CPU;
-	estado_pcb estado; // Me puede servir para hacer más eficiente la búsqueda del pcb en mis listas
+	estado_pcb estado; // Solamente sirve para los log_info
 	motivo_bloqueo motivo_bloqueo; 
 	pedido_interfaz* pedido_a_interfaz;
+	char* pedido_recurso;
+	// Lista de instancia_recurso_pcb 
+	t_list* recursos_en_uso;
 	
 }pcb;
 
@@ -129,7 +142,9 @@ extern t_list* execute;						// mutex: mutex_lista_exec
 extern t_list* new;							// mutex: mutex_lista_new
 extern t_list* blocked;						// mutex: mutex_lista_blocked
 extern t_list* lista_exit;					// mutex: mutex_lista_exit
+
 extern t_list* interfaces_conectadas;		// mutex: mutex_lista_interfaces
+extern t_list* lista_recursos;				// PENDIENTE VER SI AGREGO MUTEX
 
 extern sem_t sem_enviar_interrupcion;
 extern sem_t sem_interrupt_pcp;
@@ -141,6 +156,10 @@ extern sem_t sem_lista_new;
 extern sem_t sem_lista_execute;
 extern sem_t sem_solicitud_interfaz;
 extern sem_t sem_pcp;
+extern sem_t sem_cpu_libre;
+extern sem_t sem_RB;
+extern sem_t sem_RA;
+extern sem_t sem_RC;
 
 
 extern int ALGORITMO_PCP_SELECCIONADO;

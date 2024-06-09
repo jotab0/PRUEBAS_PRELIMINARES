@@ -31,11 +31,11 @@ typedef enum {
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
     EJECUTAR_PROCESO_KCPU,
-
-    DESALOJAR_PROCESO_KCPU,
     INTERRUPCION,
     ATENDER_INSTRUCCION_CPU,
     ATENDER_INTERRUPCION,
+    WAIT_KCPU,
+    SIGNAL_KCPU,
 
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
@@ -59,6 +59,12 @@ typedef struct {
     void* stream; // TAM + MSJE + ...
 }t_buffer;
 
+typedef enum {
+    CONSOLA_INTERRUPT,
+    QUANTUM_INTERRUPT,
+    EXIT_PROCESS
+}interrupcion;
+
 typedef enum{
 	OK,
 	ERROR
@@ -79,7 +85,14 @@ typedef enum{
 typedef enum{
 	IO_GEN_SLEEP,
     IO_STDIN_READ,
+    IO_FS_CREATE,
+    IO_FS_DELETE,
+    IO_FS_TRUNCATE,
+    IO_FS_WRITE,
+    IO_FS_READ,
+    IO_STDOUT_WRITE,
     INSTRUCCION_IO_NO_DEFINIDA
+
 }instruccion_interfaz;
 
 typedef struct{
