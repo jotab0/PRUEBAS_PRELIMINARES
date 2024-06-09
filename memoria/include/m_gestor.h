@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <math.h>
+#include "../include/shared_memoria.h"
 
 #include <utils/include/shared.h> 
 
@@ -41,7 +43,7 @@ extern t_list* lista_marcos;
 
 typedef struct {
     int pid_proceso;
-	int size;
+	int size; 
 	char* pathInstrucciones;
 	t_list* lista_de_instrucciones;
 	t_list* tabla_paginas;
@@ -52,38 +54,33 @@ typedef struct {
 /// Marcos y Pagina ///  
 
 typedef struct {
-	t_proceso* proceso;
-	int nro_pagina;
-}marco_info;
-
-typedef struct {
     int nro_marco;
+	int num_pagina;
     int base;
     bool disponible;
-    marco_info_info* info_nuevo;
-    marco_info* info_anterior;
-    int orden_carga;
-    t_temporal* ultimo_uso;
+	t_proceso* proceso;
+	int cantidad_usado;
+	bool queda_lugar_disponible;
+
 } t_marco;
 
 typedef struct {
-	int nro_pagina; //Set al inicio
+	int nro_pagina; 
 	int nro_marco;
-	bool presente;	//Set al inicio
-	bool modificado;//Set al inicio
-	int pos_en_swap;
+	int tam_usado;
+	t_proceso* proceso;
+	
 } t_pagina;
 
+typedef struct{
+	int num_pagina;
+	int num_marco;
 
+}t_tabla_de_pagina;
 //-------------------------------------------------------------
 // SEMAFOROS 
 
-extern pthread_mutex_t mutex_lista_marcos;
-extern pthread_mutex_t mutex_espacio_usuario;
-extern pthread_mutex_t mutex_carga_global;
-extern sem_t sem_swap;
-extern sem_t sem_pagefault;
 
-extern int ordenCargaGlobal;
+
 
 #endif
