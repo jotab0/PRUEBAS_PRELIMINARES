@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
-
+#include "../include/shared_memoria.h"
 
 #include <utils/include/shared.h> 
 

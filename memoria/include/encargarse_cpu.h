@@ -3,7 +3,7 @@
 
 #include "m_gestor.h"
 #include "../include/operaciones_proceso.h"
-#include "../include/shared_memoria.h"
+
 #include "../include/paginacion.h"
 #include "../include/espacio_usuario.h"
 

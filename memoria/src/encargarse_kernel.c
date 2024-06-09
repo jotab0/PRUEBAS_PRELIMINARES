@@ -32,19 +32,31 @@ void encargarse_kernel(int cliente_socket_kernel){
 
 
 //-------------------------------------------------------------------------------------
+void enviar_respuesta_liberar_estructuras(int resultado){
+    retardo_respuesta();
+    t_paquete* un_paquete = crear_paquete_con_buffer(RTA_LIBERAR_ESTRUCTURA);
+    cargar_int_a_paquete(un_paquete,resultado);
+    enviar_paquete(un_paquete, fd_kernel);
+    eliminar_paquete(un_paquete);
+}
+
 
 void liberar_estructura_proceso(unBuffer){
     int pid = extraer_int_del_buffer(unBuffer);
     t_proceso* proceso = obtener_proceso_por_pid(int pid);
     int cantidad_paginas = cantidad_paginas_necesarias(proceso->size);
-
+    int resultado;
 
     if(list_remove_element(lista_procesos, proceso)){
         destruir_proceso(proceso);
         log_info(memoria_logger, "DESTRUCCION DE: PID: <%d> - TAMANIO: <%d> ", pid, cantidad_paginas);
+        resultado = 0;
     }else{
         log_error(memoria_logger, "Erorr: el proceso con el PID: <%d> no fue encontrado", pid);
+        resultado = -1;
     }
+
+    enviar_respuesta_liberar_estructuras(resultado);
 
 
 }
@@ -69,6 +81,7 @@ t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
 }
 
 void  respuesta_kernel_de_solicitud_iniciar_proceso(){
+    retardo_respuesta();
     t_paquete* un_paquete = crear_paquete_con_buffer(RTA_INICIAR_ESTRUCTURA);
     cargar_int_a_paquete(un_paquete, 1);
     enviar_paquete(un_paquete, fd_kernel);
