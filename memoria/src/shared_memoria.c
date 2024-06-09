@@ -29,7 +29,7 @@ void resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
 // Escritura // 
 
 void resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
-    
+    //tengo que sacar la instruccion 
 }
 
 
