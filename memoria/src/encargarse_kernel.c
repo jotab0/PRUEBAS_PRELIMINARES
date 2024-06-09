@@ -15,6 +15,11 @@ void encargarse_kernel(int cliente_socket_kernel){
                 iniciar_estructura_proceso(unBuffer);
                 break;
 
+                case LIBERAR_ESTRUCTURAS:
+                unBuffer = recibir_buffer(cliente_socket_kernel);
+                liberar_estructura_proceso(unBuffer);
+                break; 
+
             }
 
         }
@@ -25,29 +30,39 @@ void encargarse_kernel(int cliente_socket_kernel){
 //------------------------------------------------------------------------------------------------------------
 //FUNCIONES NECESARIAS
 
-  // 1) saco los datos segun me mando kernel :path -> size -> pid 
+
+//-------------------------------------------------------------------------------------
+
+void liberar_estructura_proceso(unBuffer){
+    int pid = extraer_int_del_buffer(unBuffer);
+    t_proceso* proceso = obtener_proceso_por_pid(int pid);
+    int cantidad_paginas = cantidad_paginas_necesarias(proceso->size);
+
+
+    if(list_remove_element(lista_procesos, proceso)){
+        destruir_proceso(proceso);
+        log_info(memoria_logger, "DESTRUCCION DE: PID: <%d> - TAMANIO: <%d> ", pid, cantidad_paginas);
+    }else{
+        log_error(memoria_logger, "Erorr: el proceso con el PID: <%d> no fue encontrado", pid);
+    }
+
+
+}
+
+
+
+
+
+//-------------------------------------------------------------------------------------
+  // 1) saco los datos segun me mando kernel :path -> pid 
  //  2) creo proceso con el formato del struct 
 //   3) lo sumo a mi litsa de procesos
 
 t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
     char* path  = extraer_string_del_buffer(unBuffer);
     int pid     = extraer_int_del_buffer(unBuffer);
-    //int size    = extraer_int_del_buffer(unBuffer);
         
-    t_proceso* nuevo_proceso = malloc(sizeof(t_proceso));
-    nuevo_proceso->pid_proceso = pid;
-    nuevo_proceso->size = NULL;
-    nuevo_proceso->pathInstrucciones = path;
-    nuevo_proceso->tabla_paginas = list_create();
-	pthread_mutex_init(&(nuevo_proceso->mutex_tabla_paginas), NULL);
-    nuevo_proceso->lista_de_instrucciones = obtener_instrucciones_del_archivo(nuevo_proceso->pathInstrucciones);
-
-    inicializar_tabla_de_paginas(nuevo_proceso);    
-    list_add(lista_procesos, nuevo_proceso);
-    
-    int cantidad_paginas = list_size(nuevo_proceso->tabla_paginas);
-    log_info(memoria_logger,"PID: <%d>- Tamaño: <%d>",nuevo_proceso->pid_proceso,cantidad_paginas);
-
+    crear_proceso_nuevo( pid,  path);
     respuesta_kernel_de_solicitud_iniciar_proceso();
 
     return nuevo_proceso;
@@ -61,6 +76,10 @@ void  respuesta_kernel_de_solicitud_iniciar_proceso(){
 }
 
 
+
+//-------------------------------------------------------------------------------------
+
+
 t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
     t_list* instrucciones = list_create();
     instrucciones = procesar_archivo(path_archivo_instrucciones);
@@ -71,7 +90,7 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
     return instrucciones;
 }
 
-//-------------------------------------------------------------------------------------
+//------------------------------------
 
 char** dividir_cadena(const char* cadena, const char* delimitador) {
     char** resultado = NULL;
@@ -141,5 +160,4 @@ t_list* procesar_archivo(const char* path_archivo){
   }
   return instrucciones;
 }
-
-
+//-------------------------------------------------------------------------------------

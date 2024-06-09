@@ -2,6 +2,7 @@
 #define ESPACIO_USUARIO_H_
 
 #include "m_gestor.h"
+#include "paginacion.h"
 
 
 void* espacio_usuario;
@@ -14,6 +15,11 @@ int  cantidad_marcos;
 
 void inciar_espacio_usuario();
 void finalizar_memoria();
+void* pedido_lectura(int dir_fisica);
+void* pedido_escritura(int dir_fisica);
+void liberar_espacio_usuario(); 
+int ampliar_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso);
+int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso);
 
 
 
