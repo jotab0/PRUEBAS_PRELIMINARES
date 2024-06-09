@@ -48,8 +48,7 @@ void esperar_cpu_dispatch_kernel(){
 
 			un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz = extraer_datos_auxiliares(un_buffer,instruccion_solicitada);
 			
-			cambiar_estado_pcb(un_pcb, BLOCKED);
-			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
 			
 			un_pcb -> motivo_bloqueo = PEDIDO_A_INTERFAZ;
 
@@ -77,8 +76,8 @@ void esperar_cpu_dispatch_kernel(){
 			pthread_mutex_unlock(&mutex_lista_exec);
 
 			actualizar_pcb(un_pcb,pcb_recibido);
-			cambiar_estado_pcb(un_pcb, BLOCKED);
-			list_add_sync(blocked,un_pcb,&mutex_lista_blocked);
+			
+			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
 
 			un_pcb -> motivo_bloqueo = WAIT;
 			un_pcb -> pedido_recurso = recurso_solicitado;
@@ -97,15 +96,14 @@ void esperar_cpu_dispatch_kernel(){
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 			recurso_solicitado = extraer_string_del_buffer(un_buffer);
-			int pid_recibido = extraer_int_del_buffer(un_buffer);
 
 			//CONSULTA: Puedo inicializarlo en NULL cuando tengo variables enum dentro?
-			un_pcb = NULL;
-			un_pcb->pid = pid_recibido;
-		
+			un_pcb = list_get(execute,0);
+
 			un_pcb -> motivo_bloqueo = SIGNAL;
 			un_pcb -> pedido_recurso = recurso_solicitado;
 
+			//CONSULTA: Que pasa si hace signal de un recurso que no tiene?
 			quitar_recurso(un_pcb,recurso_solicitado);
 			manejar_bloqueo_de_proceso(un_pcb);
 
@@ -173,10 +171,10 @@ void agregar_recurso (pcb* un_pcb, char* un_recurso){
 			recurso->nombre_recurso = un_recurso;
 			recurso->instancias_recurso = 1;
 			list_add(un_pcb->recursos_en_uso,recurso);
+			// CONSULTA: Debería hacer free del puntero recurso?
+			free(recurso);
 		}
 	}
-
-	free(recurso);
 
 }
 

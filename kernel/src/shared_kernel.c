@@ -29,6 +29,16 @@ void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex){
 
 }
 
+// Agrega pcb a nueva lista y cambia estado de manera sincronzada
+void list_add_pcb_sync(t_list* lista, pcb* un_pcb, pthread_mutex_t* mutex, estado_pcb nuevo_estado){
+
+    pthread_mutex_lock(mutex);
+    list_add(lista,un_pcb);
+	cambiar_estado_pcb(un_pcb,nuevo_estado);
+    pthread_mutex_unlock(mutex);
+
+}
+
 void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo){
     
     if(pcb_desactualizado->pid == pcb_nuevo->pid){
@@ -265,19 +275,15 @@ void agregar_a_ready(pcb* un_pcb){
 	case VRR:
 
 		if(QUANTUM > un_pcb -> tiempo_ejecutado && un_pcb -> tiempo_ejecutado != 0){
-			cambiar_estado_pcb(un_pcb,READY);
-			list_add_sync(ready_plus,un_pcb,&mutex_lista_ready_plus);
+			list_add_pcb_sync(ready_plus,un_pcb,&mutex_lista_ready_plus,READY);
 		}
 		else{
-			cambiar_estado_pcb(un_pcb,READY);
-			list_add_sync(ready,un_pcb,&mutex_lista_ready);
+			list_add_pcb_sync(ready,un_pcb,&mutex_lista_ready,READY);
 		}
 		break;
 	
 	default:
-
-		cambiar_estado_pcb(un_pcb,READY);
-		list_add_sync(ready,un_pcb,&mutex_lista_ready);
+		list_add_pcb_sync(ready,un_pcb,&mutex_lista_ready,READY);
 		break;
 	}
 }

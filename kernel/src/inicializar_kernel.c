@@ -115,6 +115,7 @@ void inicializar_mutexes(){
         
         contador += 1;
     }
+    
  }
 
 void inicializar_planificadores(){

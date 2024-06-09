@@ -53,7 +53,7 @@ void planificador_largo_plazo()
 
 		sem_wait(&sem_lista_new);
 
-		// CONSULTA: Es necesario hacer malloc en este caso?
+		// CONSULTAR: Es necesario hacer malloc en este caso?
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_new);
@@ -339,6 +339,7 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 
 	case SIGNAL:
 
+		ejecutar_en_hilo_detach((void *)manejar_signal_de_recurso, un_pcb);
 
 	break;
 
@@ -388,7 +389,6 @@ bool _evaluar_diponibilidad_pedido(pcb *un_pcb) // 	CONSULTAR: Si está bien com
 
 	bool _buscar_interfaz(interfaz * una_interfaz)
 	{
-
 		char *nombre_encontrado = una_interfaz->nombre_interfaz;
 		char *nombre_buscado = un_pcb->pedido_a_interfaz->nombre_interfaz;
 
@@ -397,7 +397,6 @@ bool _evaluar_diponibilidad_pedido(pcb *un_pcb) // 	CONSULTAR: Si está bien com
 
 	bool _buscar_instruccion(int instruccion_encontrada)
 	{
-
 		int instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
 		return instruccion_buscada == instruccion_encontrada;
 	}
@@ -472,6 +471,28 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	sem_post(&sem_pcp);
 
 }
+
+void manejar_signal_de_recurso(pcb *pcb_recibido){
+	
+	bool _buscar_recurso(instancia_recurso *un_recurso)
+	{
+		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 1;
+	}
+
+	instancia_recurso* un_recurso;
+
+	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
+		
+		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
+
+		sem_post(&un_recurso->semaforo_recurso);
+
+	}else{
+		planificar_proceso_exit_en_hilo(pcb_recibido);
+	}
+
+}
+
 
 /*
 
