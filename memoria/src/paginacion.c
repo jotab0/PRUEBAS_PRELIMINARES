@@ -9,8 +9,8 @@ t_marco* buscar_marco_segun_numero(int num_marco){
 }
 
 int devolver_numero_de_marco(t_proceso* proceso,int num_pagina){
-    t_pagina* pagina = list_get(proceso->tabla_paginas, num_pagina);
-    return pagina->nro_marco;
+    t_tabla_de_pagina fila = list_get(proceso->tabla_paginas, num_pagina);
+    return fila->num_marco;
 }
 
 //-------------------------------------------------------------------------------------------------------
