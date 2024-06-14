@@ -1,58 +1,6 @@
 #include "../include/encargarse_cpu.h"
 
-void enviar_tamanio_pagina(int cliente_socket);
-void resolver_solicitud_instruccion(t_buffer *unBuffer);
 
-
-void encargarse_cpu(int cliente_socket_cpu){
-        
-        enviar_tamanio_pagina(cliente_socket_cpu);
-        int numero =1;
-
-        while(numero){
-            t_buffer* unBuffer;
-		    int codigo_operacion = recibir_operacion(cliente_socket_cpu);
-
-            switch(codigo_operacion){
-                case SOLICITUD_INSTRUCCION:
-                    unBuffer = recibir_buffer(fd_cpu);
-					resolver_solicitud_instruccion(unBuffer);
-                    break;
-
-                case SOLICITUD_PAGINA:
-                    unBuffer = recibir_buffer(fd_cpu);
-					resolver_solicitud_consulta_pagina(unBuffer);
-                    break;
-
-                case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
-                    unBuffer = recibir_buffer(fd_cpu);
-                    resolver_solicitud_escribir_bloque(unBuffer);
-                    break;
-
-                case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
-                    unBuffer = recibir_buffer(fd_cpu);
-                    resolver_solicitud_leer_bloque(unBuffer);
-                    break;
-
-                case AJUSTAR_TAMANIO:
-                    unBuffer = recibir_buffer(fd_cpu);
-                    resolver_ajustar_tamanio(unBuffer);
-                    break; 
-
-
-                case -1:
-				log_error(memoria_logger, "SE DESCONECTO CPU");
-				close(cliente_socket_cpu);
-				numero= 0;
-                return;
-
-                default:
-				log_error(memoria_logger, "NO ES UNA OPERACION");
-				break;
-			}
-		free(unBuffer);
-        }
-}
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
@@ -142,7 +90,7 @@ void mandar_resultado_resize(int resultado){
     eliminar_paquete(paquete);    
 }
 
-void resolver_ajustar_tamanio(unBuffer){
+void resolver_ajustar_tamanio(t_buffer* unBuffer){
     int pid = extraer_int_del_buffer(unBuffer);
     int tamanio_nuevo = extraer_int_del_buffer(unBuffer);
     int resultado;
@@ -159,4 +107,93 @@ void resolver_ajustar_tamanio(unBuffer){
     mandar_resultado_resize(resultado);
 }
 
+//---------------------------------------------------------------------------------------------------------
 
+void enviar_datos_leidos_cpu(char* datos_leidos){
+    retardo_respuesta();
+    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_LECTURA_MEMORIA_BLOQUE);
+    cargar_string_a_paquete(un_paquete, datos_leidos);
+    enviar_paquete(un_paquete, fd_cpu);
+    eliminar_paquete(un_paquete);
+    free(datos_leidos);
+       
+}
+
+void resolver_solicitud_leer_bloque_cpu(t_buffer* unBuffer){
+
+    char* datos_leidos = resolver_solicitud_leer_bloque(unBuffer);
+    enviar_datos_leidos_cpu(datos_leidos);
+
+}
+
+//---------------------------------------------------------------------------------------------------------
+
+void enviar_respuesta_escritura_en_espacio_usuario_cpu(char* respuesta){
+    retardo_respuesta();
+    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_ESCRITURA_MEMORIA_BLOQUE);
+    cargar_string_a_paquete(un_paquete, respuesta);
+    enviar_paquete(un_paquete, fd_cpu);
+    eliminar_paquete(un_paquete);
+}
+
+void resolver_solicitud_escribir_bloque_cpu(t_buffer* unBuffer){
+
+    char* respuesta = resolver_solicitud_escribir_bloque(unBuffer);
+    enviar_respuesta_escritura_en_espacio_usuario_cpu(respuesta);
+}
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//FUNCIONES PRINCIPAL 
+
+
+void encargarse_cpu(int cliente_socket_cpu){
+        
+        enviar_tamanio_pagina(cliente_socket_cpu);
+        int numero =1;
+
+        while(numero){
+            t_buffer* unBuffer;
+		    int codigo_operacion = recibir_operacion(cliente_socket_cpu);
+
+            switch(codigo_operacion){
+                case SOLICITUD_INSTRUCCION:
+                    unBuffer = recibir_buffer(fd_cpu);
+					resolver_solicitud_instruccion(unBuffer);
+                    break;
+
+                case SOLICITUD_PAGINA:
+                    unBuffer = recibir_buffer(fd_cpu);
+					resolver_solicitud_consulta_pagina(unBuffer);
+                    break;
+
+                case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_solicitud_escribir_bloque_cpu(unBuffer);
+                    break;
+
+                case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_solicitud_leer_bloque_cpu(unBuffer);
+                    break;
+
+                case AJUSTAR_TAMANIO:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_ajustar_tamanio(unBuffer);
+                    break; 
+
+
+                case -1:
+				log_error(memoria_logger, "SE DESCONECTO CPU");
+				close(cliente_socket_cpu);
+				numero= 0;
+                return;
+
+                default:
+				log_error(memoria_logger, "NO ES UNA OPERACION");
+				break;
+			}
+		
+            free(unBuffer);
+        }
+}

@@ -1,4 +1,5 @@
 #include "../include/espacio_usuario.h"
+#include "../include/paginacion.h"
 
 
 //-------------------------------------------------------------------------------------------------------
@@ -7,6 +8,8 @@
     //  1) Espacio Usuario = Malloc del tam de la memoria
   ///   2) Tablas -> tengo que crear el diccionario 
 ////    3) Creo marcos -> TAM_MEMORIA/TAM_PAGINA 
+
+
 
 void iniciar_espacio_usuario(){
 
@@ -42,20 +45,18 @@ void iniciar_espacio_usuario(){
     // Inicializar Semaforos 
 
    
-
-    return 0;
 }
 
 //-------------------------------------------------------------------------------------------------------
 // FUNCIONES NECESARIAS 
 
-t_marco* obtener_ultimo_marco(t_proceso proceso){
+t_marco* obtener_ultimo_marco(t_proceso* proceso){
     int cantidad_marcos = list_size(proceso->tabla_paginas);
-    if(cantidad_marcos ==NULL){
+    if(cantidad_marcos == 0){
                 asignar_marco_disponible_a_proceso_vacio(proceso);
                 cantidad_marcos = list_size(proceso->tabla_paginas);
     }
-    t_tabla_de_pagina una_fila = list_get(proceso->tabla_paginas,cantidad_marcos);
+    t_tabla_de_pagina* una_fila = list_get(proceso->tabla_paginas,cantidad_marcos - 1);
     t_marco* ultimo_marco = buscar_marco_segun_numero(una_fila->num_marco);
     return ultimo_marco;
 }
@@ -65,7 +66,7 @@ t_marco* obtener_ultimo_marco(t_proceso proceso){
 
 
 
-void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int cantidad,t_proceso* proceso){
+void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int* cantidad,t_proceso* proceso){
    
     bool _marco_del_proceso(t_marco* un_marco){
 		return un_marco->proceso == proceso;
@@ -82,12 +83,14 @@ void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int cantidad,t_proces
 
 //---------------------------------------------------------------
 
-void inicializar_proceso_simulador(t_proceso* proceso_simulacion){
-    proceso_simulacion->pid_proceso = NULL;
+t_proceso* inicializar_proceso_simulador(){
+    t_proceso* proceso_simulacion;
+    proceso_simulacion->pid_proceso = 0;
     proceso_simulacion->pathInstrucciones = NULL;
     proceso_simulacion->lista_de_instrucciones = list_create();
     proceso_simulacion->tabla_paginas =list_create();
     //inicializar mutex_tabla_paginas;
+    return proceso_simulacion;
 }
 
 //---------------------------------------------------------------
@@ -102,21 +105,19 @@ bool tengo_espacio_suficiente(int tamanio_necesario,t_proceso* proceso){
 
     if(tamanio_necesario > 0){
         int cantidad_marcos_necesarios = cantidad_paginas_necesarias(tamanio_necesario);
-        t_proceso* proceso_simulacion;
+        t_proceso* proceso_simulacion = inicializar_proceso_simulador();
         int cantidad_a_liberar = 0;
-        inicializar_proceso_simulador(proceso_simulacion);
 
         while(cantidad_marcos_necesarios > 0){
-            if(obtener_frame_disponible_simulacion(t_proceso* proceso)){
+            if(obtener_frame_disponible_simulacion(proceso_simulacion)){
                 cantidad_a_liberar ++;
                 cantidad_marcos_necesarios --;
             }else{
-                encontrar_todos_los_marcos_del_simulador_y_liberarlos(cantidad_a_liberar,proceso);
-                cantidad_marcos_necesarios = 0;
+                encontrar_todos_los_marcos_del_simulador_y_liberarlos(&cantidad_a_liberar,proceso_simulacion);
                 return false;
             }
         }
-        encontrar_todos_los_marcos_del_simulador_y_liberarlos(cantidad_a_liberar, proceso);
+        encontrar_todos_los_marcos_del_simulador_y_liberarlos(&cantidad_a_liberar, proceso_simulacion);
 
     }
 
@@ -138,7 +139,7 @@ void agrandar_proceso(int tamanio_a_aumentar, t_proceso* proceso){
         }else{
            int espacio_disponible = TAM_PAGINA - (ultimo_marco->cantidad_usado);
 
-            if((espacio_disponible - tamanio_a_aumentar) =< 0){
+            if((espacio_disponible - tamanio_a_aumentar) <= 0){
                 ultimo_marco->cantidad_usado = TAM_PAGINA;
                 ultimo_marco->queda_lugar_disponible =false;
                 tamanio_a_aumentar = abs(espacio_disponible - tamanio_a_aumentar);
@@ -183,16 +184,15 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 
     while(tamanio_a_reducir >0){
         int cantidad_marcos = list_size(proceso->tabla_paginas);
-        t_tabla_de_pagina una_fila = list_get(proceso->tabla_paginas, cantidad_marcos);
+        t_tabla_de_pagina* una_fila = list_get(proceso->tabla_paginas, cantidad_marcos);
         t_marco* un_marco =  buscar_marco_segun_numero( una_fila->num_marco);
         un_marco->cantidad_usado = (un_marco->cantidad_usado)- tamanio_a_reducir;
     
-        if(un_marco->cantidad_usado =< 0){
-           proceso_size = (proceso->size) - (tamanio_a_reducir + (un_marco->cantidad_usado))
+        if(un_marco->cantidad_usado <= 0){
+           proceso->size = (proceso->size) - (tamanio_a_reducir + (un_marco->cantidad_usado));
            tamanio_a_reducir = abs(un_marco->cantidad_usado);
            poner_en_disponible_frame(un_marco);
-           list_remove(proceso->tabla_paginas,una_fila);
-           free(una_fila);
+           bool resultado = list_remove_element(proceso->tabla_paginas,una_fila);
         }
         else{
             proceso->size = (proceso->size) - tamanio_a_reducir;
@@ -210,7 +210,7 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 
 void finalizar_memoria(){
     log_destroy(memoria_logger);
-	log_destroy(memoria_log_obligatorio);
+	//log_destroy(memoria_log_obligatorio);
 	config_destroy(memoria_config);
 }
 

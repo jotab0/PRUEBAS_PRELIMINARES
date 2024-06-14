@@ -32,7 +32,7 @@ char*  extraer_instruccion_por_ip(t_proceso* proceso, int ip_proceso){
 }
 //---------------------------------------------------------------------------------------
 
-t_proceso* crear_proceso_nuevo(int pid, char* path){
+void crear_proceso_nuevo(int pid, char* path){
 
 	t_proceso* nuevo_proceso = malloc(sizeof(t_proceso));
     nuevo_proceso->pid_proceso = pid;
@@ -55,7 +55,7 @@ t_proceso* crear_proceso_nuevo(int pid, char* path){
 //---------------------------------------------------------------------------------------
 
 void destruir_tabla_de_paginas(t_proceso* proceso){
-	int pid = proceso->pid;
+	int pid = proceso->pid_proceso;
 	int cantidad_paginas = list_size(proceso->tabla_paginas);
 	
 	void _liberar_paginas(t_pagina* pagina){
@@ -65,7 +65,7 @@ void destruir_tabla_de_paginas(t_proceso* proceso){
 	}
 
 	list_destroy_and_destroy_elements(proceso->tabla_paginas, (void*)_liberar_paginas);
-	log_info(memoria_log_obligatorio, "PID: <%d> - Tamaño: <%d>", pid, cantidad_paginas);
+	log_info(memoria_logger, "PID: <%d> - Tamaño: <%d>", pid, cantidad_paginas);
 }
 
 

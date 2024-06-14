@@ -21,6 +21,7 @@ typedef enum {
     PAQUETE,
     HANDSHAKE,
     RTA_HANDSHAKE,
+    IDENTIFICACION,
     //**KERNEL-MEMORIA**
     CREAR_PROCESO,
     RTA_CREAR_PROCESO,
@@ -77,7 +78,7 @@ typedef struct{
 
 typedef enum{
 	MEMORIA,
-	FILESYSTEM,
+	ENTRADASALIDA,
 	CPU,
 	KERNEL
 }modulo_identificador;

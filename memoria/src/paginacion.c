@@ -1,4 +1,4 @@
-# include "../include/paginacion.h"
+#include "../include/paginacion.h"
 
 
 
@@ -9,7 +9,7 @@ t_marco* buscar_marco_segun_numero(int num_marco){
 }
 
 int devolver_numero_de_marco(t_proceso* proceso,int num_pagina){
-    t_tabla_de_pagina fila = list_get(proceso->tabla_paginas, num_pagina);
+    t_tabla_de_pagina* fila = list_get(proceso->tabla_paginas, num_pagina);
     return fila->num_marco;
 }
 
@@ -22,7 +22,7 @@ void inicializar_tabla_de_paginas(t_proceso* nuevo_proceso){
     for(int i=0; i < cant_paginas ;i++){
         t_pagina* pagina_nueva = malloc(sizeof(t_pagina));
         pagina_nueva->nro_pagina = i;
-        pagina_nueva->nro_marco = NULL;
+        pagina_nueva->nro_marco = 0;
         list_add(nuevo_proceso->tabla_paginas,pagina_nueva);
     }
 }
@@ -43,7 +43,7 @@ t_marco* crear_frame(int tamBase, bool disponible, int numero_marco){
 	marco->base = tamBase;
 	marco->disponible = disponible;
     marco->proceso = NULL;
-    marco->num_pagina = NULL;
+    marco->num_pagina = 0;
     marco->cantidad_usado =0;
     marco->queda_lugar_disponible = true;	
 

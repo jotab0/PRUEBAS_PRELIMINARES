@@ -1,30 +1,5 @@
 #include "../include/encargarse_kernel.h"
 
-void encargarse_kernel(int cliente_socket_kernel){
-
-        int numero = 1; 
-        
-        while(numero){
-            t_buffer* unBuffer;
-            int codigo_operacion = recibir_operacion(cliente_socket_kernel);
-
-            switch(codigo_operacion){
-
-                case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_buffer(cliente_socket_kernel);
-                iniciar_estructura_proceso(unBuffer);
-                break;
-
-                case LIBERAR_ESTRUCTURAS:
-                unBuffer = recibir_buffer(cliente_socket_kernel);
-                liberar_estructura_proceso(unBuffer);
-                break; 
-
-            }
-
-        }
-
-    }
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------
@@ -41,9 +16,9 @@ void enviar_respuesta_liberar_estructuras(int resultado){
 }
 
 
-void liberar_estructura_proceso(unBuffer){
+void liberar_estructura_proceso(t_buffer* unBuffer){
     int pid = extraer_int_del_buffer(unBuffer);
-    t_proceso* proceso = obtener_proceso_por_pid(int pid);
+    t_proceso* proceso = obtener_proceso_por_pid(pid);
     int cantidad_paginas = cantidad_paginas_necesarias(proceso->size);
     int resultado;
 
@@ -62,22 +37,17 @@ void liberar_estructura_proceso(unBuffer){
 }
 
 
-
-
-
 //-------------------------------------------------------------------------------------
   // 1) saco los datos segun me mando kernel :path -> pid 
  //  2) creo proceso con el formato del struct 
 //   3) lo sumo a mi litsa de procesos
 
-t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
+void iniciar_estructura_proceso(t_buffer* unBuffer){
     char* path  = extraer_string_del_buffer(unBuffer);
     int pid     = extraer_int_del_buffer(unBuffer);
         
     crear_proceso_nuevo( pid,  path);
     respuesta_kernel_de_solicitud_iniciar_proceso();
-
-    return nuevo_proceso;
 }
 
 void  respuesta_kernel_de_solicitud_iniciar_proceso(){
@@ -173,4 +143,37 @@ t_list* procesar_archivo(const char* path_archivo){
   }
   return instrucciones;
 }
-//-------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
+//FUNCION PRINCIPAL
+
+
+
+void encargarse_kernel(int cliente_socket_kernel){
+
+        int numero = 1; 
+        
+        while(numero){
+            t_buffer* unBuffer;
+            int codigo_operacion = recibir_operacion(cliente_socket_kernel);
+
+            switch(codigo_operacion){
+
+                case INICIAR_ESTRUCTURA: 
+                unBuffer = recibir_buffer(cliente_socket_kernel);
+                iniciar_estructura_proceso(unBuffer);
+                break;
+
+                case LIBERAR_ESTRUCTURAS:
+                unBuffer = recibir_buffer(cliente_socket_kernel);
+                liberar_estructura_proceso(unBuffer);
+                break; 
+
+            }
+
+            free(unBuffer);
+        }
+
+
+    }

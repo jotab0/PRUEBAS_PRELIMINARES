@@ -2,18 +2,14 @@
 #define ESPACIO_USUARIO_H_
 
 #include "m_gestor.h"
-#include "paginacion.h"
 
 
-void* espacio_usuario;
-t_dictionary *  tablas; 
-t_list *  lista_marcos;
-int  cantidad_marcos;
+//Variables Globales
 
 
 //FUNCIONES QUE QUIERO COMPARTIR 
 
-void inciar_espacio_usuario();
+void iniciar_espacio_usuario();
 void finalizar_memoria();
 void* pedido_lectura(int dir_fisica);
 void* pedido_escritura(int dir_fisica);
