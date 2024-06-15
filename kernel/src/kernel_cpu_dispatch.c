@@ -156,7 +156,7 @@ void agregar_recurso (pcb* un_pcb, char* un_recurso){
 		recurso->nombre_recurso = un_recurso;
 		recurso->instancias_recurso = 1;
 		list_add(un_pcb->recursos_en_uso,recurso);
-
+		free(recurso);
 	}
 	else{
 		

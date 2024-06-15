@@ -82,10 +82,7 @@ void planificador_largo_plazo()
 				continue;
 			}
 
-			pthread_mutex_lock(&mutex_lista_ready);
-			list_add(ready, un_pcb);
-			pthread_mutex_unlock(&mutex_lista_ready);
-			cambiar_estado_pcb(un_pcb, READY);
+			list_add_pcb_sync(ready,un_pcb,&mutex_lista_ready,READY);
 
 			log_info(kernel_logger, " PID: %d - SET: READY", un_pcb->pid);
 
@@ -395,9 +392,9 @@ bool _evaluar_diponibilidad_pedido(pcb *un_pcb) // 	CONSULTAR: Si está bien com
 		return strcmp(nombre_encontrado, nombre_buscado) == 1;
 	}
 
-	bool _buscar_instruccion(int instruccion_encontrada)
+	bool _buscar_instruccion(instruccion_interfaz instruccion_encontrada)
 	{
-		int instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
+		instruccion_interfaz instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
 		return instruccion_buscada == instruccion_encontrada;
 	}
 
