@@ -10,9 +10,6 @@ void mandar_mesajes(){
     enviar_mensaje("Hola kernel, soy E/S",fd_kernel);
 }
 
-void enviar_handshake(int socket, char* nombre_interfaz, char* tipo_interfaz);
-configuracion_t cargar_configuracion(char* archivo_configuracion);
-
 
 int main(int argc, char* argv[]) {
 
@@ -25,12 +22,13 @@ int main(int argc, char* argv[]) {
     }
 
     char* nombre_interfaz = argv[1];
-    char* archivo_configuracion = argv[2];
+    char* es_config = argv[2];
 
-    configuracion_t config = cargar_configuracion(archivo_configuracion);
+    //configuracion_t config = cargar_configuracion(archivo_configuracion);
 
-    enviar_handshake(fd_kernel, nombre_interfaz, config.tipo_interfaz);
+    enviar_handshake(nombre_interfaz, TIPO_INTERFAZ);
 
+    atender_es_kernel();
 
     //Me conecto como Cliente a MEMORIA
     fd_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
@@ -67,5 +65,29 @@ int main(int argc, char* argv[]) {
     return 0; 
 }
 
+void enviar_handshake(char* nombre_interfaz, char* TIPO_INTERFAZ) {
+    t_paquete* un_paquete = crear_paquete_con_buffer(HANDSHAKE_K_ES);
+    cargar_string_a_paquete(un_paquete, nombre_interfaz);
+    cargar_string_a_paquete(un_paquete, TIPO_INTERFAZ);
 
+    enviar_paquete(un_paquete, fd_kernel);
 
+    eliminar_paquete(un_paquete);
+}
+
+/* configuracion_t cargar_configuracion(char* archivo_configuracion) {
+    configuracion_t config;
+    FILE *file = fopen(archivo_configuracion, "rt");
+    if (file == NULL) {
+        perror("Error al abrir el archivo de configuración");
+        exit(EXIT_FAILURE);
+    }
+
+    fscanf(file, "TIPO_INTERFAZ=%s\n", config.tipo_interfaz);
+    fscanf(file, "TIEMPO_UNIDAD_TRABAJO=%d\n", &config.tiempo_unidad_trabajo);
+    fscanf(file, "IP_KERNEL=%s\n", config.ip_kernel);
+    fscanf(file, "PUERTO_KERNEL=%d\n", &config.puerto_kernel);
+
+    fclose(file);
+    return config;
+} */

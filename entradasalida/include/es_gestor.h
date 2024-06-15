@@ -42,11 +42,5 @@ typedef struct {
     int puerto_kernel;
 } configuracion_interfaz;
 
-typedef struct {
-    char tipo_interfaz;
-    int tiempo_unidad_trabajo;
-    char ip_kernel;
-    int puerto_kernel;
-} configuracion_t;
 
 #endif
