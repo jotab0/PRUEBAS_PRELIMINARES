@@ -208,10 +208,30 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 //-------------------------------------------------------------------------------------------------------
 // FINALIZAR MEMORIA 
 
+void destruir_semaforos(){
+    pthread_mutex_destroy(&mutex_lista_procesos);
+    pthread_mutex_destroy(&mutex_lista_marcos);
+    pthread_mutex_destroy(&mutex_tablas);
+    pthread_mutex_destroy(&mutex_espacio_usuario);
+}
+
+void liberar_marcos(){
+    pthread_mutex_lock(&mutex_lista_marcos);
+
+    for(int i = 0; i < (list_size(lista_marcos));i++ ){
+        t_marco* marco = list_get(lista_marcos, i);
+        free(marco);
+    }
+    list_destroy(lista_marcos);
+    pthread_mutex_unlock(&mutex_lista_marcos);
+}
+
 void finalizar_memoria(){
     log_destroy(memoria_logger);
-	//log_destroy(memoria_log_obligatorio);
 	config_destroy(memoria_config);
+    destruir_semaforos();
+    liberar_marcos();
+
 }
 
 void liberar_espacio_usuario(){

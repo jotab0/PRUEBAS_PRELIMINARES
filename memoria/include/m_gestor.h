@@ -43,6 +43,12 @@ extern t_dictionary *  tablas;
 extern t_list *  lista_marcos;
 extern int  cantidad_marcos;
 
+
+
+extern pthread_mutex_t mutex_lista_procesos;
+extern pthread_mutex_t mutex_lista_marcos;
+extern pthread_mutex_t mutex_tablas;
+extern pthread_mutex_t mutex_espacio_usuario;
 //-------------------------------------------------------------
 // STRUCTS 
 

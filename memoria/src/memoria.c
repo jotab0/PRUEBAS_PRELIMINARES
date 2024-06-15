@@ -1,6 +1,6 @@
 #include "../include/memoria.h"
 
-
+void inicializar_mutex();
 int servidor_escucha();
 
 // SERVIDOR DE: CPU, KERNEL, ENTRADASALIDA
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 
 //-------------------------------------------------------------------------------------------------------
 // Creacion Espacio Usuario 
-
+    inicializar_mutex();
     iniciar_espacio_usuario(); 
 
     servidor_fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger, IP_MEMORIA);
@@ -177,4 +177,15 @@ int servidor_escucha(){
         
     }
     return EXIT_SUCCESS;
+}
+
+
+
+//-------------------------------------------------------------------------
+
+void inicializar_mutex(){
+    pthread_mutex_init(&mutex_lista_procesos, NULL);
+    pthread_mutex_init(&mutex_lista_marcos, NULL);
+    pthread_mutex_init(&mutex_tablas, NULL);
+    pthread_mutex_init(&mutex_espacio_usuario, NULL);
 }

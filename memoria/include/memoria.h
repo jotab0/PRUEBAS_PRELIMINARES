@@ -12,11 +12,17 @@
 #include <utils/include/shared.h>
 #include <pthread.h>
 
-// VARIABLES GLOBALES
+//--------------------------------------------
+//            VARIABLES GLOBALES            //
+//--------------------------------------------
+
+//--------------------------------------------
+
 t_log* memoria_logger;
 t_log* memoria_logger_extra;
 t_config* memoria_config;
 
+//--------------------------------------------
 
 int fd_memoria;
 int fd_cpu;
@@ -24,21 +30,18 @@ int fd_es;
 int fd_kernel;
 int servidor_fd_memoria;
 
-
 char* servidor_memoria_nombre;
 
-// variables espacio usuario y paginacion 
+//--------------------------------------------
 
 void* espacio_usuario;
-t_dictionary *  tablas; 
-t_list *  lista_marcos;
 int  cantidad_marcos;
 
-// Variable de procesos en memoria
-
+t_dictionary *  tablas; 
+t_list *  lista_marcos;
 t_list* lista_procesos;
 
-// Variables de config
+//--------------------------------------------
 
 char* PUERTO_ESCUCHA;
 int TAM_MEMORIA;
@@ -47,4 +50,12 @@ char* PATH_INSTRUCCIONES;
 int RETARDO_RESPUESTA;
 char* IP_MEMORIA;
 
+//--------------------------------------------
+
+pthread_mutex_t mutex_lista_procesos;
+pthread_mutex_t mutex_lista_marcos;
+pthread_mutex_t mutex_tablas;
+pthread_mutex_t mutex_espacio_usuario;
+
+//--------------------------------------------
 #endif
