@@ -8,6 +8,7 @@ void inicializar_kernel(){
     inicializar_mutexes();
     establecer_algoritmo_seleccionado();
     inicializar_planificadores();
+    establecer_recursos();
 }
 
 void inicializar_logs(){
@@ -40,7 +41,7 @@ void inicializar_configs(){
         PUERTO_CPU_DISPATCH = config_get_string_value(kernel_config,"PUERTO_CPU_DISPATCH");
         PUERTO_CPU_INTERRUPT = config_get_string_value(kernel_config,"PUERTO_CPU_INTERRUPT");
         ALGORITMO_PLANIFICACION = config_get_string_value(kernel_config,"ALGORITMO_PLANIFICACION");
-        QUANTUM = config_get_int_value(kernel_config,"QUANTUM"); 
+        QUANTUM = config_get_int_value(kernel_config,"QUANTUM") * 1000; 
         RECURSOS = config_get_array_value(kernel_config,"RECURSOS");
         INSTANCIAS_RECURSOS = config_get_array_value(kernel_config,"INSTANCIAS_RECURSOS");
         GRADO_MULTIPROGRAMACION = config_get_int_value(kernel_config,"GRADO_MULTIPROGRAMACION");
@@ -67,6 +68,7 @@ void crear_listas(){
 	blocked = list_create();
 	lista_exit = list_create();
     interfaces_conectadas = list_create();
+    lista_recursos = list_create();
 }
 
 void inicializar_semaforos(){
@@ -80,6 +82,7 @@ void inicializar_semaforos(){
     sem_init(&sem_lista_execute,0,1);
     sem_init(&sem_solicitud_interfaz,0,0);
     sem_init(&sem_pcp,0,0);
+    sem_init(&sem_cpu_libre,0,1);
 }
 
 void inicializar_mutexes(){
@@ -95,6 +98,25 @@ void inicializar_mutexes(){
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
 }
+
+ void establecer_recursos(){
+
+    int contador = 0;
+    while(INSTANCIAS_RECURSOS[contador] != NULL){
+        
+        instancia_recurso* un_recurso = malloc(sizeof(instancia_recurso));
+
+        un_recurso->nombre_recurso = RECURSOS[contador];
+        sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
+
+        list_add(lista_recursos,un_recurso);
+        
+        free(un_recurso);
+        
+        contador += 1;
+    }
+    
+ }
 
 void inicializar_planificadores(){
     

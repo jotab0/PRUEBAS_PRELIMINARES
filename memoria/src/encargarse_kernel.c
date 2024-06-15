@@ -3,6 +3,7 @@
 void encargarse_kernel(int cliente_socket_kernel){
 
         int numero = 1; 
+        
         while(numero){
             t_buffer* unBuffer;
             int codigo_operacion = recibir_operacion(cliente_socket_kernel);
@@ -10,9 +11,14 @@ void encargarse_kernel(int cliente_socket_kernel){
             switch(codigo_operacion){
 
                 case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_un_paquete(cliente_socket_kernel);
+                unBuffer = recibir_buffer(cliente_socket_kernel);
                 iniciar_estructura_proceso(unBuffer);
                 break;
+
+                case LIBERAR_ESTRUCTURAS:
+                unBuffer = recibir_buffer(cliente_socket_kernel);
+                liberar_estructura_proceso(unBuffer);
+                break; 
 
             }
 
@@ -24,34 +30,67 @@ void encargarse_kernel(int cliente_socket_kernel){
 //------------------------------------------------------------------------------------------------------------
 //FUNCIONES NECESARIAS
 
-  // 1) saco los datos segun me mando kernel :path -> size -> pid 
+
+//-------------------------------------------------------------------------------------
+void enviar_respuesta_liberar_estructuras(int resultado){
+    retardo_respuesta();
+    t_paquete* un_paquete = crear_paquete_con_buffer(RTA_LIBERAR_ESTRUCTURA);
+    cargar_int_a_paquete(un_paquete,resultado);
+    enviar_paquete(un_paquete, fd_kernel);
+    eliminar_paquete(un_paquete);
+}
+
+
+void liberar_estructura_proceso(unBuffer){
+    int pid = extraer_int_del_buffer(unBuffer);
+    t_proceso* proceso = obtener_proceso_por_pid(int pid);
+    int cantidad_paginas = cantidad_paginas_necesarias(proceso->size);
+    int resultado;
+
+    if(list_remove_element(lista_procesos, proceso)){
+        destruir_proceso(proceso);
+        log_info(memoria_logger, "DESTRUCCION DE: PID: <%d> - TAMANIO: <%d> ", pid, cantidad_paginas);
+        resultado = 0;
+    }else{
+        log_error(memoria_logger, "Erorr: el proceso con el PID: <%d> no fue encontrado", pid);
+        resultado = -1;
+    }
+
+    enviar_respuesta_liberar_estructuras(resultado);
+
+
+}
+
+
+
+
+
+//-------------------------------------------------------------------------------------
+  // 1) saco los datos segun me mando kernel :path -> pid 
  //  2) creo proceso con el formato del struct 
 //   3) lo sumo a mi litsa de procesos
 
 t_proceso* iniciar_estructura_proceso(t_buffer* unBuffer){
     char* path  = extraer_string_del_buffer(unBuffer);
-    int tamanio = extraer_int_del_buffer(unBuffer);
     int pid     = extraer_int_del_buffer(unBuffer);
         
-    t_proceso* nuevo_proceso = malloc(sizeof(t_proceso));
-    nuevo_proceso->pid_proceso = pid;
-    nuevo_proceso->size = tamanio;
-    nuevo_proceso->pathInstrucciones = path;
-    nuevo_proceso->lista_de_instrucciones = obtener_instrucciones_del_archivo(nuevo_proceso->pathInstrucciones);
-
-        
-    list_add(lista_procesos, nuevo_proceso);
+    crear_proceso_nuevo( pid,  path);
     respuesta_kernel_de_solicitud_iniciar_proceso();
 
     return nuevo_proceso;
 }
 
 void  respuesta_kernel_de_solicitud_iniciar_proceso(){
+    retardo_respuesta();
     t_paquete* un_paquete = crear_paquete_con_buffer(RTA_INICIAR_ESTRUCTURA);
-    cargar_string_a_paquete(un_paquete, "Correcto");
+    cargar_int_a_paquete(un_paquete, 1);
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
 }
+
+
+
+//-------------------------------------------------------------------------------------
 
 
 t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
@@ -64,7 +103,7 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
     return instrucciones;
 }
 
-//-------------------------------------------------------------------------------------
+//------------------------------------
 
 char** dividir_cadena(const char* cadena, const char* delimitador) {
     char** resultado = NULL;
@@ -134,5 +173,4 @@ t_list* procesar_archivo(const char* path_archivo){
   }
   return instrucciones;
 }
-
-
+//-------------------------------------------------------------------------------------

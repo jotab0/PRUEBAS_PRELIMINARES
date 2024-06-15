@@ -3,18 +3,42 @@
 void enviar_tamanio_pagina(int cliente_socket);
 void resolver_solicitud_instruccion(t_buffer *unBuffer);
 
-void encargarse_cpu(int cliente_socket_cpu){
-        enviar_tamanio_pagina(cliente_socket_cpu);
 
+void encargarse_cpu(int cliente_socket_cpu){
+        
+        enviar_tamanio_pagina(cliente_socket_cpu);
         int numero =1;
+
         while(numero){
             t_buffer* unBuffer;
 		    int codigo_operacion = recibir_operacion(cliente_socket_cpu);
+
             switch(codigo_operacion){
                 case SOLICITUD_INSTRUCCION:
-                    unBuffer = recibir_un_paquete(fd_cpu);
+                    unBuffer = recibir_buffer(fd_cpu);
 					resolver_solicitud_instruccion(unBuffer);
                     break;
+
+                case SOLICITUD_PAGINA:
+                    unBuffer = recibir_buffer(fd_cpu);
+					resolver_solicitud_consulta_pagina(unBuffer);
+                    break;
+
+                case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_solicitud_escribir_bloque(unBuffer);
+                    break;
+
+                case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_solicitud_leer_bloque(unBuffer);
+                    break;
+
+                case AJUSTAR_TAMANIO:
+                    unBuffer = recibir_buffer(fd_cpu);
+                    resolver_ajustar_tamanio(unBuffer);
+                    break; 
+
 
                 case -1:
 				log_error(memoria_logger, "SE DESCONECTO CPU");
@@ -34,16 +58,13 @@ void encargarse_cpu(int cliente_socket_cpu){
 //------------------------------------------------------------------------------------------------------------
 //FUNCIONES NECESARIAS
 
+// Implementación de funciones de manejo de operaciones
 
-void mandar_instruccion_a_cpu(char* instruccion){
-    //retardo_respuesta_cpu_fs();
-    t_paquete* paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
-    cargar_string_a_paquete(paquete, instruccion);
-    enviar_paquete(paquete, fd_cpu);
-    eliminar_paquete(paquete);    
+/*
+void solicitud_info_memoria(t_buffer *unBuffer) {
+   unBuffer = recibir_buffer(fd_cpu);
 }
-
-
+*/
 //------------------------------------------------------------------------------------------------------------
 
 
@@ -54,75 +75,16 @@ void enviar_tamanio_pagina(int cliente_socket){
     eliminar_paquete(un_paquete);
 }
 
-/*
- // DEFINICION DE TIPO FUNCION DE PUNTERO PARA LAS OPERACIONES DE CPU
- typedef void (*operacion_handler_t)(t_buffer*);
-
- // FUNCIONES DE MANEJO DE OPERACIONES 
- 
- void solicitud_info_memoria(t_buffer *unBuffer);
- void resolver_solicitud_instruccion(t_buffer* unBuffer);
- void resolver_solicitud_ejecucion(t_buffer* unBuffer);
- void resolver_solicitud_consulta_pagina(t_buffer* unBuffer);
- void resolver_solicitud_leer_bloque(t_buffer* unBuffer);
- void resolver_solicitud_escribir_bloque(t_buffer* unBuffer);
-
-
- // ARRAY DE PUNTEROS A FUNCIONES 
-
- operacion_handler_t funcion_handler[] ={
-    [SOLICITUD_INFO_MEMORIA]   = solicitud_info_memoria,
-    [SOLICITUD_INSTRUCCION]    = resolver_solicitud_instruccion,
-    [SOLICITUD_EJECUCION]      = resolver_solicitud_ejecucion,
-    [SOLICITUD_CONSULTA_PAG]   = resolver_solicitud_consulta_pagina,
-    [SOLICITUD_LECTURA_MEMORIA_BLOQUE]   = resolver_solicitud_leer_bloque,
-    [SOLICITUD_ESCRITURA_MEMORIA_BLOQUE] = resolver_solicitud_escribir_bloque
- };
-
-
-
-void encargarse_cpu(int cliente_socket_cpu){
-    enviar_tamanio_pagina(cliente_socket_cpu);
-
-    while (true) {
-        int codigo_operacion;
-        t_buffer* unBuffer;
-
-        codigo_operacion = recibir_operacion(cliente_socket_cpu);
-        if (codigo_operacion == -1) {
-            log_error(memoria_logger, "SE DESCONECTO CPU");
-            close(cliente_socket_cpu);
-            return;
-        }
-
-        unBuffer = recibir_paquete_completo(cliente_socket_cpu);
-        if (unBuffer == NULL) {
-            log_error(memoria_logger, "Error al recibir el paquete");
-            close(cliente_socket_cpu);
-            return;
-        }
-
-        if (codigo_operacion >= 0 && codigo_operacion < sizeof(funcion_handler) / sizeof(operacion_handler_t)) {
-            if (funcion_handler[codigo_operacion]) {
-                funcion_handler[codigo_operacion](unBuffer);
-            } else {
-                log_error(memoria_logger, "ERROR: No se conoce la operacion: %d", codigo_operacion);
-                close(cliente_socket_cpu);
-                free(unBuffer);
-                return;
-            }
-        }
-        free(unBuffer); 
-    }
-}*/
 
 //---------------------------------------------------------------------------------------------------------
-// Implementación de funciones de manejo de operaciones
 
-void solicitud_info_memoria(t_buffer *unBuffer) {
-   unBuffer = recibir_buffer(fd_cpu);
+void mandar_instruccion_a_cpu(char* instruccion){
+    retardo_respuesta();
+    t_paquete* paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
+    cargar_string_a_paquete(paquete, instruccion);
+    enviar_paquete(paquete, fd_cpu);
+    eliminar_paquete(paquete);    
 }
-
 
 void resolver_solicitud_instruccion(t_buffer *unBuffer) {
 
@@ -143,7 +105,7 @@ void resolver_solicitud_instruccion(t_buffer *unBuffer) {
         log_error(memoria_logger, "No se encontró la instrucción en el IP: %d para el PID: %d", ip, pid);
         return;   
     }
-    // Registrar información del proceso y la instrucción
+    // Registro la información del proceso y de la instrucción
     log_info(memoria_logger, "Proceso [PID: %d, IP: %d]: %s", pid, ip, instruccion);
     mandar_instruccion_a_cpu(instruccion);
 }
@@ -151,18 +113,50 @@ void resolver_solicitud_instruccion(t_buffer *unBuffer) {
 
 //---------------------------------------------------------------------------------------------------------
 
-void resolver_solicitud_ejecucion(t_buffer *unBuffer) {
-    
+void mandar_num_marco(int numero_marco){
+    retardo_respuesta();
+    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_PAGINA);
+    cargar_int_a_paquete(un_paquete, numero_marco);
+    enviar_paquete(un_paquete, fd_cpu);
+    eliminar_paquete(un_paquete);
 }
+
 
 void resolver_solicitud_consulta_pagina(t_buffer *unBuffer) {
-    
+    int pid = extraer_int_del_buffer(unBuffer);
+    int num_pagina  = extraer_int_del_buffer(unBuffer);
+
+    t_proceso* proceso = obtener_proceso_por_pid(pid);
+    int num_marco_buscado = devolver_numero_de_marco(proceso,num_pagina);
+
+    mandar_num_marco(num_marco_buscado);
 }
 
-void resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
-    
+//---------------------------------------------------------------------------------------------------------
+
+void mandar_resultado_resize(int resultado){
+    retardo_respuesta();
+    t_paquete* paquete = crear_paquete_con_buffer(RTA_AJUSTAR_TAMANIO);
+    cargar_int_a_paquete(paquete, resultado);
+    enviar_paquete(paquete, fd_cpu);
+    eliminar_paquete(paquete);    
 }
 
-void resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
+void resolver_ajustar_tamanio(unBuffer){
+    int pid = extraer_int_del_buffer(unBuffer);
+    int tamanio_nuevo = extraer_int_del_buffer(unBuffer);
+    int resultado;
+
+    t_proceso* proceso = obtener_proceso_por_pid(pid);
+
+    if(tamanio_nuevo > proceso->size){
+        resultado = ampliar_tamanio_proceso(tamanio_nuevo,proceso);
+    }
+    else{
+        resultado = reducir_tamanio_proceso(tamanio_nuevo,proceso);
+    }
     
+    mandar_resultado_resize(resultado);
 }
+
+

@@ -27,14 +27,15 @@ typedef enum {
     INICIAR_ESTRUCTURA,
     RTA_INICIAR_ESTRUCTURA,
     LIBERAR_ESTRUCTURAS,
+    RTA_LIBERAR_ESTRUCTURA,
     // SEPARAR SEGUN TIPO:
     //**KERNEL-CPU**
     EJECUTAR_PROCESO_KCPU,
-
-    DESALOJAR_PROCESO_KCPU,
     INTERRUPCION,
     ATENDER_INSTRUCCION_CPU,
     ATENDER_INTERRUPCION,
+    WAIT_KCPU,
+    SIGNAL_KCPU,
 
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
@@ -52,8 +53,10 @@ typedef enum {
     //**CPU-MEMORIA**
     SOLICITUD_INFO_MEMORIA,
     SOLICITUD_INSTRUCCION,
-    SOLICITUD_EJECUCION,
+    RTA_AJUSTAR_TAMANIO,
     SOLICITUD_CONSULTA_PAG,
+    SOLICITUD_PAGINA,
+    AJUSTAR_TAMANIO,
     SOLICITUD_LECTURA_MEMORIA_BLOQUE,
     SOLICITUD_ESCRITURA_MEMORIA_BLOQUE
 }op_code;
@@ -62,6 +65,12 @@ typedef struct {
     int size;
     void* stream; // TAM + MSJE + ...
 }t_buffer;
+
+typedef enum {
+    CONSOLA_INTERRUPT,
+    QUANTUM_INTERRUPT,
+    EXIT_PROCESS
+}interrupcion;
 
 typedef enum{
 	OK,
@@ -90,6 +99,7 @@ typedef enum{
     IO_FS_WRITE,
     IO_FS_READ,
     INSTRUCCION_IO_NO_DEFINIDA
+
 }instruccion_interfaz;
 
 typedef struct{

@@ -2,6 +2,8 @@
 #define ENCARGARSE_KERNEL_H_
 
 #include "m_gestor.h"
+#include "paginacion.h"
+#include "operaciones_proceso.h"
 
 void encargarse_kernel(int cliente_socket_cpu);
 void  respuesta_kernel_de_solicitud_iniciar_proceso();
