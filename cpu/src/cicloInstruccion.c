@@ -184,7 +184,7 @@ void decodeYExecute(){
 
         int direccion_logica = (int)registro_direccion;
 
-        int valor = leer_valor_memoria(direccion_logica);
+        int valor = leer_valor_memoria(direccion_logica, sizeof(registro_datos));
 
         if(valor != -1){ // si no hubo PF
             registro_datos = (uint32_t)valor;
@@ -200,7 +200,7 @@ void decodeYExecute(){
 
         int direccion_logica = (int)registro_direccion; // ?? antes lo tenia asi: direccion_logica = atpi(instruccion_dividida[2]) pero dice que es un registro que contiene la direccion
 
-        escribir_valor_memoria(direccion_logica, registro_datos); // se fija aca adentro si hubo PF
+        escribir_valor_memoria(direccion_logica, registro_datos, sizeof(registro_datos)); // se fija aca adentro si hubo PF
 
     } else if (strcmp(instruccion_dividida[0], "RESIZE" == 0)){ // RESIZE(tamaño)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
@@ -213,7 +213,9 @@ void decodeYExecute(){
         cargar_int_a_paquete(unPaquete, contexto->proceso_pid); //para que memoria sepa el proceso
         cargar_int_a_paquete(unPaquete, tamanio);
 
-        int resultado = enviar_paquete(unPaquete, fd_memoria); 
+        enviar_paquete(unPaquete, fd_memoria); 
+
+        // semaforo wait resultado
 
         if(resultado == -1){ // si el resize dio out of memory
             t_paquete* unPaquete = crear_paquete_con_buffer(BLOQUEO);
@@ -236,12 +238,17 @@ void decodeYExecute(){
         int tamanio = atoi(instruccion_dividida[1]);
 
         int direccion_logica_SI = (int)contexto->SI; // el registro contiene la direccion logica del string que quiero copiar
-        int valor = leer_valor_memoria(direccion_logica_SI); // lee la direccion (tendria que ser un string pero leer devuelve un int como resuelvo?)
+        char* valor = leer_valor_memoria(direccion_logica_SI); // lee la direccion (tendria que ser un string pero leer devuelve un int como resuelvo?)
         
         // falta ver el tema de que solo copie el tamanio pedido y no todo completo
-        if(valor != -1){
+        if(strcmp(valor, "-1") != 0){
+            char* resultado;
+            for(int i; i < tamanio && valor[i] != '\0'; i++){
+                resultado[i] = valor[i];
+            }
+            resultado[tamanio] = '\0';
             int direccion_logica_DI = (int)contexto->DI; // registro en el que quiero escribir
-            escribir_valor_memoria(direccion_logica_DI, valor); // escribe en la direccion de DI el valor de la direccion SI
+            escribir_valor_memoria(direccion_logica_DI, resultado); // escribe en la direccion de DI el valor de la direccion SI
         }
 
     } else if (strcmp(instruccion_dividida[0], "IO_STDIN_READ" == 0)){ // IO_STDIN_READ(interfaz, registro direccion, registro tamanio )
@@ -358,7 +365,8 @@ uint32_t detectar_registro(char* registro){
 }
 
 void enviarContextoAKernel(t_paquete* unPaquete){
-    
+
+    cargar_int_a_paquete(unPaquete, contexto->proceso_pid);    
     cargar_int_a_paquete(unPaquete, contexto->proceso_pc);
 
     cargar_uint32_a_paquete(unPaquete, contexto->AX);  // si es puntero a uint32_t:(uint32_t)(uintptr_t) 
@@ -382,7 +390,7 @@ void enviarContextoAKernel(t_paquete* unPaquete){
 
 }
 
-int leer_valor_memoria(int direccion_logica){
+int leer_valor_memoria(int direccion_logica, int tamanio){
     int direccion_fisica = traducir(direccion_logica);
 
     if(direccion_fisica == -1){
@@ -393,14 +401,15 @@ int leer_valor_memoria(int direccion_logica){
         t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_LECTURA_MEMORIA_BLOQUE);
         cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
         cargar_int_a_paquete(unPaquete, direccion_fisica);
+        cargar_int_a_paquete(unPaquete, tamanio);
         enviar_paquete(unPaquete, fd_memoria);
         eliminar_paquete(unPaquete);
 
         // semaforo wait(respuesta_memoria)
 
-        log_info(cpu_logger, "PID: <%d> - Accion: LEER - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, *valor_marco);
+        log_info(cpu_logger, "PID: <%d> - Accion: LEER - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, respuesta_marco_lectura);
         
-        int valor = *valor_marco;
+        int valor = respuesta_marco_lectura;
         return valor;
 
     }
@@ -412,7 +421,7 @@ int leer_valor_memoria(int direccion_logica){
     // le pide a memoria leer el contenido del marco
 }
 
-void escribir_valor_memoria(int direccion_logica, uint32_t valor){
+void escribir_valor_memoria(int direccion_logica, uint32_t valor, int tamanio){
     int direccion_fisica = traducir(direccion_logica);
 
     if(direccion_fisica != -1){
@@ -421,40 +430,38 @@ void escribir_valor_memoria(int direccion_logica, uint32_t valor){
         cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
         cargar_int_a_paquete(unPaquete, direccion_fisica);
         cargar_uint32_a_paquete(unPaquete, valor); 
+        cargar_int_a_paquete(unPaquete, tamanio);
         enviar_paquete(unPaquete, fd_memoria);
         eliminar_paquete(unPaquete);
 
         // semaforo wait(respuesta_peticion_escritura)
 
-        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, *valor_marco);
+        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, respuesta_marco_escritura);
     }
 
 }
 
 int traducir(int direccion_logica){
 
-    // le solicito a memoria el tamanio de las pags
-    t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
-    cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
-    enviar_paquete(unPaquete, fd_memoria);
-    eliminar_paquete(unPaquete);
-
     // semaforo wait envio_info de memoria
     int numero_pagina = floor(direccion_logica/tamanio_pagina);
+    int direccion_fisica;
+    int marco_TLB = buscar_en_TLB(numero_pagina);
 
-    int direccion_TLB = buscar_en_TLB(numero_pagina);
-
-    if(direccion_TLB == -1){
+    if(marco_TLB == -1){ // No la encuentra en la tlb
         log_info(cpu_logger, "PID: <%d> - TLB MISS - Pagina: <%d>", contexto->proceso_pid, numero_pagina);
 
-        int direccion_mmu = mmu(direccion_logica, numero_pagina, tamanio_pagina);
+        direccion_fisica = mmu(direccion_logica, numero_pagina, tamanio_pagina);
 
-        return direccion_mmu;
+        return direccion_fisica;
 
-    } else {
+    } else { // La encuentra en la tlb
         log_info(cpu_logger, "PID: <%d> - TLB HIT - Pagina: <%d>", contexto->proceso_pid, numero_pagina);
 
-        return direccion_TLB;
+        int desplazamiento = direccion_logica - numero_pagina * tamanio_pagina;
+        direccion_fisica = marco_TLB * tamanio_pagina + desplazamiento;
+
+        return direccion_fisica;
     }
 }
 
@@ -476,6 +483,8 @@ int mmu(int direccion_logica, int numero_pagina, int tamanio_pagina){
         log_info(cpu_logger, "PID: <%d> - OBTENER MARCO - Pagina: <%d> - Marco: <%d>", contexto->proceso_pid, numero_pagina, marco);
 
         int direccion_fisica = marco * tamanio_pagina + desplazamiento;
+        
+        agregar_entrada_tlb(numero_pagina, marco);
 
         return direccion_fisica;
 
@@ -493,22 +502,146 @@ int mmu(int direccion_logica, int numero_pagina, int tamanio_pagina){
     }
 }
 
+/*
 int buscar_en_TLB(int numero_pagina){
-    //TODO
-    // (aca no iria esto pero no se en donde) crear TLB (tendria que ser parecido a crear la tabla de paginas) con numero de entradas y algoritmo de reemplazo (FIFO?)
-    // buscar en TLB:
-    // fijarse si el numero de pagina esta (list_find()?)
+    // fijarse si el numero de pagina para ese proceso esta 
     // si no esta devuelve -1 
-    //      y tiene que hacer cargar_pagina(numero_pagina) que carga la pagina solicitada 
-    //      que no encontro (si hay espacio la carga y listo y sino tiene que usar el algoritmo de reemplazo para sacar una y cargar esta)
-    // si esta devuelve la direccion fisica que esta en la TLB
-    
+    //int resultado_direccion = buscar(numero_pagina);
+    t_link_element* entrada_encontrada = list_find(tlb, &condicion_busqueda(numero_pagina));
+
+    if(entrada_encontrada != NULL){
+        // si esta (la encontro) devuelve la direccion fisica
+        return entrada_encontrada->direccion_fisica;
+    } else {
+        // si no esta devuelve -1 y la reemplaza
+        agregar_a_la_TLB(numero_pagina);
+        return -1;
+    }
 }
 
-// SOLICITUDES A MEMORIA
+bool condicion_busqueda(int numero_pagina, void *entrada){
+    t_link_element *elemento = (t_link_elemento *)entrada;
+    if(elemento->pid == contexto->proceso_pid && elemento->nro_pag == numero_pagina){
+        return true;
+    } else {
+        return false;
+    }
+}
+*/
+
+int buscar_en_TLB(int numero_pagina){
+    int marco = -1;
+
+    //mutex tlb
+    for(int i = 0; i < tlb->tamanio; i++){
+        if(tlb->entradas[i].pid == contexto->proceso_pid && tlb->entradas[i].pagina == numero_pagina && tlb->entradas[i].estado == OCUPADA){
+            marco = tlb->entradas[i].marco;
+            temporal_destroy(tlb->entradas[i].ultimo_uso);
+            tlb->entradas[i].ultimo_uso = temporal_create();
+        }
+    }
+    //mutex tlb
+
+    return marco;
+
+}
 
 
+void agregar_entrada_TLB(int numero_pagina, int marco){
+    int hay_libre = 0; // si hay entrada libre (no ocupada)
+    
+    // mutex tlb
+    for(int i = 0; i < tlb->tamanio && hay_libre == 0; i++){
+        if(tlb->entradas[i].estado == LIBRE) {
+            tlb->entradas[i].pid = contexto->proceso_pid;
+            tlb->entradas[i].pagina = numero_pagina;
+            tlb->entradas[i].marco = marco;
+            tlb->entradas[i].estado = OCUPADA;
+
+            tlb->entradas[i].orden_carga = ordenCargaGlobal;
+            ordenCargaGlobal++;
+            temporal_destroy(tlb->entradas[i].ultimo_uso);
+            tlb->entradas[i].ultimo_uso = temporal_create();
+        
+
+            hay_libre = 1;
+
+            break;
+        }
+    }
+
+    if(hay_libre == 0){ //no encontro ninguna entrada libre, hay que reemplazar alguna segun el algoritmo
+      
+        if(algoritmo_tlb == 2){ // FIFO
+            int menorIndice = 0;
+           for(int i = 1; i < tlb->tamanio; i++){ // busco la entrada con el menor orden de carga (la que esta hace mas tiempo) y la reemplazo por la nueva
+                if(tlb->entradas[i].ordenCarga < tlb->entradas[menorIndice].ordenCarga){
+                    menorIndice = i;
+                }
+           }
+            tlb->entradas[menorIndice].pid = contexto->proceso_pid;
+            tlb->entradas[menorIndice].pagina = numero_pagina;
+            tlb->entradas[menorIndice].marco = marco;
+            tlb->entradas[menorIndice].estado = OCUPADA;
+
+            tlb->entradas[menorIndice].orden_carga = ordenCargaGlobal;
+            ordenCargaGlobal++;
+            temporal_destroy(tlb->entradas[menorIndice].ultimo_uso);
+            tlb->entradas[menorIndice].ultimo_uso = temporal_create();
+           
 
 
+        }else if (algoritmo_tlb == 1){ //LRU
+            int mayorIndice = 0;
+           for(int i = 1; i < tlb->tamanio; i++){ // busco la entrada con el mayor ultimo_uso (el mas antiguo) y la reemplazo por la nueva
+                if(temporal_gettime(tlb->entradas[i].ultimo_uso) > temporal_gettime(tlb->entradas[mayorIndice].ultimo_uso)){
+                    mayorIndice = i;
+                }
+           }
+            tlb->entradas[mayorIndice].pid = contexto->proceso_pid;
+            tlb->entradas[mayorIndice].pagina = numero_pagina;
+            tlb->entradas[mayorIndice].marco = marco;
+            tlb->entradas[mayorIndice].estado = OCUPADA;
+
+            tlb->entradas[mayorIndice].orden_carga = ordenCargaGlobal;
+            ordenCargaGlobal++;
+            temporal_destroy(tlb->entradas[menorIndice].ultimo_uso);
+            tlb->entradas[mayorIndice].ultimo_uso = temporal_create();
+
+        }else{
+            log_error(cpu_logger, "Algoritmo de reemplazo no valido");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void quitar_entrada(int numero_pagina){
+    //mutex tlb
+    for(int i = 0; i < tlb->tamanio; i++){
+        if(tlb->entradas[i].pid == contexto->proceso_pid && tlb->entradas[i].pagina == numero_pagina){
+            tlb->entradas[i].estado = LIBRE;
+            return;
+        }
+    }
+    //mutex tlb
+}
+
+void limpiar_tlb(){
+    // mutex tlb
+    for(int i = 0; i < tlb-> tamanio; i++){
+        tlb->entradas[i].estado = LIBRE;
+    }
+    // mutex tlb
+}
+
+void liberar_entradas_de_un_proceso(){
+    //mutex tlb
+    for (int i = 0; i < tlb->tamanio; i++){
+        if(tlb->entradas[i].pid == contexto->proceso_pid){
+            tlb->entradas[i].estado = LIBRE;
+        }
+    }
+    //mutex tlb
+}
 
 

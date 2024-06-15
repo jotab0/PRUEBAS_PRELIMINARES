@@ -82,7 +82,7 @@ void esperar_memoria_cpu(){
 			break;
 		case SOLICITUD_INFO_MEMORIA:
 			t_buffer* unBuffer = recibir_buffer(fd_memoria);
-			int tamanio_pagina = extraer_int_del_buffer(unBuffer);
+			tamanio_pagina = extraer_int_del_buffer(unBuffer);
 			destruir_buffer(unBuffer);
 			break;
 		case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
