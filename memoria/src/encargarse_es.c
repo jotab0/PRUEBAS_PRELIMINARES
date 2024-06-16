@@ -7,7 +7,7 @@
 
 void enviar_datos_leidos_es(char* datos_leidos){
     retardo_respuesta();
-    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_LECTURA_MEMORIA_BLOQUE);
+    t_paquete* un_paquete = crear_paquete_con_buffer(ENVIO_RECURSOS_STDOUT_ESM);
     cargar_string_a_paquete(un_paquete, datos_leidos);
     enviar_paquete(un_paquete, fd_es);
     eliminar_paquete(un_paquete);
@@ -27,7 +27,7 @@ void resolver_solicitud_leer_bloque_es(t_buffer* unBuffer){
 
 void enviar_respuesta_escritura_en_espacio_usuario_es(char* respuesta){
     retardo_respuesta();
-    t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_ESCRITURA_MEMORIA_BLOQUE);
+    t_paquete* un_paquete = crear_paquete_con_buffer(ENVIO_RECURSOS_STDIN_ESM);
     cargar_string_a_paquete(un_paquete, respuesta);
     enviar_paquete(un_paquete, fd_es);
     eliminar_paquete(un_paquete);
@@ -52,12 +52,12 @@ void encargarse_es(int cliente_socket_es){
 
             switch(codigo_operacion){
 
-                case SOLICITUD_LECTURA_MEMORIA_BLOQUE: 
+                case ENVIO_RECURSOS_STDOUT_ESM: 
                 unBuffer = recibir_buffer(cliente_socket_es);
                 resolver_solicitud_leer_bloque_es(unBuffer);
                 break;
 
-                case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
+                case ENVIO_RECURSOS_STDIN_ESM:
                 unBuffer = recibir_buffer(cliente_socket_es);
                 resolver_solicitud_escribir_bloque_es(unBuffer);
                 break; 

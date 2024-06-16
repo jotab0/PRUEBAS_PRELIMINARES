@@ -24,9 +24,11 @@ char* leer_valor_del_espacio_usuario(int tamanio, uint32_t direc_fisica) {
         char* puntero_a_datos = (char*)espacio_usuario + direc_fisica + bytes_leidos;
 
         int bytes_a_leer = (tamanio - bytes_leidos > espacio_en_pagina) ? espacio_en_pagina : (tamanio - bytes_leidos);
-
+        
+        pthread_mutex_lock(&mutex_espacio_usuario);
         memcpy(dato_leido + bytes_leidos, puntero_a_datos, bytes_a_leer);
-
+        pthread_mutex_unlock(&mutex_espacio_usuario);
+      
         bytes_leidos += bytes_a_leer;
     }
 
@@ -60,18 +62,18 @@ char* traducir_direccion_fisica(uint32_t direc_fisica, t_proceso* proceso) {
 
     // Busca la entrada de la tabla de páginas correspondiente
     t_tabla_de_pagina* entrada_pagina = NULL;
-    pthread_mutex_lock(&proceso->mutex_tabla_paginas);
     if (pagina < list_size(proceso->tabla_paginas)) {
+
+        pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
         entrada_pagina = list_get(proceso->tabla_paginas, pagina);
+        pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
     }
-    pthread_mutex_unlock(&proceso->mutex_tabla_paginas);
 
     if (!entrada_pagina) {
         log_info(memoria_logger, "Error: Página no encontrada en la tabla de páginas\n");
         return NULL;
     }
 
-    // Encuentra el marco asociado a la página
     t_marco* marco = NULL;
     marco = buscar_marco_segun_numero(entrada_pagina->num_marco);
 
@@ -104,8 +106,10 @@ void escribir_valor_en_espacio_usuario(const char* datos, int tamanio, uint32_t 
             log_error(memoria_logger, "Error: Dirección física no válida\n");
             return;
         }
-
+        
+        pthread_mutex_lock(&mutex_espacio_usuario);
         memcpy(puntero_a_espacio_usuario, datos, bytes_a_escribir);
+        pthread_mutex_unlock(&mutex_espacio_usuario);
 
         offset += bytes_a_escribir;
         datos += bytes_a_escribir;
@@ -124,7 +128,7 @@ char* resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
     t_proceso* proceso = obtener_proceso_por_pid(pid);
     if (!proceso) {
         free(datos_a_escribir);
-        log_error(memoria_logger,  "Error: Proceso no encontrado\n");
+        log_error(memoria_logger, "Error: Proceso no encontrado\n");
         return "ERROR";
     }
 

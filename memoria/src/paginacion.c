@@ -4,12 +4,20 @@
 
 t_marco* buscar_marco_segun_numero(int num_marco){
     t_marco* un_marco;
+
+    pthread_mutex_lock(&mutex_lista_marcos);
     un_marco = list_get(lista_marcos, num_marco);
+    pthread_mutex_unlock(&mutex_lista_marcos);
+
     return un_marco;
 }
 
 int devolver_numero_de_marco(t_proceso* proceso,int num_pagina){
+
+    pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
     t_tabla_de_pagina* fila = list_get(proceso->tabla_paginas, num_pagina);
+    pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+
     return fila->num_marco;
 }
 
@@ -23,7 +31,10 @@ void inicializar_tabla_de_paginas(t_proceso* nuevo_proceso){
         t_pagina* pagina_nueva = malloc(sizeof(t_pagina));
         pagina_nueva->nro_pagina = i;
         pagina_nueva->nro_marco = 0;
+
+        pthread_mutex_lock(&(nuevo_proceso->mutex_tabla_paginas));
         list_add(nuevo_proceso->tabla_paginas,pagina_nueva);
+        pthread_mutex_unlock(&(nuevo_proceso->mutex_tabla_paginas));
     }
 }
 
@@ -80,7 +91,10 @@ void agregar_marco_pagina_a_tabla(t_proceso* proceso, int num_pagina, int nro_ma
     t_tabla_de_pagina* pagina = malloc(sizeof(t_tabla_de_pagina));
     pagina->num_pagina = num_pagina;
     pagina->num_marco = nro_marco;
+
+    pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
     list_add(proceso->tabla_paginas, pagina);
+    pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
 }
 
 //-----------------------------------------
@@ -99,7 +113,7 @@ t_marco* obtener_frame_disponible(){
 	bool _marco_libre(t_marco* un_marco){
 		return un_marco->disponible;
 	}
-//	pthread_mutex_lock(&mutex_lista_marcos);
+	pthread_mutex_lock(&mutex_lista_marcos);
 	un_marco = list_find(lista_marcos, (void*)_marco_libre);
 	
 	if(un_marco == NULL){
@@ -110,7 +124,7 @@ t_marco* obtener_frame_disponible(){
 	}
 		
 	un_marco->disponible = false;
-//	pthread_mutex_unlock(&mutex_lista_marcos);
+	pthread_mutex_unlock(&mutex_lista_marcos);
 
 	return un_marco;
 }
@@ -122,7 +136,7 @@ bool obtener_frame_disponible_simulacion(t_proceso* proceso){
 	bool _marco_libre(t_marco* un_marco){
 		return un_marco->disponible;
 	}
-//	pthread_mutex_lock(&mutex_lista_marcos);
+	pthread_mutex_lock(&mutex_lista_marcos);
 	un_marco = list_find(lista_marcos, (void*)_marco_libre);
 	
 	if(un_marco == NULL){
@@ -131,7 +145,7 @@ bool obtener_frame_disponible_simulacion(t_proceso* proceso){
 		
 	un_marco->disponible = false;
     un_marco->proceso = proceso;
-//	pthread_mutex_unlock(&mutex_lista_marcos);
+	pthread_mutex_unlock(&mutex_lista_marcos);
 
 	return true;
 }

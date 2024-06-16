@@ -36,24 +36,21 @@ void mandar_instruccion_a_cpu(char* instruccion){
 
 void resolver_solicitud_instruccion(t_buffer *unBuffer) {
 
-    // Obtener PID e IP desde el buffer
     int pid = extraer_int_del_buffer(unBuffer);
     int ip  = extraer_int_del_buffer(unBuffer);
 
-    // Buscar el proceso correspondiente al PID
     t_proceso* proceso = obtener_proceso_por_pid(pid); 
     if (proceso == NULL) {
         log_error(memoria_logger, "No se encontró el proceso con PID: %d", pid);
         return;
     }
 
-    // Obtener la instrucción específica usando el IP
     char* instruccion = extraer_instruccion_por_ip(proceso, ip);
     if (instruccion == NULL) {
         log_error(memoria_logger, "No se encontró la instrucción en el IP: %d para el PID: %d", ip, pid);
         return;   
     }
-    // Registro la información del proceso y de la instrucción
+    
     log_info(memoria_logger, "Proceso [PID: %d, IP: %d]: %s", pid, ip, instruccion);
     mandar_instruccion_a_cpu(instruccion);
 }

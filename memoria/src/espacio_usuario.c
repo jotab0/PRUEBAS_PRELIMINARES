@@ -40,11 +40,8 @@ void iniciar_espacio_usuario(){
 
 
 
-    log_info(memoria_logger, "Memoria inicializada con Paginacion Simple.\n");
+    log_info(memoria_logger, "Memoria inicializada: Paginacion Simple.\n");
 
-    // Inicializar Semaforos 
-
-   
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -56,7 +53,11 @@ t_marco* obtener_ultimo_marco(t_proceso* proceso){
                 asignar_marco_disponible_a_proceso_vacio(proceso);
                 cantidad_marcos = list_size(proceso->tabla_paginas);
     }
+
+    pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
     t_tabla_de_pagina* una_fila = list_get(proceso->tabla_paginas,cantidad_marcos - 1);
+    pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+
     t_marco* ultimo_marco = buscar_marco_segun_numero(una_fila->num_marco);
     return ultimo_marco;
 }
@@ -73,7 +74,11 @@ void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int* cantidad,t_proce
 	}
 
     while(cantidad >0){
+
+        pthread_mutex_lock(&mutex_lista_marcos);
         t_marco* marco = list_find(lista_marcos, (void*)_marco_del_proceso);
+        pthread_mutex_unlock(&mutex_lista_marcos);
+
         poner_en_disponible_frame(marco);
         cantidad--;
     }
@@ -89,7 +94,7 @@ t_proceso* inicializar_proceso_simulador(){
     proceso_simulacion->pathInstrucciones = NULL;
     proceso_simulacion->lista_de_instrucciones = list_create();
     proceso_simulacion->tabla_paginas =list_create();
-    //inicializar mutex_tabla_paginas;
+    pthread_mutex_init(&(proceso_simulacion->mutex_tabla_paginas), NULL);
     return proceso_simulacion;
 }
 
@@ -160,10 +165,10 @@ void agrandar_proceso(int tamanio_a_aumentar, t_proceso* proceso){
 int ampliar_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 	int tam_inicial = proceso->size;
     int tamanio_a_aumentar = nuevo_tamanio - tam_inicial;
-    log_info(memoria_logger,  "PID <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>" ,proceso->pid_proceso, tam_inicial,tamanio_a_aumentar);
 
     if(tengo_espacio_suficiente(tamanio_a_aumentar, proceso)){
         agrandar_proceso(tamanio_a_aumentar, proceso);
+        log_info(memoria_logger,  "PID <%d> - Tamaño Actual: <%d> - Tamaño a Ampliar: <%d>" ,proceso->pid_proceso, tam_inicial,tamanio_a_aumentar);
         return 1;
 
     }else{
@@ -184,7 +189,11 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 
     while(tamanio_a_reducir >0){
         int cantidad_marcos = list_size(proceso->tabla_paginas);
+
+        pthread_mutex_lock(&proceso->mutex_tabla_paginas);
         t_tabla_de_pagina* una_fila = list_get(proceso->tabla_paginas, cantidad_marcos);
+        pthread_mutex_unlock(&proceso->mutex_tabla_paginas);
+
         t_marco* un_marco =  buscar_marco_segun_numero( una_fila->num_marco);
         un_marco->cantidad_usado = (un_marco->cantidad_usado)- tamanio_a_reducir;
     
@@ -206,7 +215,10 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
 }
 
 //-------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------
 // FINALIZAR MEMORIA 
+//-------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------
 
 void destruir_semaforos(){
     pthread_mutex_destroy(&mutex_lista_procesos);
@@ -223,6 +235,7 @@ void liberar_marcos(){
         free(marco);
     }
     list_destroy(lista_marcos);
+
     pthread_mutex_unlock(&mutex_lista_marcos);
 }
 
