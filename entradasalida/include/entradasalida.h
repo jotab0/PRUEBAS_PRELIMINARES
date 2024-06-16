@@ -30,4 +30,7 @@ char* PATH_BASE_DIALFS;
 int BLOCK_SIZE;
 int BLOCK_COUNT;
 
+
+void enviar_handshake(char* nombre_interfaz,char* TIPO_INTERFAZ);
+//configuracion_t cargar_configuracion(char* archivo_configuracion);
 #endif
