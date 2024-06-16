@@ -1,13 +1,16 @@
 #include "../include/memoria.h"
 
+void inicializar_mutex();
+int servidor_escucha();
+
 // SERVIDOR DE: CPU, KERNEL, ENTRADASALIDA
 // CLIENTE DE: - 
 
 // MENSAJES DE PRUEBA
 void mandar_mensajes(){
     sleep(10);
-    enviar_mensaje("Hola CPU, soy memoria", fd_cpu);
     enviar_mensaje("Hola KERNEL, soy memoria", fd_kernel);
+    enviar_mensaje("Hola CPU, soy memoria", fd_cpu);
     enviar_mensaje("Hola E/S, soy memoria", fd_es);   
 }
 
@@ -19,10 +22,10 @@ int main(int argc, char* argv[]) {
 	
     inicializar_memoria();
 	
-    fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"!! Servidor MEMORIA iniciada !!");  
-    fd_cpu     = esperar_cliente(fd_memoria, memoria_logger,"CPU");
-    fd_kernel  = esperar_cliente(fd_memoria, memoria_logger,"Kernel");
-    fd_es      = esperar_cliente(fd_memoria, memoria_logger,"E/S");
+    fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"Iniciado servidor: Memoria");  
+    fd_kernel  = esperar_cliente(fd_memoria, memoria_logger,"Cliente: Kernel");
+    fd_cpu     = esperar_cliente(fd_memoria, memoria_logger,"Cliente: CPU");
+    fd_es      = esperar_cliente(fd_memoria, memoria_logger,"Cliente: E/S");
 
 //-------------------------------------------------------------------------------------------------------
 // Procesos
@@ -67,16 +70,10 @@ int main(int argc, char* argv[]) {
 
 //-------------------------------------------------------------------------------------------------------
 // Creacion Espacio Usuario 
-
-    //  1) Iniciar espacio usuario 
-  ///   2) Se queda escuchando a los clientes 
-////    3) Finaliza cuando no hay más peticiones 
-
-
-
+    inicializar_mutex();
     iniciar_espacio_usuario(); 
 
-    servidor_fd_memoria = iniciar_servidor(memoria_logger, IP_MEMORIA, PUERTO_ESCUCHA);
+    servidor_fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger, IP_MEMORIA);
 
 	while(servidor_escucha())
 
@@ -104,6 +101,91 @@ int main(int argc, char* argv[]) {
             log_info(memoria_logger, "Kernel se conecto correctamente");
             encargarse_kernel(fd_kernel);    
             break;
+
+        case ENTRADASALIDA:
+        fd_es = conexion;
+        log_info(memoria_logger, "E/S se conecto correctamente");
+        encargarse_es(fd_es);
+        break;
+
         }
     }
 
+static void gestionar_conexion(void *void_args){
+    int *args = (int*) void_args;
+    int cliente_socket = *args;
+    int codigo_operacion = recibir_operacion(cliente_socket);
+    t_buffer* buffer;
+
+    switch (codigo_operacion)
+    {
+    case IDENTIFICACION:
+        buffer = recibir_buffer(cliente_socket);
+        cliente_segun_modulo(cliente_socket, buffer);
+        break;
+    
+    case -1:
+        log_error(memoria_logger, "Error: Se desconceto cliente en  IDENTIFICACION");
+        break;
+
+        default:
+        log_error(memoria_logger, "Error: Operacion desconocida en IDENTIFICACION");
+        break;
+    }
+}
+
+void saludar_cliente(void *void_args){
+    int* conexion = (int*) void_args;
+    int codigo_operacion = recibir_operacion(*conexion);
+    switch(codigo_operacion){
+
+        case HANDSHAKE:
+        int resultado = 1;
+        void* dato_para_enviar = malloc(sizeof(int));
+        memcpy(dato_para_enviar, &resultado, sizeof(int));
+        send(*conexion, dato_para_enviar, sizeof(int), 0);
+        free(dato_para_enviar);
+        gestionar_conexion(conexion);
+        break;
+
+        case -1:
+        log_error(memoria_logger, "Error: Se desconceto cliente en HANDSHAKE");
+        break;
+
+        default:
+        log_error(memoria_logger, "Error: Operacion desconocida en HANDSHAKE");
+        break;
+    }
+}
+
+
+int servidor_escucha(){
+
+    servidor_memoria_nombre = "Memoria";
+    log_info(memoria_logger, "%s servidor comenzando", servidor_memoria_nombre);
+    int numero =1;
+    while(numero){
+        int cliente_socket = esperar_cliente(servidor_fd_memoria,memoria_logger, servidor_memoria_nombre);
+        if(cliente_socket != -1){
+            pthread_t hilo_cliente;
+            int *args = malloc(sizeof(int));
+            *args = cliente_socket;
+            pthread_create(&hilo_cliente, NULL, (void*)saludar_cliente, args);
+            log_info(memoria_logger, "[THREAD] Estableciendo hilo para soporte");
+            pthread_detach(hilo_cliente);
+        }
+        
+    }
+    return EXIT_SUCCESS;
+}
+
+
+
+//-------------------------------------------------------------------------
+
+void inicializar_mutex(){
+    pthread_mutex_init(&mutex_lista_procesos, NULL);
+    pthread_mutex_init(&mutex_lista_marcos, NULL);
+    pthread_mutex_init(&mutex_tablas, NULL);
+    pthread_mutex_init(&mutex_espacio_usuario, NULL);
+}

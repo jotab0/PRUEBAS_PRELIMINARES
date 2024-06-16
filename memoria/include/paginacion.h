@@ -2,6 +2,7 @@
 #define PAGINACION_H_
 
 #include "m_gestor.h"
+#include "../include/espacio_usuario.h"
 
 //FUNCIONES QUE QUIERO COMPARTIR 
 

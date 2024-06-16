@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
-#include "../include/shared_memoria.h"
+
 
 #include <utils/include/shared.h> 
 
@@ -24,6 +24,7 @@ extern int TAM_MEMORIA;
 extern int TAM_PAGINA;
 extern char* PATH_INSTRUCCIONES;
 extern int RETARDO_RESPUESTA;
+extern char* IP_MEMORIA;
 
 
 extern int fd_memoria;
@@ -34,8 +35,20 @@ extern int fd_kernel;
 
 extern t_list* lista_procesos;
 extern t_list* list_pagina;
-extern t_list* lista_marcos;
 
+
+
+extern void* espacio_usuario;
+extern t_dictionary *  tablas; 
+extern t_list *  lista_marcos;
+extern int  cantidad_marcos;
+
+
+
+extern pthread_mutex_t mutex_lista_procesos;
+extern pthread_mutex_t mutex_lista_marcos;
+extern pthread_mutex_t mutex_tablas;
+extern pthread_mutex_t mutex_espacio_usuario;
 //-------------------------------------------------------------
 // STRUCTS 
 
