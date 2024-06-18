@@ -22,7 +22,6 @@ void inicializar_logs(){
     }
 }
 
-
 void iniciar_config(){
 
     es_config = config_create("/home/utnso/Documents/tp-2024-1c-ubuntunel/entradasalida/ES.config");

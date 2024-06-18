@@ -71,24 +71,39 @@ void esperar_memoria_cpu(){
         int cod_op = recibir_operacion(fd_memoria);
 		switch (cod_op) {
 		case SOLICITUD_INSTRUCCION:
-			t_buffer* unBuffer = recibir_buffer(fd_memoria);
-			recibir_instruccion(unBuffer);
-			destruir_buffer(unBuffer);
+			t_buffer* buffer1 = recibir_buffer(fd_memoria);
+			recibir_instruccion(buffer1);
+			destruir_buffer(buffer1);
 			break;
 		case SOLICITUD_CONSULTA_PAG:
-			t_buffer* unBuffer = recibir_buffer(fd_memoria);
-			int marco = extraer_int_del_buffer(unBuffer);
-			destruir_buffer(unBuffer);
+			t_buffer* buffer2 = recibir_buffer(fd_memoria);
+			marco = extraer_int_del_buffer(buffer2);
+			destruir_buffer(buffer2);
 			break;
 		case SOLICITUD_INFO_MEMORIA:
-			t_buffer* unBuffer = recibir_buffer(fd_memoria);
-			tamanio_pagina = extraer_int_del_buffer(unBuffer);
-			destruir_buffer(unBuffer);
+			t_buffer* buffer3 = recibir_buffer(fd_memoria);
+			tamanio_pagina = extraer_int_del_buffer(buffer3);
+			destruir_buffer(buffer3);
+			break;
+		/*case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
+			t_buffer* buffer4 = recibir_buffer(fd_memoria);
+			valor_marco = extraer_string_del_buffer(buffer4);
+			destruir_buffer(buffer4);
+			break;*/
+		case RTA_AJUSTAR_TAMANIO:
+			t_buffer* buffer5 = recibir_buffer(fd_memoria);
+			resultado = extraer_int_del_buffer(buffer5);
+			destruir_buffer(buffer5);
+			break;
+		case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
+			t_buffer* buffer6 = recibir_buffer(fd_memoria);
+			respuesta_marco_lectura = extraer_string_del_buffer(buffer6);
+			destruir_buffer(buffer6);
 			break;
 		case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
-			t_buffer* unBuffer = recibir_buffer(fd_memoria);
-			int valor_marco = extraer_int_del_buffer(unBuffer);
-			destruir_buffer(unBuffer);
+			t_buffer* buffer7 = recibir_buffer(fd_memoria);
+			respuesta_marco_escritura = extraer_string_del_buffer(buffer7);
+			destruir_buffer(buffer7);
 			break;
 		case -1:
 			log_error(cpu_logger, "MEMORIA se desconecto. Terminando servidor");
@@ -109,7 +124,7 @@ void recibir_instruccion(t_buffer* unBuffer){
 	log_warning(cpu_logger, "Instruccion recibida: [%s]", instruccion);
 	// string split divide una cadena en subcadenas (para dividir el cod_op de los operadores?)
 	//semaforo mutex
-	char** instruccion_dividida = string_split(instruccion, delimitador);
+	instruccion_dividida = string_split(instruccion, delimitador);
 	free(instruccion);
 	// semaforo signal pata indicarle a el ciclo de instruccion que ya recibio la instruccion
 }
@@ -158,6 +173,8 @@ void iniciar_estructuras_para_recibir_pcb(t_buffer* unBuffer){
 	contexto->BX = extraer_uint32_del_buffer(unBuffer);
 	contexto->CX = extraer_uint32_del_buffer(unBuffer);
 	contexto->DX = extraer_uint32_del_buffer(unBuffer);
+	contexto->SI = extraer_uint32_del_buffer(unBuffer);
+	contexto->DI = extraer_uint32_del_buffer(unBuffer);
 
 	free(unBuffer);
 }
@@ -166,10 +183,13 @@ void atender_interrupcion(t_buffer* unBuffer){
 
 	// verifico que el pid del proceso interrumpido sea el mismo que el del proceso actual, si lo es lo interrumpo y sino no hago nada
 	int pid_interrumpido = extraer_int_del_buffer(unBuffer);
-	int motivo_interrupcion = extraer_int_del_buffer(unBuffer);
+	motivo_interrupcion = extraer_int_del_buffer(unBuffer);
 
 	if(pid_interrumpido == contexto->proceso_pid){
 
+		hay_interrupcion = true;
+
+		/*
 		if(motivo_interrupcion == 0){
 			//mutex
 			hay_interrupcion_consola = true;
@@ -180,6 +200,7 @@ void atender_interrupcion(t_buffer* unBuffer){
 			// mutex
 			hay_interrupcion_exit = true;
 		}
+		*/
 	}
 
 	// que cada tipo de interrupcion sea un case y tenga una flag distinta?

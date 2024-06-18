@@ -4,7 +4,7 @@
 void inicializar_cpu() {
     iniciar_logs();
     iniciar_config();
-    crear_TLB();
+    tlb = crear_TLB();
     imprimir_config();
     pedir_tamanio_pagina();
 }
@@ -69,13 +69,13 @@ t_tlb* crear_TLB(){
    
 int get_entradas_tlb(){
     int entradas;
-    entradas = config_get_int_value(config, "CANTIDAD_ENTRADAS_TLB")
+    entradas = config_get_int_value(cpu_config, "CANTIDAD_ENTRADAS_TLB");
     return entradas;
 }
 
 int get_algoritmo_tlb(){
     char* algoritmo;
-    algoritmo = config_get_string_value(config, "ALGORITMO_TLB");
+    algoritmo = config_get_string_value(cpu_config, "ALGORITMO_TLB");
     if(strcmp(algoritmo, "FIFO") == 0){
         return FIFO;
     } else{

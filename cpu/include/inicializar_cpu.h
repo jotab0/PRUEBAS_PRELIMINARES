@@ -11,10 +11,10 @@ void iniciar_logs();
 void iniciar_config();
 void imprimir_config();
 
-void crear_TLB();
+t_tlb* crear_TLB();
 int get_entradas_tlb();
 int get_algoritmo_tlb();
-
+void pedir_tamanio_pagina();
 /*
 typedef struct tlb {
     t_tlbEntrada* entradas;

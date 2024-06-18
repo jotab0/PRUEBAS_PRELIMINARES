@@ -48,6 +48,18 @@ void realizarCicloInstruccion(){
 
     // mutex
     // CHECK INTERRUPTION
+
+    if(hay_interrupcion){
+        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
+
+        cargar_int_a_paquete(unPaquete, motivo_interrupcion);
+
+        enviarContextoAKernel(unPaquete);
+        
+        break;
+    }
+
+    /*
     if(hay_interrupcion_consola){ // bool que le llega de comunicaciones
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
 
@@ -76,6 +88,7 @@ void realizarCicloInstruccion(){
         
         break;
     }
+    */
 
     }
 }
@@ -121,36 +134,36 @@ void decodeYExecute(){
        
         contexto->proceso_pc++; // aumenta PC
        
-        uint32_t registro = detectar_registro(instruccion_dividida[1]); //registro
-        registro = atoi(instruccion_dividida[2]); //convierte el valor de la instruction_split[2] a un int y lo guarda en el registro
+        uint32_t* registro = detectar_registro(instruccion_dividida[1]); //registro
+        *registro = atoi(instruccion_dividida[2]); //convierte el valor de la instruction_split[2] a un int y lo guarda en el registro
 
     } else if(strcmp(instruccion_dividida[0], "SUM") == 0){ //SUM(registroDestino, registroOrigen)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
         
         contexto->proceso_pc++; // aumenta PC
         
-        uint32_t registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
-        uint32_t registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
         
-        registro_destino = registro_destino + registro_origen;
+        *registro_destino = *registro_destino + *registro_origen;
 
     } else if(strcmp(instruccion_dividida[0], "SUB") == 0){ //SUB(registroDestino, registroOrigen)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
         
         contexto->proceso_pc++; // aumenta PC
         
-        uint32_t registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
-        uint32_t registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
+        uint32_t* registro_destino = detectar_registro(instruccion_dividida[1]); // registro destino
+        uint32_t* registro_origen = detectar_registro(instruccion_dividida[2]); // registro origen
         
-        registro_destino = registro_destino - registro_origen;
+        *registro_destino = *registro_destino - *registro_origen;
         
     } else if(strcmp(instruccion_dividida[0], "JNZ") == 0){ //JNZ(registro, instruccion)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
         
-        uint32_t registro = detectar_registro(instruccion_dividida[1]);
+        uint32_t* registro = detectar_registro(instruccion_dividida[1]);
         int valorNuevoPC = atoi(instruccion_dividida[2]);
         
-        if(registro != 0){
+        if(*registro != 0){
             contexto->proceso_pc = valorNuevoPC;
         }
 
@@ -164,11 +177,11 @@ void decodeYExecute(){
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
         cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
-        cargar_int_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
         cargar_int_a_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
 
-        motivo_bloqueo = "IO";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+        //motivo_bloqueo = "IO";
+        //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
 
@@ -179,15 +192,15 @@ void decodeYExecute(){
 
         contexto->proceso_pc++; // aumenta PC        
 
-        uint32_t registro_datos = detectar_registro(instruccion_dividida[1]); //registro datos, aca tengo que guardar el valor leido
-        uint32_t registro_direccion = detectar_registro(instruccion_dividida[2]); // registro direccion que contiene la direccion logica
+        uint32_t* registro_datos = detectar_registro(instruccion_dividida[1]); //registro datos, aca tengo que guardar el valor leido
+        uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]); // registro direccion que contiene la direccion logica
 
-        int direccion_logica = (int)registro_direccion;
+        int direccion_logica = (int)*registro_direccion;
 
-        int valor = leer_valor_memoria(direccion_logica, sizeof(registro_datos));
+        char* valor = leer_valor_memoria(direccion_logica, sizeof(*registro_datos));
 
-        if(valor != -1){ // si no hubo PF
-            registro_datos = (uint32_t)valor;
+        if(strcmp(valor, "ERROR") != 0){ // si no hubo PF
+            *registro_datos = (uint32_t)(uintptr_t)valor;
         }
 
     } else if (strcmp(instruccion_dividida[0], "MOV_OUT") == 0){ // MOV_OUT(registro direccion, registro datos)
@@ -195,14 +208,15 @@ void decodeYExecute(){
 
         contexto->proceso_pc++; // aumenta PC  
         
-        uint32_t registro_direccion = detectar_registro(instruccion_dividida[1]); // registro direccion (direccion de memoria en la que hay que escribir el valor)
-        uint32_t registro_datos = detectar_registro(instruccion_dividida[2]); // registro datos (valor a escribir)
+        uint32_t* registro_direccion = detectar_registro(instruccion_dividida[1]); // registro direccion (direccion de memoria en la que hay que escribir el valor)
+        uint32_t* registro_datos = detectar_registro(instruccion_dividida[2]); // registro datos (valor a escribir)
 
-        int direccion_logica = (int)registro_direccion; // ?? antes lo tenia asi: direccion_logica = atpi(instruccion_dividida[2]) pero dice que es un registro que contiene la direccion
+        int direccion_logica = (int)*registro_direccion; // ?? antes lo tenia asi: direccion_logica = atpi(instruccion_dividida[2]) pero dice que es un registro que contiene la direccion
+        char* valor_a_escribir = (char*)(uintptr_t)registro_datos;
 
-        escribir_valor_memoria(direccion_logica, registro_datos, sizeof(registro_datos)); // se fija aca adentro si hubo PF
+        escribir_valor_memoria(direccion_logica, valor_a_escribir, strlen(valor_a_escribir)); // se fija aca adentro si hubo PF
 
-    } else if (strcmp(instruccion_dividida[0], "RESIZE" == 0)){ // RESIZE(tamaño)
+    } else if (strcmp(instruccion_dividida[0], "RESIZE") == 0){ // RESIZE(tamaño)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
 
         contexto->proceso_pc++; // aumenta PC
@@ -218,10 +232,10 @@ void decodeYExecute(){
         // semaforo wait resultado
 
         if(resultado == -1){ // si el resize dio out of memory
-            t_paquete* unPaquete = crear_paquete_con_buffer(BLOQUEO);
+            t_paquete* unPaquete = crear_paquete_con_buffer(OUT_OF_MEMORY);
 
-            motivo_bloqueo = "Out of Memory";
-            cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+            //motivo_bloqueo = "Out of Memory";
+            //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
             enviarContextoAKernel(unPaquete);
 
@@ -230,38 +244,37 @@ void decodeYExecute(){
 
         eliminar_paquete(unPaquete);
 
-    } else if (strcmp(instruccion_dividida[0], "COPY_STRING" == 0)){ // COPY_STRING(tamaño)
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+    } else if (strcmp(instruccion_dividida[0], "COPY_STRING") == 0){ // COPY_STRING(tamaño)
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
 
         contexto->proceso_pc++; // aumenta PC
 
         int tamanio = atoi(instruccion_dividida[1]);
 
         int direccion_logica_SI = (int)contexto->SI; // el registro contiene la direccion logica del string que quiero copiar
-        char* valor = leer_valor_memoria(direccion_logica_SI); // lee la direccion (tendria que ser un string pero leer devuelve un int como resuelvo?)
+        char* valor = leer_valor_memoria(direccion_logica_SI, tamanio); // lee la direccion (tendria que ser un string pero leer devuelve un int como resuelvo?)
         
-        // falta ver el tema de que solo copie el tamanio pedido y no todo completo
-        if(strcmp(valor, "-1") != 0){
+        if(strcmp(valor, "ERROR") != 0){
             char* resultado;
             for(int i; i < tamanio && valor[i] != '\0'; i++){
                 resultado[i] = valor[i];
             }
             resultado[tamanio] = '\0';
             int direccion_logica_DI = (int)contexto->DI; // registro en el que quiero escribir
-            escribir_valor_memoria(direccion_logica_DI, resultado); // escribe en la direccion de DI el valor de la direccion SI
+            escribir_valor_memoria(direccion_logica_DI, resultado, tamanio); // escribe en la direccion de DI el valor de la direccion SI
         }
 
-    } else if (strcmp(instruccion_dividida[0], "IO_STDIN_READ" == 0)){ // IO_STDIN_READ(interfaz, registro direccion, registro tamanio )
+    } else if (strcmp(instruccion_dividida[0], "IO_STDIN_READ") == 0){ // IO_STDIN_READ(interfaz, registro direccion, registro tamanio )
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3]);
 
         contexto->proceso_pc++; // aumenta PC
 
         int instruccion_interfaz = 1;
 
-        uint32_t registro_direccion = detectar_registro(instruccion_dividida[2]);
-        int direccion_logica = (int)registro_direccion;
-        uint32_t registro_tamanio = detectar_registro(instruccion_dividida[3]);
-        int tamanio = (int)registro_tamanio;
+        uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
+        int direccion_logica = (int)*registro_direccion;
+        uint32_t* registro_tamanio = detectar_registro(instruccion_dividida[3]);
+        int tamanio = (int)*registro_tamanio;
 
         int direccion_fisica = traducir(direccion_logica); 
 
@@ -274,25 +287,25 @@ void decodeYExecute(){
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
 
-            motivo_bloqueo = "IO";
-            cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+            //motivo_bloqueo = "IO";
+            //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
             enviarContextoAKernel(unPaquete);
 
             hayQueDesalojar = true;
         }
 
-    } else if (strcmp(instruccion_dividida[0], "IO_STDOUT_WRITE" == 0)){ // IO_STDOUT_WRITE(interfaz, registro direccion, registro tamanio )
+    } else if (strcmp(instruccion_dividida[0], "IO_STDOUT_WRITE") == 0){ // IO_STDOUT_WRITE(interfaz, registro direccion, registro tamanio )
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3]);
 
         contexto->proceso_pc++; // aumenta PC
 
          int instruccion_interfaz = 2;
 
-        uint32_t registro_direccion = detectar_registro(instruccion_dividida[2]);
-        int direccion_logica = (int)registro_direccion;
-        uint32_t registro_tamanio = detectar_registro(instruccion_dividida[3]);
-        int tamanio = (int)registro_tamanio;
+        uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
+        int direccion_logica = (int)*registro_direccion;
+        uint32_t* registro_tamanio = detectar_registro(instruccion_dividida[3]);
+        int tamanio = (int)*registro_tamanio;
 
         int direccion_fisica = traducir(direccion_logica); 
 
@@ -305,8 +318,8 @@ void decodeYExecute(){
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
 
-            motivo_bloqueo = "IO";
-            cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+            //motivo_bloqueo = "IO";
+            //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
             enviarContextoAKernel(unPaquete);
 
@@ -318,12 +331,12 @@ void decodeYExecute(){
         
         contexto->proceso_pc++; // aumenta PC
 
-        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+        t_paquete* unPaquete = crear_paquete_con_buffer(WAIT_KCPU);
 
         cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // recurso 
 
-        motivo_bloqueo = "Wait";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+        //motivo_bloqueo = "Wait";
+        //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
 
@@ -334,24 +347,24 @@ void decodeYExecute(){
         
         contexto->proceso_pc++; // aumenta PC
 
-        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+        t_paquete* unPaquete = crear_paquete_con_buffer(SIGNAL_KCPU);
 
         cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // recurso 
 
-        motivo_bloqueo = "Signal";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+        //motivo_bloqueo = "Signal";
+        //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
 
-        hayQueDesalojar = true;
+        //hayQueDesalojar = false; no hay que desalojar, no cambia
 
     }
     else if(strcmp(instruccion_dividida[0], "EXIT") == 0){
-        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0]);
+        log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s>", contexto->proceso_pid, instruccion_dividida[0]);
 
         t_paquete* unPaquete = crear_paquete_con_buffer(FINALIZAR_PROCESO);
 
-        cargar_string_a_paquete(unPaquete);
+        cargar_string_a_paquete(unPaquete, instruccion_dividida[0]);
 
         enviarContextoAKernel(unPaquete);
 
@@ -359,18 +372,18 @@ void decodeYExecute(){
     }
 }
 
-uint32_t detectar_registro(char* registro){
+uint32_t* detectar_registro(char* registro){
     if(strcmp(registro, "AX") == 0){
-        return contexto->AX;
+        return &(contexto->AX);
     }
     else if(strcmp(registro, "BX") == 0){
-        return contexto->BX;
+        return &(contexto->BX);
     }
     else if(strcmp(registro, "CX") == 0){
-        return contexto->CX;
+        return &(contexto->CX);
     }
     else if(strcmp(registro, "DX") == 0){
-        return contexto->DX;
+        return &(contexto->DX);
     }
     return NULL;
 }
@@ -395,18 +408,22 @@ void enviarContextoAKernel(t_paquete* unPaquete){
     eliminar_paquete(unPaquete);
 
     //mutex
+    hay_interrupcion = false;
+    hayQueDesalojar = false;
+    /*
     hay_interrupcion_consola = false;
     hay_interrupcion_quantum = false;
     hay_interrupcion_exit = false;
+    */
 
 }
 
-int leer_valor_memoria(int direccion_logica, int tamanio){
+char* leer_valor_memoria(int direccion_logica, int tamanio){
     int direccion_fisica = traducir(direccion_logica);
 
     if(direccion_fisica == -1){
        
-        return -1;
+        return "ERROR";
 
     } else {
         t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_LECTURA_MEMORIA_BLOQUE);
@@ -420,7 +437,7 @@ int leer_valor_memoria(int direccion_logica, int tamanio){
 
         log_info(cpu_logger, "PID: <%d> - Accion: LEER - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, respuesta_marco_lectura);
         
-        int valor = respuesta_marco_lectura;
+        char* valor = respuesta_marco_lectura;
         return valor;
 
     }
@@ -432,16 +449,18 @@ int leer_valor_memoria(int direccion_logica, int tamanio){
     // le pide a memoria leer el contenido del marco
 }
 
-void escribir_valor_memoria(int direccion_logica, uint32_t valor, int tamanio){
+void escribir_valor_memoria(int direccion_logica, char* valor, int tamanio){
     int direccion_fisica = traducir(direccion_logica);
+
+    int tamanio_total = tamanio * sizeof(char);
 
     if(direccion_fisica != -1){
 
         t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_ESCRITURA_MEMORIA_BLOQUE);
         cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
         cargar_int_a_paquete(unPaquete, direccion_fisica);
-        cargar_uint32_a_paquete(unPaquete, valor); 
-        cargar_int_a_paquete(unPaquete, tamanio);
+        cargar_string_a_paquete(unPaquete, valor); 
+        cargar_int_a_paquete(unPaquete, tamanio_total);
         enviar_paquete(unPaquete, fd_memoria);
         eliminar_paquete(unPaquete);
 
@@ -504,12 +523,14 @@ int mmu(int direccion_logica, int numero_pagina, int tamanio_pagina){
 
         t_paquete* unPaquete = crear_paquete_con_buffer(PAGE_FAULT);
 
-            motivo_bloqueo = "Page Fault";
-            cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+           // motivo_bloqueo = "Page Fault";
+            //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
-            enviarContextoAKernel(unPaquete);
+        enviarContextoAKernel(unPaquete);
 
-            hayQueDesalojar = true;
+        hayQueDesalojar = true;
+
+        return -1;
     }
 }
 
@@ -586,7 +607,7 @@ void agregar_entrada_TLB(int numero_pagina, int marco){
         if(algoritmo_tlb == 2){ // FIFO
             int menorIndice = 0;
            for(int i = 1; i < tlb->tamanio; i++){ // busco la entrada con el menor orden de carga (la que esta hace mas tiempo) y la reemplazo por la nueva
-                if(tlb->entradas[i].ordenCarga < tlb->entradas[menorIndice].ordenCarga){
+                if(tlb->entradas[i].orden_carga < tlb->entradas[menorIndice].orden_carga){
                     menorIndice = i;
                 }
            }
@@ -616,7 +637,7 @@ void agregar_entrada_TLB(int numero_pagina, int marco){
 
             tlb->entradas[mayorIndice].orden_carga = ordenCargaGlobal;
             ordenCargaGlobal++;
-            temporal_destroy(tlb->entradas[menorIndice].ultimo_uso);
+            temporal_destroy(tlb->entradas[mayorIndice].ultimo_uso);
             tlb->entradas[mayorIndice].ultimo_uso = temporal_create();
 
         }else{
@@ -626,6 +647,7 @@ void agregar_entrada_TLB(int numero_pagina, int marco){
     }
 }
 
+/*
 void quitar_entrada(int numero_pagina){
     //mutex tlb
     for(int i = 0; i < tlb->tamanio; i++){
@@ -654,5 +676,6 @@ void liberar_entradas_de_un_proceso(){
     }
     //mutex tlb
 }
+*/
 
 

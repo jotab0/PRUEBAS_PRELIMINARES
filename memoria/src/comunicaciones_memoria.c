@@ -1,6 +1,8 @@
 
 # include "../include/comunicaciones_memoria.h"
 
+// si mal no recuerdo esto es prueba del primer checkpoint 
+
 void iterator(char* value){
 	log_info(memoria_logger,"%s",value);
 }

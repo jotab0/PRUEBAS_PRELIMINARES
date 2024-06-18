@@ -32,6 +32,8 @@ typedef struct{
     uint32_t BX; 
     uint32_t CX;
     uint32_t DX;
+    uint32_t SI;
+    uint32_t DI;
 }t_contexto;
 
 extern t_contexto* contexto;
@@ -55,7 +57,9 @@ extern int fd_memoria;
 
 // CICLO INSTRUCCION
 
-extern char** instruccion_dividida[];
+extern char** instruccion_dividida;
+
+extern int motivo_interrupcion;
 
 //extern char* motivo_bloqueo;
 
@@ -63,15 +67,7 @@ extern bool hay_interrupcion;
 
 // TLB
 
-extern typedef struct tlb {
-    t_tlbEntrada* entradas;
-    int tamanio;
-} t_tlb;
-
-extern t_tlb* tlb;
-extern int algoritmo_tlb;
-
-extern typedef struct tlbEntrada{
+typedef struct tlbEntrada{
     uint32_t pid;
     uint32_t pagina;
     int32_t marco;
@@ -80,6 +76,16 @@ extern typedef struct tlbEntrada{
     int orden_carga;
     t_temporal* ultimo_uso;
 }t_tlbEntrada;
+
+typedef struct tlb {
+    t_tlbEntrada* entradas;
+    int tamanio;
+} t_tlb;
+
+extern t_tlb* tlb;
+extern int algoritmo_tlb;
+
+
 
 extern int ordenCargaGlobal;
 
@@ -95,6 +101,15 @@ extern t_list* tlb;
 */
 
 extern int tamanio_pagina;
+
+extern char* valor_marco;
+
+extern int marco;
+
+extern int resultado;
+
+extern char* respuesta_marco_lectura;
+extern char* respuesta_marco_escritura;
 
 #endif
 
