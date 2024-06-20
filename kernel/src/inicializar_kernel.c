@@ -108,6 +108,9 @@ void inicializar_mutexes(){
 
         un_recurso->nombre_recurso = RECURSOS[contador];
         sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
+        sem_init(&un_recurso->semaforo_request_recurso,0,0);
+        un_recurso->lista_procesos_en_cola = list_create();
+        pthread_mutex_init(&un_recurso->mutex_lista_recurso, NULL);
 
         list_add(lista_recursos,un_recurso);
         
@@ -115,7 +118,6 @@ void inicializar_mutexes(){
         
         contador += 1;
     }
-    
  }
 
 void inicializar_planificadores(){

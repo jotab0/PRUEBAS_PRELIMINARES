@@ -296,7 +296,61 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 
 void liberar_recursos_pcb (pcb* un_pcb){
 	liberar_memoria(un_pcb);
+	liberar_recursos(un_pcb);
 }
+
+void liberar_recursos(pcb* un_pcb){
+
+	if(un_pcb->estado == BLOCKED && un_pcb->pedido_recurso != NULL ){
+		eliminar_de_lista_recurso(un_pcb,un_pcb->pedido_recurso);
+	}
+	while(list_size(un_pcb->recursos_en_uso)>0){
+			
+		instancia_recurso_pcb* un_recurso = list_remove(un_pcb->recursos_en_uso,0);
+		signal_recurso(un_recurso->nombre_recurso,un_recurso->instancias_recurso);
+		
+	}	
+}
+
+void eliminar_de_lista_recurso(pcb* un_pcb, char* nombre_recurso){
+	
+	bool _buscar_recurso(instancia_recurso* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,un_pcb->pedido_recurso)== 0;
+	}
+
+	bool _buscar_pcb(pcb* otro_pcb)
+	{
+		return otro_pcb->pid == un_pcb->pid;
+	}
+
+	pthread_mutex_lock(&mutex_lista_recursos);
+	instancia_recurso* un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
+	list_remove_by_condition(un_recurso->lista_procesos_en_cola,(void *)_buscar_pcb);
+	pthread_mutex_unlock(&mutex_lista_recursos);
+
+}
+
+void signal_recurso(char* nombre_recurso, int cantidad_instanciada){
+	
+	bool _buscar_recurso(instancia_recurso* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,nombre_recurso)== 0;
+	}
+
+	pthread_mutex_lock(&mutex_lista_recursos);
+	instancia_recurso* un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
+	
+	while(cantidad_instanciada>0){
+		sem_post(&un_recurso->semaforo_recurso);
+		cantidad_instanciada--;
+	}
+	pthread_mutex_unlock(&mutex_lista_recursos);
+
+}
+
+
+
 
 void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb){
 
