@@ -454,14 +454,70 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-		list_add(un_recurso->lista_procesos_en_cola,pcb_recibido);
+		list_add_sync(un_recurso->lista_procesos_en_cola,pcb_recibido,&un_recurso->mutex_lista_recurso);
+		sem_post(&un_recurso->semaforo_request_recurso);
 
 	}else{
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
 
 	sem_post(&sem_pcp);
-	
+
+}
+
+void control_request_de_recursos(instancia_recurso* un_recurso){
+	while(1){
+		
+		sem_wait(&un_recurso->semaforo_request_recurso);
+		sem_wait(&un_recurso->semaforo_recurso);
+
+		pcb* un_pcb = NULL;
+		un_pcb = list_remove(un_recurso->lista_procesos_en_cola,0);
+
+		un_pcb = extraer_pcb_de_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
+		agregar_recurso(un_pcb,un_recurso->nombre_recurso);
+		un_pcb->pedido_recurso = NULL;
+
+		agregar_a_ready(un_pcb);
+	}
+}
+
+// CONSULTAR: Si están bien las siguientes funciones con listas
+void agregar_recurso (pcb* un_pcb, char* un_recurso){
+
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso) == 0;
+	}
+
+	instancia_recurso_pcb* recurso = NULL;
+
+	if(list_is_empty(un_pcb->recursos_en_uso)){
+
+		recurso = malloc(sizeof(instancia_recurso_pcb));
+		recurso->nombre_recurso = un_recurso;
+		recurso->instancias_recurso = 1;
+		list_add(un_pcb->recursos_en_uso,recurso);
+		free(recurso);
+	}
+	else{
+		
+		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+		{
+			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+			recurso->instancias_recurso += 1;
+		}
+		else
+		{
+			recurso = malloc(sizeof(instancia_recurso_pcb));
+			recurso->nombre_recurso = un_recurso;
+			recurso->instancias_recurso = 1;
+			list_add(un_pcb->recursos_en_uso,recurso);
+			// CONSULTA: Debería hacer free del puntero recurso?
+			free(recurso);
+		}
+	}
+
 }
 
 void manejar_signal_de_recurso(pcb *pcb_recibido){

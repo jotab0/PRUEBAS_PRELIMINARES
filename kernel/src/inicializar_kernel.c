@@ -94,6 +94,7 @@ void inicializar_mutexes(){
     pthread_mutex_init(&mutex_lista_exit, NULL);
     pthread_mutex_init(&mutex_procesos_en_core, NULL);
     pthread_mutex_init(&mutex_lista_interfaces, NULL);
+    pthread_mutex_init(&mutex_lista_recursos, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);

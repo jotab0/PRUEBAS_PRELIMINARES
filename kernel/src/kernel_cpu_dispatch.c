@@ -78,8 +78,6 @@ void esperar_cpu_dispatch_kernel(){
 			un_pcb -> motivo_bloqueo = WAIT;
 			un_pcb -> pedido_recurso = recurso_solicitado;
 
-			agregar_recurso(un_pcb,recurso_solicitado);
-
 			manejar_bloqueo_de_proceso(un_pcb);	
 			
 			sem_post(&sem_cpu_libre);	
@@ -137,44 +135,6 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 
 	enviar_paquete(un_paquete, fd_cpu_dispatch); 
 	destruir_paquete(un_paquete);
-}
-
-// CONSULTAR: Si están bien las siguientes funciones con listas
-void agregar_recurso (pcb* un_pcb, char* un_recurso){
-
-	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
-	{
-		return strcmp(recurso_encontrado->nombre_recurso,un_recurso) == 0;
-	}
-
-	instancia_recurso_pcb* recurso = NULL;
-
-	if(list_is_empty(un_pcb->recursos_en_uso)){
-
-		recurso = malloc(sizeof(instancia_recurso_pcb));
-		recurso->nombre_recurso = un_recurso;
-		recurso->instancias_recurso = 1;
-		list_add(un_pcb->recursos_en_uso,recurso);
-		free(recurso);
-	}
-	else{
-		
-		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
-		{
-			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
-			recurso->instancias_recurso += 1;
-		}
-		else
-		{
-			recurso = malloc(sizeof(instancia_recurso_pcb));
-			recurso->nombre_recurso = un_recurso;
-			recurso->instancias_recurso = 1;
-			list_add(un_pcb->recursos_en_uso,recurso);
-			// CONSULTA: Debería hacer free del puntero recurso?
-			free(recurso);
-		}
-	}
-
 }
 
 void quitar_recurso (pcb* un_pcb, char* un_recurso){

@@ -88,6 +88,7 @@ typedef struct{
 	char* nombre_recurso;
 	t_list* lista_procesos_en_cola;
     sem_t semaforo_recurso;
+	sem_t semaforo_request_recurso;
 	pthread_mutex_t mutex_lista_recurso; 
 }instancia_recurso;
 
@@ -134,6 +135,7 @@ extern pthread_mutex_t mutex_lista_blocked;
 extern pthread_mutex_t mutex_lista_exit;
 extern pthread_mutex_t mutex_procesos_en_core;
 extern pthread_mutex_t mutex_lista_interfaces;
+extern pthread_mutex_t mutex_lista_recursos;
 
 
 extern pthread_mutex_t mutex_ticket;
