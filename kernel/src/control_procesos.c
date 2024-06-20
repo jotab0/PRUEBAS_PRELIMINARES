@@ -1,6 +1,6 @@
 #include "../include/control_procesos.h"
 // FUNCIONALIDADES PCB
-pcb *crear_pcb(char *path, int size)
+pcb *crear_pcb(char *path)
 {
 
 	pcb *nuevo_PCB = malloc(sizeof(pcb));
@@ -8,33 +8,35 @@ pcb *crear_pcb(char *path, int size)
 	nuevo_PCB->pid = asignar_pid();
 
 	nuevo_PCB->program_counter = 0;
-
-	nuevo_PCB->quantum = QUANTUM; // Multiplico por mil para pasarlo de milisegundos a microsegundos
+	nuevo_PCB->quantum = QUANTUM; 
 	nuevo_PCB->tiempo_ejecutado = 0;
-	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
 
 	nuevo_PCB->ticket = -1; // Inicializa en -1 porque el valor del primer ticket global es 0
 
-	nuevo_PCB->path = path; // Que pasa si cambia o sucesde algo con lo que apunta
+	nuevo_PCB->path = path; 
 
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
 	nuevo_PCB->registros_CPU->AX = 0;
 	nuevo_PCB->registros_CPU->BX = 0;
 	nuevo_PCB->registros_CPU->CX = 0;
 	nuevo_PCB->registros_CPU->DX = 0;
+	nuevo_PCB->registros_CPU->SI = 0;
+	nuevo_PCB->registros_CPU->DI = 0;
 
 	nuevo_PCB->estado = NEW;
-	// *****CONSULTAR: Si está bien inicializar así los enum que no están definidos todavía
+
 	// INTERFACES
+	
 	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO;
+	nuevo_PCB->pedido_a_interfaz = malloc(sizeof(pedido_interfaz));
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz = NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
 	nuevo_PCB->pedido_a_interfaz->datos_auxiliares_interfaz = list_create();
 	
 	// RECURSOS
-	nuevo_PCB->recursos_en_uso = list_create();
 	nuevo_PCB->pedido_recurso = NULL; 
-
+	nuevo_PCB->recursos_en_uso = list_create();
+	
 	return nuevo_PCB;
 }
 
@@ -51,9 +53,11 @@ void planificador_largo_plazo()
 
 		_check_interrupt_plp();
 
+		// Es señalizado por:
+		// - Consola
+		// - Propio PLP
 		sem_wait(&sem_lista_new);
 
-		// CONSULTAR: Es necesario hacer malloc en este caso?
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_new);
@@ -90,15 +94,14 @@ void planificador_largo_plazo()
 			procesos_en_core++;
 			pthread_mutex_unlock(&mutex_procesos_en_core);
 
-			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
 			sem_post(&sem_pcp);
-			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
-			// Debe haber sem_post cada vez que se manda un proceso a exit
+			
+			// CORRECCION PENDIENTE: Ver si sirve para manejar grado de multiprogramación y como actualizarlo
 			sem_wait(&sem_multiprogramacion);
 		}
 		else
 		{
-			log_error(kernel_logger, "ERROR: Se intentó cargar un proceso vacío");
+			log_warning(kernel_logger, "Lista ready vacía");
 		}
 	}
 }
@@ -146,26 +149,22 @@ void planificador_corto_plazo()
 
 		_check_interrupt_pcp();
 		// Espero a que se agregue algo a ready
+
+		// Es señalizado por:
+		// - PLP
+		// - Fin de instrucción IO
+		// - Volver de pedido de recurso
 		sem_wait(&sem_pcp);
+
+		// Es señalizado por:
+		// - Salida por fin de Q
+		// - Salida por fin de proceso (Consola o natural)
+		// - Salida por pedido de instrucción IO
+		// - Salida por WAIT
 		sem_wait(&sem_cpu_libre);
 
-		switch (ALGORITMO_PCP_SELECCIONADO)
-		{
+		planificar_corto_plazo();
 
-			case FIFO:
-
-			case RR:
-
-			case VRR:
-
-				planificar_corto_plazo();
-
-				break;
-
-			default:
-				log_error(kernel_logger_extra, "ERROR: Este algoritmo de planificación no es reconocido.");
-				// Debería romer la ejecución?
-		}
 	}
 }
 
@@ -225,7 +224,7 @@ void _poner_en_ejecucion(pcb *un_pcb)
 	}
 	else
 	{
-		log_warning(kernel_logger, "Lista de READY vacía");
+		log_warning(kernel_logger, "Lista READY vacía");
 	}
 }
 
@@ -447,7 +446,7 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	
 	bool _buscar_recurso(instancia_recurso *un_recurso)
 	{
-		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 1;
+		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 0;
 	}
 
 	instancia_recurso* un_recurso;
@@ -455,18 +454,14 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-
-		sem_wait(&un_recurso->semaforo_recurso);
-
-		pcb_recibido = extraer_pcb_de_lista(pcb_recibido->pid, blocked, &mutex_lista_blocked);
-		agregar_a_ready(pcb_recibido);
+		list_add(un_recurso->lista_procesos_en_cola,pcb_recibido);
 
 	}else{
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
 
 	sem_post(&sem_pcp);
-
+	
 }
 
 void manejar_signal_de_recurso(pcb *pcb_recibido){

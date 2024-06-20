@@ -9,7 +9,7 @@
 #include "shared_kernel.h"
 
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
-pcb* crear_pcb(char* path, int size_path);
+pcb* crear_pcb(char* path);
 void agregar_a_ready(pcb* un_pcb);
 
 void planificar_corto_plazo();

@@ -49,10 +49,10 @@ void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo){
         pcb_desactualizado->registros_CPU->BX   = pcb_nuevo->registros_CPU->BX;
         pcb_desactualizado->registros_CPU->CX   = pcb_nuevo->registros_CPU->CX;
         pcb_desactualizado->registros_CPU->DX   = pcb_nuevo->registros_CPU->DX;
+		pcb_desactualizado->registros_CPU->SI   = pcb_nuevo->registros_CPU->SI;
+		pcb_desactualizado->registros_CPU->DI   = pcb_nuevo->registros_CPU->DI;
 
         pcb_desactualizado->tiempo_ejecutado    = pcb_nuevo->tiempo_ejecutado;
-        pcb_desactualizado->motivo_bloqueo      = pcb_nuevo->motivo_bloqueo;
-        pcb_desactualizado->pedido_a_interfaz   = pcb_nuevo->pedido_a_interfaz;
 
     }
     else{
@@ -84,6 +84,8 @@ interfaz* obtener_interfaz_con_nombre(char* nombre_interfaz){
 
 void destruir_pcb(pcb* un_pcb){
 	free(un_pcb->registros_CPU);
+	list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
+	list_destroy(un_pcb->recursos_en_uso);
 	free(un_pcb->pedido_a_interfaz);
 	free(un_pcb);
 }
@@ -296,20 +298,27 @@ void liberar_recursos_pcb (pcb* un_pcb){
 	liberar_memoria(un_pcb);
 }
 
-pcb* obtener_contexto_pcb(t_buffer* un_buffer){
-	pcb* un_pcb = NULL;
+void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb){
 
-	un_pcb -> pid = extraer_int_del_buffer(un_buffer);
-	un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
+	int pid_recibido = extraer_int_del_buffer(un_buffer);
 
-	un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> BX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> CX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> DX = extraer_uint32_del_buffer(un_buffer);
+	if(un_pcb->pid == pid_recibido){
 
-	un_pcb -> ticket = extraer_int_del_buffer(un_buffer);
-	
-	un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
+		un_pcb -> pid = pid_recibido;
+		un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
 
-	return un_pcb;
+		un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> BX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> CX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> DX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> SI = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> DI = extraer_uint32_del_buffer(un_buffer);
+		
+		un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
+
+	}else{
+		log_error(kernel_logger_extra,"ERROR: Se intentó actualizar procesos con distinto PID");
+	}	
 }
+
+

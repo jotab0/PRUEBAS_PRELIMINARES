@@ -80,11 +80,15 @@ typedef struct{
 	uint32_t BX;
 	uint32_t CX;
 	uint32_t DX;
+	uint32_t SI;
+	uint32_t DI;
 }registrosCPU;
 
 typedef struct{
 	char* nombre_recurso;
+	t_list* lista_procesos_en_cola;
     sem_t semaforo_recurso;
+	pthread_mutex_t mutex_lista_recurso; 
 }instancia_recurso;
 
 typedef struct{

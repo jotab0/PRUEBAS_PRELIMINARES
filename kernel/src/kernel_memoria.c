@@ -51,8 +51,9 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
 
     cargar_string_a_paquete(paquete,un_pcb->path);
     cargar_int_a_paquete(paquete,un_pcb->pid);
-
-    log_info(kernel_logger, "Solicitud de creación de proceso enviada a memoria");
+ 
+    log_info(kernel_logger, "Solicitud de creación de proceso con PID: %d enviada a memoria",un_pcb->pid);
+    
     enviar_paquete(paquete,fd_memoria);
     destruir_paquete(paquete);
     // Espero a la respuesta de memoria
