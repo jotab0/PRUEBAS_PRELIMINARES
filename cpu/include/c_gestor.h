@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <math.h>
 
 #include <utils/include/shared.h>
 
@@ -57,13 +58,17 @@ extern int fd_memoria;
 
 // CICLO INSTRUCCION
 
+extern void realizarCicloInstruccion();
+
 extern char** instruccion_dividida;
 
 extern int motivo_interrupcion;
 
 //extern char* motivo_bloqueo;
 
-extern bool hay_interrupcion;
+//extern bool hay_interrupcion;
+extern bool hay_interrupcion_quantum;
+extern bool hay_interrupcion_exit;
 
 // TLB
 

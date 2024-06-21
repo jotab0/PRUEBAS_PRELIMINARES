@@ -19,6 +19,8 @@ void realizarCicloInstruccion(){
     iniciar_tiempo();
 
     hayQueDesalojar = false;
+    hay_interrupcion_exit = false;
+    hay_interrupcion_quantum = false;
 
     //contexto->proceso_tiempo_ejecutado++;
 
@@ -49,6 +51,7 @@ void realizarCicloInstruccion(){
     // mutex
     // CHECK INTERRUPTION
 
+/*
     if(hay_interrupcion){
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
 
@@ -58,37 +61,27 @@ void realizarCicloInstruccion(){
         
         break;
     }
+*/
+          
+    if(hay_interrupcion_quantum){
+        t_paquete* unPaquete = crear_paquete_con_buffer(INTERRUPCION_QUANTUM);
 
-    /*
-    if(hay_interrupcion_consola){ // bool que le llega de comunicaciones
-        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
-
-        motivo_bloqueo = "Consola";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
-
-        enviarContextoAKernel(unPaquete);
-        
-        break;                 
-    } else if(hay_interrupcion_quantum){
-        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
-
-        motivo_bloqueo = "Quantum";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+        //motivo_bloqueo = "Quantum";
+        //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
         break;
     } else if(hay_interrupcion_exit){
-        t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INTERRUPCION);
+        t_paquete* unPaquete = crear_paquete_con_buffer(EXIT_PROCESS);
 
-        motivo_bloqueo = "Exit";
-        cargar_string_a_paquete(unPaquete, motivo_bloqueo);
+        //motivo_bloqueo = "Exit";
+        //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
 
         enviarContextoAKernel(unPaquete);
         
         break;
     }
-    */
 
     }
 }
@@ -232,7 +225,7 @@ void decodeYExecute(){
         // semaforo wait resultado
 
         if(resultado == -1){ // si el resize dio out of memory
-            t_paquete* unPaquete = crear_paquete_con_buffer(OUT_OF_MEMORY);
+            t_paquete* unPaquete = crear_paquete_con_buffer(EXIT_PROCESS);
 
             //motivo_bloqueo = "Out of Memory";
             //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
@@ -255,8 +248,8 @@ void decodeYExecute(){
         char* valor = leer_valor_memoria(direccion_logica_SI, tamanio); // lee la direccion (tendria que ser un string pero leer devuelve un int como resuelvo?)
         
         if(strcmp(valor, "ERROR") != 0){
-            char* resultado;
-            for(int i; i < tamanio && valor[i] != '\0'; i++){
+            char* resultado = NULL;
+            for(int i = 0; i < tamanio && valor[i] != '\0'; i++){
                 resultado[i] = valor[i];
             }
             resultado[tamanio] = '\0';
@@ -362,7 +355,7 @@ void decodeYExecute(){
     else if(strcmp(instruccion_dividida[0], "EXIT") == 0){
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s>", contexto->proceso_pid, instruccion_dividida[0]);
 
-        t_paquete* unPaquete = crear_paquete_con_buffer(FINALIZAR_PROCESO);
+        t_paquete* unPaquete = crear_paquete_con_buffer(EXIT_PROCESS);
 
         cargar_string_a_paquete(unPaquete, instruccion_dividida[0]);
 
@@ -384,8 +377,16 @@ uint32_t* detectar_registro(char* registro){
     }
     else if(strcmp(registro, "DX") == 0){
         return &(contexto->DX);
+    } 
+    else if(strcmp(registro, "SI") == 0){
+        return &(contexto->SI);
     }
-    return NULL;
+    else if(strcmp(registro, "DI") == 0){
+        return &(contexto->DI);
+    } else {
+        return NULL;
+    }
+    
 }
 
 void enviarContextoAKernel(t_paquete* unPaquete){
@@ -397,8 +398,10 @@ void enviarContextoAKernel(t_paquete* unPaquete){
     cargar_uint32_a_paquete(unPaquete, contexto->BX);
     cargar_uint32_a_paquete(unPaquete, contexto->CX);
     cargar_uint32_a_paquete(unPaquete, contexto->DX);
-    
-    cargar_int_a_paquete(unPaquete, contexto->proceso_ticket);
+    cargar_uint32_a_paquete(unPaquete, contexto->SI);
+    cargar_uint32_a_paquete(unPaquete, contexto->DI);
+
+    //cargar_int_a_paquete(unPaquete, contexto->proceso_ticket);
 
     calcularTiempoEjecutado();
 
@@ -406,15 +409,6 @@ void enviarContextoAKernel(t_paquete* unPaquete){
 
     enviar_paquete(unPaquete, fd_kernel_dispatch); 
     eliminar_paquete(unPaquete);
-
-    //mutex
-    hay_interrupcion = false;
-    hayQueDesalojar = false;
-    /*
-    hay_interrupcion_consola = false;
-    hay_interrupcion_quantum = false;
-    hay_interrupcion_exit = false;
-    */
 
 }
 
@@ -435,7 +429,7 @@ char* leer_valor_memoria(int direccion_logica, int tamanio){
 
         // semaforo wait(respuesta_memoria)
 
-        log_info(cpu_logger, "PID: <%d> - Accion: LEER - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, respuesta_marco_lectura);
+        log_info(cpu_logger, "PID: <%d> - Accion: LEER - Direccion: <%d> - Valor: <%s>", contexto->proceso_pid, direccion_fisica, respuesta_marco_lectura);
         
         char* valor = respuesta_marco_lectura;
         return valor;
@@ -466,7 +460,7 @@ void escribir_valor_memoria(int direccion_logica, char* valor, int tamanio){
 
         // semaforo wait(respuesta_peticion_escritura)
 
-        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%d>", contexto->proceso_pid, direccion_fisica, respuesta_marco_escritura);
+        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%s>", contexto->proceso_pid, direccion_fisica, respuesta_marco_escritura);
     }
 
 }
@@ -514,14 +508,14 @@ int mmu(int direccion_logica, int numero_pagina, int tamanio_pagina){
 
         int direccion_fisica = marco * tamanio_pagina + desplazamiento;
         
-        agregar_entrada_tlb(numero_pagina, marco);
+        agregar_entrada_TLB(numero_pagina, marco);
 
         return direccion_fisica;
 
     } else { // hay PF
         log_info(cpu_logger, "PID: <%d> - PAGE FAULT - Pagina: <%d>", contexto->proceso_pid, numero_pagina);
 
-        t_paquete* unPaquete = crear_paquete_con_buffer(PAGE_FAULT);
+        t_paquete* unPaquete = crear_paquete_con_buffer(EXIT_PROCESS);
 
            // motivo_bloqueo = "Page Fault";
             //cargar_string_a_paquete(unPaquete, motivo_bloqueo);
@@ -596,7 +590,7 @@ void agregar_entrada_TLB(int numero_pagina, int marco){
             tlb->entradas[i].ultimo_uso = temporal_create();
         
 
-            hay_libre = 1;
+            hay_libre = 1; // encontro entrada libre y la ocupo
 
             break;
         }

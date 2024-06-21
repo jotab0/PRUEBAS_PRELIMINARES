@@ -14,7 +14,9 @@ uint32_t* detectar_registro(char*);
 void enviarContextoAKernel(t_paquete*);
 
 bool hayQueDesalojar;
-bool hay_interrupcion;
+//bool hay_interrupcion;
+bool hay_interrupcion_quantum;
+bool hay_interrupcion_exit;
 
 //char* motivo_bloqueo;
 

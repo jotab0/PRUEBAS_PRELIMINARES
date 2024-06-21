@@ -6,8 +6,17 @@ void inicializar_cpu() {
     iniciar_config();
     tlb = crear_TLB();
     imprimir_config();
+    inicializar_mutexs();
     pedir_tamanio_pagina();
+    inicializar_variables();
 }
+
+void inicializar_variables(){
+    char* respuesta_marco_escritura = NULL;
+    char* respuesta_marco_lectura = NULL;
+}
+
+
 
 void iniciar_logs(){
     cpu_logger = log_create("CPU.log", "CPU_log", true, LOG_LEVEL_TRACE);
@@ -45,7 +54,7 @@ void imprimir_config(){
     // Agregar los para debugear
 }
 
-void inicializar_mutexes(){
+void inicializar_mutexs(){
 	pthread_mutex_init(&mutex_manejo_contexto, NULL);
 }
 
@@ -78,8 +87,11 @@ int get_algoritmo_tlb(){
     algoritmo = config_get_string_value(cpu_config, "ALGORITMO_TLB");
     if(strcmp(algoritmo, "FIFO") == 0){
         return FIFO;
-    } else{
+    } else if(strcmp(algoritmo, "LRU") == 0){
         return LRU;
+    } else {
+        log_error(cpu_logger, "Algoritmo de reemplazo no valido");
+        return 0;
     }
     free(algoritmo);
 }

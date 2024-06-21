@@ -10,6 +10,8 @@ void inicializar_cpu();
 void iniciar_logs();
 void iniciar_config();
 void imprimir_config();
+void inicializar_mutexs();
+void inicializar_variables();
 
 t_tlb* crear_TLB();
 int get_entradas_tlb();
