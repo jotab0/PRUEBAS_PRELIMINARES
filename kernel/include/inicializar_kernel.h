@@ -13,6 +13,7 @@ void inicializar_mutexes();
 void establecer_algoritmo_seleccionado();
 void inicializar_planificadores();
 void establecer_recursos();
+void inicializar_asistentes_de_recurso();
 
 
 #endif

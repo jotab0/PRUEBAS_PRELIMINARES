@@ -22,11 +22,13 @@ pcb* extraer_pcb_de_lista(int pid, t_list* una_lista, pthread_mutex_t* mutex_lis
 pcb* buscar_pcb_en_lista(int pid, t_list* una_lista, pthread_mutex_t* mutex_lista);
 
 pcb* extraer_pcb_de_lista_sistema(pcb* un_pcb);
-pcb* buscar_pcb_en_sistema_(pcb* un_pcb);
+
+pcb* buscar_pcb_en_sistema_(int pid);
 
 void agregar_a_ready(pcb* un_pcb);
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
-void liberar_recursos_pcb (pcb* un_pcb);
-pcb* obtener_contexto_pcb(t_buffer* un_buffer);
+
+
+void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb);
 
 #endif

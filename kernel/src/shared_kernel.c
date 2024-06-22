@@ -49,10 +49,10 @@ void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo){
         pcb_desactualizado->registros_CPU->BX   = pcb_nuevo->registros_CPU->BX;
         pcb_desactualizado->registros_CPU->CX   = pcb_nuevo->registros_CPU->CX;
         pcb_desactualizado->registros_CPU->DX   = pcb_nuevo->registros_CPU->DX;
+		pcb_desactualizado->registros_CPU->SI   = pcb_nuevo->registros_CPU->SI;
+		pcb_desactualizado->registros_CPU->DI   = pcb_nuevo->registros_CPU->DI;
 
         pcb_desactualizado->tiempo_ejecutado    = pcb_nuevo->tiempo_ejecutado;
-        pcb_desactualizado->motivo_bloqueo      = pcb_nuevo->motivo_bloqueo;
-        pcb_desactualizado->pedido_a_interfaz   = pcb_nuevo->pedido_a_interfaz;
 
     }
     else{
@@ -84,6 +84,8 @@ interfaz* obtener_interfaz_con_nombre(char* nombre_interfaz){
 
 void destruir_pcb(pcb* un_pcb){
 	free(un_pcb->registros_CPU);
+	list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
+	list_destroy(un_pcb->recursos_en_uso);
 	free(un_pcb->pedido_a_interfaz);
 	free(un_pcb);
 }
@@ -199,48 +201,25 @@ pcb* extraer_pcb_de_lista(int pid, t_list* una_lista, pthread_mutex_t* mutex_lis
 	}
 }
 
-pcb* buscar_pcb_en_sistema_(pcb* un_pcb){
-	
-	switch (un_pcb -> estado)
-	{
-		
-	case NEW:
+pcb* buscar_pcb_en_sistema_(int pid){
 
-		un_pcb = buscar_pcb_en_lista(un_pcb->pid,new,&mutex_lista_new);
-		
-		break;
-
-	case READY:
-
+		pcb* un_pcb = NULL;
 		un_pcb = buscar_pcb_en_lista(un_pcb->pid,ready,&mutex_lista_ready);
-		
 		if(un_pcb == NULL){
 			un_pcb = buscar_pcb_en_lista(un_pcb->pid,ready_plus,&mutex_lista_ready_plus);
 		}
-
-		break;
-
-	case BLOCKED:
-
-		un_pcb = buscar_pcb_en_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
-	
-		break;
-
-	case EXEC:
-
-		//CONSULTA: Si el list_get devuelve puntero a el pcb
-		pthread_mutex_lock(&mutex_lista_exec);
-		list_get(execute,0);
-		pthread_mutex_unlock(&mutex_lista_exec);
-
-		break;
-
-	case EXIT:
-
-		un_pcb = buscar_pcb_en_lista(un_pcb->pid,lista_exit,&mutex_lista_exit);
-
-		break;
-	}
+		else if (un_pcb == NULL){
+			un_pcb = buscar_pcb_en_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
+		}
+		else if (un_pcb == NULL){
+			un_pcb = buscar_pcb_en_lista(un_pcb->pid,new,&mutex_lista_new);
+		}
+		else if (un_pcb == NULL){
+			un_pcb = buscar_pcb_en_lista(un_pcb->pid,execute,&mutex_lista_exec);
+		}
+		else if (un_pcb == NULL){
+			un_pcb = buscar_pcb_en_lista(un_pcb->pid,lista_exit,&mutex_lista_exit);
+		}
 
 	return un_pcb;
 }
@@ -292,24 +271,30 @@ void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado){
 	un_pcb->estado = nuevo_estado;
 }
 
-void liberar_recursos_pcb (pcb* un_pcb){
-	liberar_memoria(un_pcb);
+
+
+
+void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb){
+
+	int pid_recibido = extraer_int_del_buffer(un_buffer);
+
+	if(un_pcb->pid == pid_recibido){
+
+		un_pcb -> pid = pid_recibido;
+		un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
+
+		un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> BX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> CX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> DX = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> SI = extraer_uint32_del_buffer(un_buffer);
+		un_pcb -> registros_CPU -> DI = extraer_uint32_del_buffer(un_buffer);
+		
+		un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
+
+	}else{
+		log_error(kernel_logger_extra,"ERROR: Se intentó actualizar procesos con distinto PID");
+	}	
 }
 
-pcb* obtener_contexto_pcb(t_buffer* un_buffer){
-	pcb* un_pcb = NULL;
 
-	un_pcb -> pid = extraer_int_del_buffer(un_buffer);
-	un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
-
-	un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> BX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> CX = extraer_uint32_del_buffer(un_buffer);
-	un_pcb -> registros_CPU -> DX = extraer_uint32_del_buffer(un_buffer);
-
-	un_pcb -> ticket = extraer_int_del_buffer(un_buffer);
-	
-	un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
-
-	return un_pcb;
-}

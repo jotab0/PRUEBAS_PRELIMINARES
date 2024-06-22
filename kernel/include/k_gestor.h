@@ -80,11 +80,17 @@ typedef struct{
 	uint32_t BX;
 	uint32_t CX;
 	uint32_t DX;
+	uint32_t SI;
+	uint32_t DI;
 }registrosCPU;
 
 typedef struct{
 	char* nombre_recurso;
+	// Lista de PCBs
+	t_list* lista_procesos_en_cola;
     sem_t semaforo_recurso;
+	sem_t semaforo_request_recurso;
+	pthread_mutex_t mutex_lista_procesos_en_cola;  
 }instancia_recurso;
 
 typedef struct{
@@ -111,11 +117,15 @@ typedef struct{ //
 
 typedef struct{
 	char* nombre_interfaz;
+	// Lista de instruccion_interfaz
 	t_list* instrucciones_disponibles;
+	// Lista de PCBs
+	t_list* lista_procesos_en_cola;
 	int* fd_conexion; // Consultar si tiene que ser puntero o debe ser int
 	resultado_operacion resultado_operacion_solicitada;
 	pthread_mutex_t mutex_interfaz;
 	sem_t sem_interfaz;
+	sem_t sem_request_interfaz;
 	sem_t sem_instruccion_interfaz;
 }interfaz;
 
@@ -130,6 +140,7 @@ extern pthread_mutex_t mutex_lista_blocked;
 extern pthread_mutex_t mutex_lista_exit;
 extern pthread_mutex_t mutex_procesos_en_core;
 extern pthread_mutex_t mutex_lista_interfaces;
+extern pthread_mutex_t mutex_lista_recursos;
 
 
 extern pthread_mutex_t mutex_ticket;
