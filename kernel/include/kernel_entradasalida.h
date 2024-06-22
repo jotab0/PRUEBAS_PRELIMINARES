@@ -10,5 +10,6 @@ void esperar_conexiones_entradasalida();
 interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida);
 int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz);
 void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, t_list* datos_auxiliares, t_paquete* un_paquete);
+void limpiar_interfaz(int *fd_interfaz);
 
 #endif /* KERNEL_ENTRADASALIDA_H_ */

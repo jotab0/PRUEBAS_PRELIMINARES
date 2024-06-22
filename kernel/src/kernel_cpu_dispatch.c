@@ -176,14 +176,11 @@ void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instrucci
 		case IO_GEN_SLEEP:
 
 			// CORRECCION PENDIENTE: Ver si está ok el manejo de puntero para la lista. Está bien el free?
-			int *un_tiempo = malloc(sizeof(int));
 			int tiempo_extraido;
 
 			tiempo_extraido = extraer_int_del_buffer(un_buffer);
-			*un_tiempo = tiempo_extraido;
 
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,un_tiempo);
-			free(un_tiempo);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&tiempo_extraido);
 
 			break;
 		

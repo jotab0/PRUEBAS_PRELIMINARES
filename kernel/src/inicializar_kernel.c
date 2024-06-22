@@ -9,6 +9,7 @@ void inicializar_kernel(){
     establecer_algoritmo_seleccionado();
     inicializar_planificadores();
     establecer_recursos();
+    inicializar_asistentes_de_recurso();
 }
 
 void inicializar_logs(){
@@ -108,17 +109,14 @@ void inicializar_mutexes(){
         instancia_recurso* un_recurso = malloc(sizeof(instancia_recurso));
 
         un_recurso->nombre_recurso = RECURSOS[contador];
+        
         sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
         sem_init(&un_recurso->semaforo_request_recurso,0,0);
+        pthread_mutex_init(&un_recurso->mutex_lista_procesos_en_cola, NULL);
 
         un_recurso->lista_procesos_en_cola = list_create();
         
-        pthread_mutex_init(&un_recurso->mutex_lista_recurso, NULL);
-        pthread_mutex_init(&un_recurso->mutex_lista_procesos_en_cola, NULL);
-
         list_add(lista_recursos,un_recurso);
-        
-        free(un_recurso);
         
         contador += 1;
     }

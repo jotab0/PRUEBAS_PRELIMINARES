@@ -86,10 +86,10 @@ typedef struct{
 
 typedef struct{
 	char* nombre_recurso;
+	// Lista de PCBs
 	t_list* lista_procesos_en_cola;
     sem_t semaforo_recurso;
 	sem_t semaforo_request_recurso;
-	pthread_mutex_t mutex_lista_recurso;
 	pthread_mutex_t mutex_lista_procesos_en_cola;  
 }instancia_recurso;
 
@@ -117,11 +117,15 @@ typedef struct{ //
 
 typedef struct{
 	char* nombre_interfaz;
+	// Lista de instruccion_interfaz
 	t_list* instrucciones_disponibles;
+	// Lista de PCBs
+	t_list* lista_procesos_en_cola;
 	int* fd_conexion; // Consultar si tiene que ser puntero o debe ser int
 	resultado_operacion resultado_operacion_solicitada;
 	pthread_mutex_t mutex_interfaz;
 	sem_t sem_interfaz;
+	sem_t sem_request_interfaz;
 	sem_t sem_instruccion_interfaz;
 }interfaz;
 
