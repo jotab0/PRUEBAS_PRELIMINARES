@@ -4,8 +4,19 @@
 void inicializar_cpu() {
     iniciar_logs();
     iniciar_config();
+    tlb = crear_TLB();
     imprimir_config();
+    inicializar_mutexs();
+    pedir_tamanio_pagina();
+    inicializar_variables();
 }
+
+void inicializar_variables(){
+    char* respuesta_marco_escritura = NULL;
+    char* respuesta_marco_lectura = NULL;
+}
+
+
 
 void iniciar_logs(){
     cpu_logger = log_create("CPU.log", "CPU_log", true, LOG_LEVEL_TRACE);
@@ -43,7 +54,52 @@ void imprimir_config(){
     // Agregar los para debugear
 }
 
-void inicializar_mutexes(){
+void inicializar_mutexs(){
 	pthread_mutex_init(&mutex_manejo_contexto, NULL);
 }
+
+t_tlb* crear_TLB(){
+    tlb = malloc(sizeof(t_tlb));
+    tlb->tamanio = get_entradas_tlb();
+    tlb->entradas = (t_tlbEntrada*) calloc(tlb->tamanio, sizeof(t_tlbEntrada));
+    // mutex tlb
+
+    // pongo todas las entradas como libres
+    for (int i = 0; i < tlb->tamanio; i++){
+        tlb->entradas[i].estado = LIBRE;
+    }
+
+    algoritmo_tlb = get_algoritmo_tlb();
+    ordenCargaGlobal = 0;
+
+    return tlb;
+
+}
    
+int get_entradas_tlb(){
+    int entradas;
+    entradas = config_get_int_value(cpu_config, "CANTIDAD_ENTRADAS_TLB");
+    return entradas;
+}
+
+int get_algoritmo_tlb(){
+    char* algoritmo;
+    algoritmo = config_get_string_value(cpu_config, "ALGORITMO_TLB");
+    if(strcmp(algoritmo, "FIFO") == 0){
+        return FIFO;
+    } else if(strcmp(algoritmo, "LRU") == 0){
+        return LRU;
+    } else {
+        log_error(cpu_logger, "Algoritmo de reemplazo no valido");
+        return 0;
+    }
+    free(algoritmo);
+}
+
+void pedir_tamanio_pagina(){
+    // le solicito a memoria el tamanio de las pags
+    t_paquete* unPaquete = crear_paquete_con_buffer(SOLICITUD_INFO_MEMORIA);
+    //cargar_int_a_paquete(unPaquete, contexto->proceso_pid);
+    enviar_paquete(unPaquete, fd_memoria);
+    eliminar_paquete(unPaquete);
+}

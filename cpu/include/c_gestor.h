@@ -4,11 +4,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <math.h>
 
 #include <utils/include/shared.h>
 
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/temporal.h>
+
+#define LIBRE 0
+#define OCUPADA 1
 
 // VARIABLES GLOBALES
 extern t_log* cpu_logger;
@@ -28,6 +33,8 @@ typedef struct{
     uint32_t BX; 
     uint32_t CX;
     uint32_t DX;
+    uint32_t SI;
+    uint32_t DI;
 }t_contexto;
 
 extern t_contexto* contexto;
@@ -51,11 +58,63 @@ extern int fd_memoria;
 
 // CICLO INSTRUCCION
 
-extern char** instruccion_dividida[];
+extern void realizarCicloInstruccion();
+
+extern char** instruccion_dividida;
+
+extern int motivo_interrupcion;
 
 //extern char* motivo_bloqueo;
 
-extern bool hay_interrupcion;
+//extern bool hay_interrupcion;
+extern bool hay_interrupcion_quantum;
+extern bool hay_interrupcion_exit;
+
+// TLB
+
+typedef struct tlbEntrada{
+    uint32_t pid;
+    uint32_t pagina;
+    int32_t marco;
+    int estado;
+
+    int orden_carga;
+    t_temporal* ultimo_uso;
+}t_tlbEntrada;
+
+typedef struct tlb {
+    t_tlbEntrada* entradas;
+    int tamanio;
+} t_tlb;
+
+extern t_tlb* tlb;
+extern int algoritmo_tlb;
+
+
+
+extern int ordenCargaGlobal;
+
+/*
+typedef struct {
+    int pid;
+    int nro_pag;
+    int direc_fisica;
+    bool ult_vez_usado;
+} t_entradaTabla;
+
+extern t_list* tlb;
+*/
+
+extern int tamanio_pagina;
+
+extern char* valor_marco;
+
+extern int marco;
+
+extern int resultado;
+
+extern char* respuesta_marco_lectura;
+extern char* respuesta_marco_escritura;
 
 #endif
 

@@ -71,7 +71,9 @@ int main(void){
 
     // CICLO DE INSTRUCCION
 
-    //realizarCicloInstruccion();
+    // semaforo para esperar a que me llegue un proceso?
+
+    realizarCicloInstruccion();
 
     
 	return EXIT_SUCCESS;
