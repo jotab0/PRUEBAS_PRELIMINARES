@@ -166,11 +166,13 @@ void decodeYExecute(){
         contexto->proceso_pc++; // aumenta PC
 
         int instruccion_interfaz = 0;
+        int cant_recursos = 1;
 
         t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
         cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
         cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+        cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
         cargar_int_a_paquete(unPaquete, atoi(instruccion_dividida[2])); // unidades de tiempo
 
         //motivo_bloqueo = "IO";
@@ -263,6 +265,7 @@ void decodeYExecute(){
         contexto->proceso_pc++; // aumenta PC
 
         int instruccion_interfaz = 1;
+        int cant_recursos = 2;
 
         uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
         int direccion_logica = (int)*registro_direccion;
@@ -276,7 +279,8 @@ void decodeYExecute(){
             t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
             cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
-            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+            cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos 
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
 
@@ -293,7 +297,8 @@ void decodeYExecute(){
 
         contexto->proceso_pc++; // aumenta PC
 
-         int instruccion_interfaz = 2;
+        int instruccion_interfaz = 2;
+        int cant_recursos = 2;
 
         uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
         int direccion_logica = (int)*registro_direccion;
@@ -307,7 +312,8 @@ void decodeYExecute(){
             t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
 
             cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
-            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz 
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+            cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
             cargar_int_a_paquete(unPaquete, direccion_fisica); // direccion
             cargar_int_a_paquete(unPaquete, tamanio); // tamanio
 
@@ -319,6 +325,135 @@ void decodeYExecute(){
             hayQueDesalojar = true;
         }
 
+    }  else if (strcmp(instruccion_dividida[0], "IO_FS_CREATE") == 0){ // IO_FS_CREATE(Interfaz, Nombre Archivo)
+            log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> ", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+
+            contexto->proceso_pc++; // aumenta PC
+
+            int instruccion_interfaz = 3;
+            int cant_recursos = 1;
+
+            t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+            cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+            cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[2]); // nombre archivo
+
+            enviarContextoAKernel(unPaquete);
+
+            hayQueDesalojar = true;
+   
+    }  else if (strcmp(instruccion_dividida[0], "IO_FS_DELETE") == 0){ // IO_FS_DELETE(Interfaz, Nombre Archivo)
+            log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> ", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2]);
+
+            contexto->proceso_pc++; // aumenta PC
+
+            int instruccion_interfaz = 4;
+            int cant_recursos = 1;
+
+            t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+            cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+            cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[2]); // nombre archivo
+
+            enviarContextoAKernel(unPaquete);
+
+            hayQueDesalojar = true;
+    
+    } else if (strcmp(instruccion_dividida[0], "IO_FS_TRUNCATE") == 0){ // IO_FS_TRUNCATE(Interfaz, Nombre Archivo, Registro tamanio)
+            log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s> ", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3]);
+
+            contexto->proceso_pc++; // aumenta PC
+
+            int instruccion_interfaz = 5;
+            int cant_recursos = 2;
+
+            uint32_t* registro_tamanio = detectar_registro(instruccion_dividida[3]);
+            int tamanio = (int)*registro_tamanio;
+
+            t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+            cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+            cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
+            cargar_string_a_paquete(unPaquete, instruccion_dividida[2]); // nombre archivo
+            cargar_int_a_paquete(unPaquete, tamanio); // valor del registro tamanio
+
+            enviarContextoAKernel(unPaquete);
+
+            hayQueDesalojar = true;
+    
+    } else if (strcmp(instruccion_dividida[0], "IO_FS_WRITE") == 0){ // IO_FS_WRITE(Interfaz, Nombre Archivo, Registro direccion, registro tamanio, registro puntero archivo)
+            log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s> <%s> <%s> ", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3], instruccion_dividida[4], instruccion_dividida[5]);
+
+            contexto->proceso_pc++; // aumenta PC
+
+            int instruccion_interfaz = 6;
+            int cant_recursos = 4;
+
+            uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
+            int direccion_logica = (int)*registro_direccion;
+            int direccion_fisica = traducir(direccion_logica); 
+
+            uint32_t* registro_tamanio = detectar_registro(instruccion_dividida[3]);
+            int tamanio = (int)*registro_tamanio;
+
+            uint32_t* registro_puntero_archivo = detectar_registro(instruccion_dividida[3]);
+            int puntero = (int)*registro_puntero_archivo;
+
+            if(direccion_fisica != 1){
+                t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+                cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+                cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+                cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
+                cargar_string_a_paquete(unPaquete, instruccion_dividida[2]); // nombre archivo
+                cargar_int_a_paquete(unPaquete, direccion_fisica); // valor registro direccion
+                cargar_int_a_paquete(unPaquete, tamanio); // valor del registro tamanio
+                cargar_int_a_paquete(unPaquete, puntero); // valor del registro puntero archivo
+
+                enviarContextoAKernel(unPaquete);
+
+                hayQueDesalojar = true;
+            }
+            
+    } else if (strcmp(instruccion_dividida[0], "IO_FS_READ") == 0){ // IO_FS_READ(Interfaz, Nombre Archivo, Registro direccion, registro tamanio, registro puntero archivo)
+            log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s> <%s> <%s> <%s> <%s> ", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1], instruccion_dividida[2], instruccion_dividida[3], instruccion_dividida[4], instruccion_dividida[5]);
+
+            contexto->proceso_pc++; // aumenta PC
+
+            int instruccion_interfaz = 7;
+            int cant_recursos = 4;
+
+            uint32_t* registro_direccion = detectar_registro(instruccion_dividida[2]);
+            int direccion_logica = (int)*registro_direccion;
+            int direccion_fisica = traducir(direccion_logica); 
+
+            uint32_t* registro_tamanio = detectar_registro(instruccion_dividida[3]);
+            int tamanio = (int)*registro_tamanio;
+
+            uint32_t* registro_puntero_archivo = detectar_registro(instruccion_dividida[3]);
+            int puntero = (int)*registro_puntero_archivo;
+
+            if(direccion_fisica != 1){
+                t_paquete* unPaquete = crear_paquete_con_buffer(ATENDER_INSTRUCCION_CPU);
+
+                cargar_int_a_paquete(unPaquete, instruccion_interfaz); // instruccion
+                cargar_string_a_paquete(unPaquete, instruccion_dividida[1]); // interfaz
+                cargar_int_a_paquete(unPaquete, cant_recursos); // cantidad de recursos
+                cargar_string_a_paquete(unPaquete, instruccion_dividida[2]); // nombre archivo
+                cargar_int_a_paquete(unPaquete, direccion_fisica); // valor registro direccion
+                cargar_int_a_paquete(unPaquete, tamanio); // valor del registro tamanio
+                cargar_int_a_paquete(unPaquete, puntero); // valor del registro puntero archivo
+
+                enviarContextoAKernel(unPaquete);
+
+                hayQueDesalojar = true;
+            }
+            
     } else if(strcmp(instruccion_dividida[0], "WAIT") == 0){ //WAIT(recurso)
         log_info(cpu_logger, "PID: <%d>, Ejecutando: <%s> - <%s>", contexto->proceso_pid, instruccion_dividida[0], instruccion_dividida[1]);
         
