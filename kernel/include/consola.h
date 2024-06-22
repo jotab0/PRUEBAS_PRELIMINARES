@@ -4,6 +4,7 @@
 #include "../include/k_gestor.h"
 #include "../include/shared_kernel.h"
 #include "../include/control_procesos.h"
+#include "../include/exit_process.h"
 
 #include <utils/include/shared.h>
 
