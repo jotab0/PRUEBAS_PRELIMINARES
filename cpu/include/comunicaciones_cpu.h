@@ -11,6 +11,8 @@ void esperar_kernel_cpu_interrupt();
 void esperar_memoria_cpu();
 //void solicitar_instruccion_de_memoria();
 
+void atender_escritura(char*);
+void atender_lectura();
 
 void recibir_instruccion(t_buffer*);
 char** string_split(char*, char*);

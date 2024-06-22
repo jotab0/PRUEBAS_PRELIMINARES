@@ -33,6 +33,16 @@ int fd_kernel_dispatch;
 int fd_kernel_interrupt;
 int fd_memoria;
 
+char* respuesta_marco_escritura;
+char* respuesta_marco_lectura;
 
+int marco;
+int tamanio_pagina;
+int motivo_interrupcion;
+int resultado;
+char** instruccion_dividida;
+int algoritmo_tlb;
+t_tlb* tlb;
+int ordenCargaGlobal;
 
 #endif

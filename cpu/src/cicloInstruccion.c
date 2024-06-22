@@ -460,7 +460,7 @@ void escribir_valor_memoria(int direccion_logica, char* valor, int tamanio){
 
         // semaforo wait(respuesta_peticion_escritura)
 
-        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%s>", contexto->proceso_pid, direccion_fisica, respuesta_marco_escritura);
+        log_info(cpu_logger, "PID: <%d> - Accion: ESCRIBIR - Direccion: <%d> - Valor: <%s>", contexto->proceso_pid, direccion_fisica, valor);
     }
 
 }

@@ -108,32 +108,14 @@ void esperar_memoria_cpu()
 			t_buffer *buffer6 = recibir_buffer(fd_memoria);
 			char *literal;
 			literal = extraer_string_del_buffer(buffer6);
-			if (respuesta_marco_lectura != NULL)
-			{
-				free(respuesta_marco_lectura);
-			}
-			respuesta_marco_lectura = (char *)malloc((strlen(literal) + 1) * sizeof(char));
-			if(respuesta_marco_lectura == NULL){
-				fprintf(stderr, "Error de asignacion de memoria\n");
-				exit(EXIT_FAILURE);
-			}
-			strcpy(respuesta_marco_lectura, literal);
+			atender_lectura(literal);
 			destruir_buffer(buffer6);
 			break;
 		case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
 			t_buffer *buffer7 = recibir_buffer(fd_memoria);
 			char *literal2;
 			literal2 = extraer_string_del_buffer(buffer7);
-			if (respuesta_marco_escritura != NULL)
-			{
-				free(respuesta_marco_escritura);
-			}
-			respuesta_marco_escritura = (char *)malloc((strlen(literal2) + 1) * sizeof(char));
-			if(respuesta_marco_escritura == NULL){
-				fprintf(stderr, "Error de asignacion de memoria\n");
-				exit(EXIT_FAILURE);
-			}
-			strcpy(respuesta_marco_escritura, literal2);
+			atender_escritura(literal2);
 			destruir_buffer(buffer7);
 			break;
 		case -1:
@@ -148,6 +130,30 @@ void esperar_memoria_cpu()
 }
 
 // atender memoria
+
+void atender_lectura(char* literal){
+	if (respuesta_marco_lectura != NULL){
+		free(respuesta_marco_lectura);
+	}
+	respuesta_marco_lectura = (char *)malloc((strlen(literal) + 1) * sizeof(char));
+	if(respuesta_marco_lectura == NULL){
+		fprintf(stderr, "Error de asignacion de memoria\n");
+		exit(EXIT_FAILURE);
+	}
+	strcpy(respuesta_marco_lectura, literal);
+}
+
+void atender_escritura(char* literal2){
+	if (respuesta_marco_escritura != NULL){
+		free(respuesta_marco_escritura);
+	}
+	respuesta_marco_escritura = (char *)malloc((strlen(literal2) + 1) * sizeof(char));
+	if(respuesta_marco_escritura == NULL){
+		fprintf(stderr, "Error de asignacion de memoria\n");
+		exit(EXIT_FAILURE);
+	}
+	strcpy(respuesta_marco_escritura, literal2);
+}
 
 void recibir_instruccion(t_buffer *unBuffer)
 {
