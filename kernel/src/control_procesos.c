@@ -1,6 +1,6 @@
 #include "../include/control_procesos.h"
 // FUNCIONALIDADES PCB
-pcb *crear_pcb(char *path, int size)
+pcb *crear_pcb(char *path)
 {
 
 	pcb *nuevo_PCB = malloc(sizeof(pcb));
@@ -8,33 +8,35 @@ pcb *crear_pcb(char *path, int size)
 	nuevo_PCB->pid = asignar_pid();
 
 	nuevo_PCB->program_counter = 0;
-
-	nuevo_PCB->quantum = QUANTUM; // Multiplico por mil para pasarlo de milisegundos a microsegundos
+	nuevo_PCB->quantum = QUANTUM; 
 	nuevo_PCB->tiempo_ejecutado = 0;
-	// nuevo_PCB->ticket = generar_ticket(); // Esto debería generarlo cuando lo pongo en exec?
 
 	nuevo_PCB->ticket = -1; // Inicializa en -1 porque el valor del primer ticket global es 0
 
-	nuevo_PCB->path = path; // Que pasa si cambia o sucesde algo con lo que apunta
+	nuevo_PCB->path = path; 
 
 	nuevo_PCB->registros_CPU = malloc(sizeof(registrosCPU));
 	nuevo_PCB->registros_CPU->AX = 0;
 	nuevo_PCB->registros_CPU->BX = 0;
 	nuevo_PCB->registros_CPU->CX = 0;
 	nuevo_PCB->registros_CPU->DX = 0;
+	nuevo_PCB->registros_CPU->SI = 0;
+	nuevo_PCB->registros_CPU->DI = 0;
 
 	nuevo_PCB->estado = NEW;
-	// *****CONSULTAR: Si está bien inicializar así los enum que no están definidos todavía
+
 	// INTERFACES
+	
 	nuevo_PCB->motivo_bloqueo = BLOQUEO_NO_DEFINIDO;
+	nuevo_PCB->pedido_a_interfaz = malloc(sizeof(pedido_interfaz));
 	nuevo_PCB->pedido_a_interfaz->nombre_interfaz = NULL;
 	nuevo_PCB->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
 	nuevo_PCB->pedido_a_interfaz->datos_auxiliares_interfaz = list_create();
 	
 	// RECURSOS
-	nuevo_PCB->recursos_en_uso = list_create();
 	nuevo_PCB->pedido_recurso = NULL; 
-
+	nuevo_PCB->recursos_en_uso = list_create();
+	
 	return nuevo_PCB;
 }
 
@@ -51,9 +53,11 @@ void planificador_largo_plazo()
 
 		_check_interrupt_plp();
 
+		// Es señalizado por:
+		// - Consola
+		// - Propio PLP
 		sem_wait(&sem_lista_new);
 
-		// CONSULTAR: Es necesario hacer malloc en este caso?
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_new);
@@ -82,10 +86,7 @@ void planificador_largo_plazo()
 				continue;
 			}
 
-			pthread_mutex_lock(&mutex_lista_ready);
-			list_add(ready, un_pcb);
-			pthread_mutex_unlock(&mutex_lista_ready);
-			cambiar_estado_pcb(un_pcb, READY);
+			list_add_pcb_sync(ready,un_pcb,&mutex_lista_ready,READY);
 
 			log_info(kernel_logger, " PID: %d - SET: READY", un_pcb->pid);
 
@@ -93,15 +94,14 @@ void planificador_largo_plazo()
 			procesos_en_core++;
 			pthread_mutex_unlock(&mutex_procesos_en_core);
 
-			// Esto le avisa a pcp que se agrego algo a ready, entonces puede planificar
 			sem_post(&sem_pcp);
-			// Acá se frena si ya no hay lugar de multiprogramación, no hay más espera activa si no hay lugar
-			// Debe haber sem_post cada vez que se manda un proceso a exit
+			
+			// CORRECCION PENDIENTE: Ver si sirve para manejar grado de multiprogramación y como actualizarlo
 			sem_wait(&sem_multiprogramacion);
 		}
 		else
 		{
-			log_error(kernel_logger, "ERROR: Se intentó cargar un proceso vacío");
+			log_warning(kernel_logger, "Lista ready vacía");
 		}
 	}
 }
@@ -149,26 +149,23 @@ void planificador_corto_plazo()
 
 		_check_interrupt_pcp();
 		// Espero a que se agregue algo a ready
+
+		// Es señalizado por:
+		// - PLP
+		// - Fin de instrucción IO
+		// - Volver de pedido de recurso
+		// - Volver por fin de Q
 		sem_wait(&sem_pcp);
+
+		// Es señalizado por:
+		// - Salida por fin de Q
+		// - Salida por fin de proceso (Consola o natural)
+		// - Salida por pedido de instrucción IO
+		// - Salida por WAIT
 		sem_wait(&sem_cpu_libre);
 
-		switch (ALGORITMO_PCP_SELECCIONADO)
-		{
+		planificar_corto_plazo();
 
-			case FIFO:
-
-			case RR:
-
-			case VRR:
-
-				planificar_corto_plazo();
-
-				break;
-
-			default:
-				log_error(kernel_logger_extra, "ERROR: Este algoritmo de planificación no es reconocido.");
-				// Debería romer la ejecución?
-		}
 	}
 }
 
@@ -180,7 +177,7 @@ void planificar_corto_plazo()
 
 	if (list_is_empty(execute))
 	{ // ESTO NO SÉ SI LO NECESITO CON EL SEMÁFORO sem_cpu_libre, CONSULTAR
-
+		pthread_mutex_unlock(&mutex_lista_exec);
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_ready);
@@ -198,9 +195,9 @@ void planificar_corto_plazo()
 		pthread_mutex_unlock(&mutex_lista_ready_plus);
 
 		_poner_en_ejecucion(un_pcb);
+	}else{
+		pthread_mutex_unlock(&mutex_lista_exec);
 	}
-
-	pthread_mutex_unlock(&mutex_lista_exec);
 }
 
 void _poner_en_ejecucion(pcb *un_pcb)
@@ -208,9 +205,10 @@ void _poner_en_ejecucion(pcb *un_pcb)
 
 	if (un_pcb != NULL)
 	{
-
+		pthread_mutex_lock(&mutex_lista_exec);
 		list_add(execute, un_pcb);
 		cambiar_estado_pcb(un_pcb, EXEC);
+		pthread_mutex_unlock(&mutex_lista_exec);
 
 		log_info(kernel_logger, " PID: %d - SET: EXEC", un_pcb->pid);
 		un_pcb->ticket = generar_ticket();
@@ -228,7 +226,7 @@ void _poner_en_ejecucion(pcb *un_pcb)
 	}
 	else
 	{
-		log_warning(kernel_logger, "Lista de READY vacía");
+		log_warning(kernel_logger, "Lista READY vacía");
 	}
 }
 
@@ -348,6 +346,8 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 	}
 }
 
+///////// INTERFAZ
+
 // Recibe pcb actualizado y gestiona el pedido a la interfaz
 void manejar_pedido_a_interfaz(pcb *pcb_recibido)
 {
@@ -395,9 +395,9 @@ bool _evaluar_diponibilidad_pedido(pcb *un_pcb) // 	CONSULTAR: Si está bien com
 		return strcmp(nombre_encontrado, nombre_buscado) == 1;
 	}
 
-	bool _buscar_instruccion(int instruccion_encontrada)
+	bool _buscar_instruccion(instruccion_interfaz instruccion_encontrada)
 	{
-		int instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
+		instruccion_interfaz instruccion_buscada = un_pcb->pedido_a_interfaz->instruccion_a_interfaz;
 		return instruccion_buscada == instruccion_encontrada;
 	}
 
@@ -445,30 +445,92 @@ interfaz* _traer_interfaz_solicitada(pcb *un_pcb)
 	return una_interfaz = list_find(interfaces_conectadas, (void *)_buscar_interfaz);
 }
 
-
+////// RECURSOS
 void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	
 	bool _buscar_recurso(instancia_recurso *un_recurso)
 	{
-		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 1;
+		return strcmp(pcb_recibido->pedido_recurso, un_recurso->nombre_recurso) == 0;
 	}
 
 	instancia_recurso* un_recurso;
 
+	pthread_mutex_lock(&mutex_lista_recursos);
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-
-		sem_wait(&un_recurso->semaforo_recurso);
-
-		pcb_recibido = extraer_pcb_de_lista(pcb_recibido->pid, blocked, &mutex_lista_blocked);
-		agregar_a_ready(pcb_recibido);
+		list_add(un_recurso->lista_procesos_en_cola,pcb_recibido);
+		pthread_mutex_unlock(&mutex_lista_recursos);
+		sem_post(&un_recurso->semaforo_request_recurso);
 
 	}else{
+		pthread_mutex_unlock(&mutex_lista_recursos);
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
 
 	sem_post(&sem_pcp);
+
+}
+
+void control_request_de_recursos(instancia_recurso* un_recurso){
+	while(1){
+		
+		// Se le envía signal solamente cuando algún proceso hace la request del recurso
+		sem_wait(&un_recurso->semaforo_request_recurso);
+
+		// Se le envía señal cada vez que se libera una instancia
+		sem_wait(&un_recurso->semaforo_recurso);
+
+		pcb* un_pcb = NULL;
+
+		pthread_mutex_lock(&un_recurso->mutex_lista_procesos_en_cola);
+		un_pcb = list_remove(un_recurso->lista_procesos_en_cola,0);
+		pthread_mutex_unlock(&un_recurso->mutex_lista_procesos_en_cola);
+
+		un_pcb = extraer_pcb_de_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
+		un_pcb->pedido_recurso = NULL;
+		agregar_recurso_a_pcb(un_pcb,un_recurso->nombre_recurso);
+		
+
+		agregar_a_ready(un_pcb);
+	}
+}
+
+// CONSULTAR: Si están bien las siguientes funciones con listas
+void agregar_recurso_a_pcb (pcb* un_pcb, char* un_recurso){
+
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso) == 0;
+	}
+
+	instancia_recurso_pcb* recurso = NULL;
+
+	if(list_is_empty(un_pcb->recursos_en_uso)){
+
+		recurso = malloc(sizeof(instancia_recurso_pcb));
+		recurso->nombre_recurso = un_recurso;
+		recurso->instancias_recurso = 1;
+		list_add(un_pcb->recursos_en_uso,recurso);
+		free(recurso);
+	}
+	else{
+		
+		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+		{
+			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+			recurso->instancias_recurso += 1;
+		}
+		else
+		{
+			recurso = malloc(sizeof(instancia_recurso_pcb));
+			recurso->nombre_recurso = un_recurso;
+			recurso->instancias_recurso = 1;
+			list_add(un_pcb->recursos_en_uso,recurso);
+			// CONSULTA: Debería hacer free del puntero recurso?
+			free(recurso);
+		}
+	}
 
 }
 
@@ -481,16 +543,43 @@ void manejar_signal_de_recurso(pcb *pcb_recibido){
 
 	instancia_recurso* un_recurso;
 
+	pthread_mutex_lock(&mutex_lista_recursos);
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-
 		sem_post(&un_recurso->semaforo_recurso);
 
 	}else{
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
+	pthread_mutex_unlock(&mutex_lista_recursos);
+	quitar_recurso(pcb_recibido, pcb_recibido->pedido_recurso);
+}
 
+
+void quitar_recurso (pcb* un_pcb, char* un_recurso){
+
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
+	}
+
+	instancia_recurso_pcb* recurso = NULL;
+
+	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+	{
+		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+		
+		if(recurso->instancias_recurso > 0){
+
+			recurso->instancias_recurso -= 1;
+
+		}
+		else
+		{
+			list_remove_by_condition(un_pcb->recursos_en_uso,(void *)_buscar_recurso);
+		}
+	}
 }
 
 

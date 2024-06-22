@@ -42,7 +42,7 @@ void _gestionar_interrupcion(pcb* un_pcb, interrupcion motivo_interrupcion){
 		
 		t_paquete* paquete = NULL;
 		
-		paquete = crear_paquete_con_buffer(INTERRUPCION);
+		paquete = crear_paquete_con_buffer(QUANTUM_INTERRUPT);
 		cargar_int_a_paquete(paquete,un_pcb->pid);
 		cargar_int_a_paquete(paquete,motivo_interrupcion);
 

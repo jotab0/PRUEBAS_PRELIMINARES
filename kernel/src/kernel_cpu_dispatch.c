@@ -34,19 +34,16 @@ void esperar_cpu_dispatch_kernel(){
 			
 			instruccion_interfaz instruccion_solicitada = extraer_int_del_buffer(un_buffer);
 			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);
-			// Podría ser una lista?
+			int cantidad_recursos = extraer_int_del_buffer(un_buffer);
 
-			pcb* pcb_recibido = NULL;
-			pcb_recibido = obtener_contexto_pcb(un_buffer);
-			
 			pcb* un_pcb = NULL;
 			pthread_mutex_lock(&mutex_lista_exec);
 			un_pcb = list_remove(execute,0);
 			pthread_mutex_unlock(&mutex_lista_exec);
+			
+			extraer_datos_auxiliares(un_buffer,instruccion_solicitada,cantidad_recursos,un_pcb);
 
-			actualizar_pcb(un_pcb,pcb_recibido);
-
-			un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz = extraer_datos_auxiliares(un_buffer,instruccion_solicitada);
+			obtener_contexto_pcb(un_buffer,un_pcb);
 			
 			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
 			
@@ -55,7 +52,8 @@ void esperar_cpu_dispatch_kernel(){
 			un_pcb -> pedido_a_interfaz -> nombre_interfaz = interfaz_solicitada;
 			un_pcb -> pedido_a_interfaz -> instruccion_a_interfaz = instruccion_solicitada;
 
-			manejar_bloqueo_de_proceso(un_pcb);	
+			manejar_bloqueo_de_proceso(un_pcb);
+
 			sem_post(&sem_cpu_libre);	
 
 			destruir_buffer(un_buffer);
@@ -67,22 +65,17 @@ void esperar_cpu_dispatch_kernel(){
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 			char* recurso_solicitado = extraer_string_del_buffer(un_buffer);
 
-			pcb_recibido = NULL;
-			pcb_recibido = obtener_contexto_pcb(un_buffer);
-
 			un_pcb = NULL;
 			pthread_mutex_lock(&mutex_lista_exec);
 			un_pcb = list_remove(execute,0);
 			pthread_mutex_unlock(&mutex_lista_exec);
 
-			actualizar_pcb(un_pcb,pcb_recibido);
+			obtener_contexto_pcb(un_buffer,un_pcb);
 			
 			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
 
 			un_pcb -> motivo_bloqueo = WAIT;
 			un_pcb -> pedido_recurso = recurso_solicitado;
-
-			agregar_recurso(un_pcb,recurso_solicitado);
 
 			manejar_bloqueo_de_proceso(un_pcb);	
 			
@@ -97,18 +90,50 @@ void esperar_cpu_dispatch_kernel(){
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 			recurso_solicitado = extraer_string_del_buffer(un_buffer);
 
-			//CONSULTA: Puedo inicializarlo en NULL cuando tengo variables enum dentro?
+			pthread_mutex_lock(&mutex_lista_exec);
 			un_pcb = list_get(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
 
 			un_pcb -> motivo_bloqueo = SIGNAL;
 			un_pcb -> pedido_recurso = recurso_solicitado;
 
 			//CONSULTA: Que pasa si hace signal de un recurso que no tiene?
-			quitar_recurso(un_pcb,recurso_solicitado);
 			manejar_bloqueo_de_proceso(un_pcb);
 
 			destruir_buffer(un_buffer);
 
+		break;
+
+		case QUANTUM_INTERRUPT:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
+
+			obtener_contexto_pcb(un_buffer,un_pcb);
+
+			agregar_a_ready(un_pcb);
+			sem_post(&sem_pcp);
+			sem_post(&sem_cpu_libre);
+
+		break;
+
+		case EXIT_PROCESS:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
+
+			obtener_contexto_pcb(un_buffer,un_pcb);
+
+			list_add_pcb_sync(lista_exit,un_pcb,&mutex_lista_exit,EXIT);
+
+			sem_post(&sem_cpu_libre);
+			
 		break;
 
 		case -1:
@@ -129,97 +154,37 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	un_paquete = crear_paquete_con_buffer(EJECUTAR_PROCESO_KCPU);
 	cargar_int_a_paquete(un_paquete, un_pcb->pid);
 	cargar_int_a_paquete(un_paquete, un_pcb->program_counter);
+
+	// CORRECCION PENDIENTE: No hace falta enviar tiempo ejecutado ni ticket (Verlo con cami)
 	cargar_int_a_paquete(un_paquete, un_pcb->tiempo_ejecutado);
 	cargar_int_a_paquete(un_paquete, un_pcb->ticket);
+
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->AX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->BX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->CX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->DX);
 
-	enviar_paquete(un_paquete, fd_cpu_dispatch); //RECORDAR: PAQUETE SE SERIALIZA ACÁ ADENTRO
+	enviar_paquete(un_paquete, fd_cpu_dispatch); 
 	destruir_paquete(un_paquete);
 }
 
-// CONSULTAR: Si están bien las siguientes funciones con listas
-void agregar_recurso (pcb* un_pcb, char* un_recurso){
 
-	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
-	{
-		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
-	}
-
-	instancia_recurso_pcb* recurso = NULL;
-
-	if(list_is_empty(un_pcb->recursos_en_uso)){
-
-		instancia_recurso_pcb* recurso = malloc(sizeof(instancia_recurso_pcb));
-		recurso->nombre_recurso = un_recurso;
-		recurso->instancias_recurso = 1;
-		list_add(un_pcb->recursos_en_uso,recurso);
-
-	}
-	else{
-		
-		if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
-		{
-			recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
-			recurso->instancias_recurso += 1;
-		}
-		else
-		{
-			recurso = malloc(sizeof(instancia_recurso_pcb));
-			recurso->nombre_recurso = un_recurso;
-			recurso->instancias_recurso = 1;
-			list_add(un_pcb->recursos_en_uso,recurso);
-			// CONSULTA: Debería hacer free del puntero recurso?
-			free(recurso);
-		}
-	}
-
-}
-
-void quitar_recurso (pcb* un_pcb, char* un_recurso){
-
-	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
-	{
-		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
-	}
-
-	instancia_recurso_pcb* recurso = NULL;
-
-	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
-	{
-		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
-		
-		if(recurso->instancias_recurso > 0){
-
-			recurso->instancias_recurso -= 1;
-
-		}
-		else
-		{
-			list_remove_by_condition(un_pcb->recursos_en_uso,(void *)_buscar_recurso);
-		}
-	}
-	
-}
-
-t_list* extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada){
-	
-	t_list* una_lista = list_create();
+void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada, int cantidad_recursos, pcb* un_pcb){
 
 	switch (instruccion_solicitada)
 	{
 		case IO_GEN_SLEEP:
 
-
-			int* un_tiempo = NULL;
+			// CORRECCION PENDIENTE: Ver si está ok el manejo de puntero para la lista. Está bien el free?
+			int *un_tiempo = malloc(sizeof(int));
 			int tiempo_extraido;
 
 			tiempo_extraido = extraer_int_del_buffer(un_buffer);
-			un_tiempo = &tiempo_extraido;
+			*un_tiempo = tiempo_extraido;
 
-			list_add(una_lista,un_tiempo);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,un_tiempo);
+			free(un_tiempo);
+
 			break;
 		
 		case IO_STDIN_READ:
@@ -231,9 +196,10 @@ t_list* extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instru
 		case IO_FS_READ:
 			
 			char* una_direccion = NULL;
-			while(un_buffer->size > 0){
+			while(cantidad_recursos > 0){
 				una_direccion = extraer_string_del_buffer(un_buffer);
-				list_add(una_lista,una_direccion);
+				list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,una_direccion);
+				cantidad_recursos -= 1;
 			} 
 			break;
 
@@ -241,6 +207,4 @@ t_list* extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instru
 			log_error(kernel_logger,"No llegó ninguna instrucción a interfaz conocida");
 			break;
 	}
-
-	return una_lista;
 }

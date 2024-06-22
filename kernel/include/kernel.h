@@ -52,6 +52,7 @@ pthread_mutex_t mutex_lista_blocked;
 pthread_mutex_t mutex_lista_exit;
 pthread_mutex_t mutex_procesos_en_core;
 pthread_mutex_t mutex_lista_interfaces;
+pthread_mutex_t mutex_lista_recursos;
 
 pthread_mutex_t mutex_ticket;
 pthread_mutex_t mutex_pid;
