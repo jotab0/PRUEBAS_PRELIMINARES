@@ -30,8 +30,11 @@ interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
 void planificar_proceso_exit(pcb* un_pcb);
 void planificar_proceso_exit_en_hilo(pcb* un_pcb);
+
 void manejar_pedido_de_recurso(pcb *pcb_recibido);
-void agregar_recurso (pcb* un_pcb, char* un_recurso);
+void control_request_de_recursos(instancia_recurso* un_recurso);
+void agregar_recurso_a_pcb (pcb* un_pcb, char* un_recurso);
 void manejar_signal_de_recurso(pcb *pcb_recibido);
+void quitar_recurso (pcb* un_pcb, char* un_recurso);
 
 #endif

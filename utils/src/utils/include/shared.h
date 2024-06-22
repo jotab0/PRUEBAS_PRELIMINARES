@@ -57,7 +57,6 @@ typedef struct {
 }t_buffer;
 
 typedef enum {
-    CONSOLA_INTERRUPT,
     QUANTUM_INTERRUPT,
     EXIT_PROCESS
 }interrupcion;

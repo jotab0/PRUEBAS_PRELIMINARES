@@ -89,7 +89,8 @@ typedef struct{
 	t_list* lista_procesos_en_cola;
     sem_t semaforo_recurso;
 	sem_t semaforo_request_recurso;
-	pthread_mutex_t mutex_lista_recurso; 
+	pthread_mutex_t mutex_lista_recurso;
+	pthread_mutex_t mutex_lista_procesos_en_cola;  
 }instancia_recurso;
 
 typedef struct{

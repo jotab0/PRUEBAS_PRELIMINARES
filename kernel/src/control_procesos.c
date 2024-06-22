@@ -154,6 +154,7 @@ void planificador_corto_plazo()
 		// - PLP
 		// - Fin de instrucción IO
 		// - Volver de pedido de recurso
+		// - Volver por fin de Q
 		sem_wait(&sem_pcp);
 
 		// Es señalizado por:
@@ -176,7 +177,7 @@ void planificar_corto_plazo()
 
 	if (list_is_empty(execute))
 	{ // ESTO NO SÉ SI LO NECESITO CON EL SEMÁFORO sem_cpu_libre, CONSULTAR
-
+		pthread_mutex_unlock(&mutex_lista_exec);
 		pcb *un_pcb = NULL;
 
 		pthread_mutex_lock(&mutex_lista_ready);
@@ -194,9 +195,9 @@ void planificar_corto_plazo()
 		pthread_mutex_unlock(&mutex_lista_ready_plus);
 
 		_poner_en_ejecucion(un_pcb);
+	}else{
+		pthread_mutex_unlock(&mutex_lista_exec);
 	}
-
-	pthread_mutex_unlock(&mutex_lista_exec);
 }
 
 void _poner_en_ejecucion(pcb *un_pcb)
@@ -204,9 +205,10 @@ void _poner_en_ejecucion(pcb *un_pcb)
 
 	if (un_pcb != NULL)
 	{
-
+		pthread_mutex_lock(&mutex_lista_exec);
 		list_add(execute, un_pcb);
 		cambiar_estado_pcb(un_pcb, EXEC);
+		pthread_mutex_unlock(&mutex_lista_exec);
 
 		log_info(kernel_logger, " PID: %d - SET: EXEC", un_pcb->pid);
 		un_pcb->ticket = generar_ticket();
@@ -344,6 +346,8 @@ void manejar_bloqueo_de_proceso(pcb *un_pcb)
 	}
 }
 
+///////// INTERFAZ
+
 // Recibe pcb actualizado y gestiona el pedido a la interfaz
 void manejar_pedido_a_interfaz(pcb *pcb_recibido)
 {
@@ -441,7 +445,7 @@ interfaz* _traer_interfaz_solicitada(pcb *un_pcb)
 	return una_interfaz = list_find(interfaces_conectadas, (void *)_buscar_interfaz);
 }
 
-
+////// RECURSOS
 void manejar_pedido_de_recurso(pcb *pcb_recibido){
 	
 	bool _buscar_recurso(instancia_recurso *un_recurso)
@@ -451,13 +455,16 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 
 	instancia_recurso* un_recurso;
 
+	pthread_mutex_lock(&mutex_lista_recursos);
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-		list_add_sync(un_recurso->lista_procesos_en_cola,pcb_recibido,&un_recurso->mutex_lista_recurso);
+		list_add(un_recurso->lista_procesos_en_cola,pcb_recibido);
+		pthread_mutex_unlock(&mutex_lista_recursos);
 		sem_post(&un_recurso->semaforo_request_recurso);
 
 	}else{
+		pthread_mutex_unlock(&mutex_lista_recursos);
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
 
@@ -468,22 +475,29 @@ void manejar_pedido_de_recurso(pcb *pcb_recibido){
 void control_request_de_recursos(instancia_recurso* un_recurso){
 	while(1){
 		
+		// Se le envía signal solamente cuando algún proceso hace la request del recurso
 		sem_wait(&un_recurso->semaforo_request_recurso);
+
+		// Se le envía señal cada vez que se libera una instancia
 		sem_wait(&un_recurso->semaforo_recurso);
 
 		pcb* un_pcb = NULL;
+
+		pthread_mutex_lock(&un_recurso->mutex_lista_procesos_en_cola);
 		un_pcb = list_remove(un_recurso->lista_procesos_en_cola,0);
+		pthread_mutex_unlock(&un_recurso->mutex_lista_procesos_en_cola);
 
 		un_pcb = extraer_pcb_de_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
-		agregar_recurso(un_pcb,un_recurso->nombre_recurso);
 		un_pcb->pedido_recurso = NULL;
+		agregar_recurso_a_pcb(un_pcb,un_recurso->nombre_recurso);
+		
 
 		agregar_a_ready(un_pcb);
 	}
 }
 
 // CONSULTAR: Si están bien las siguientes funciones con listas
-void agregar_recurso (pcb* un_pcb, char* un_recurso){
+void agregar_recurso_a_pcb (pcb* un_pcb, char* un_recurso){
 
 	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
 	{
@@ -529,16 +543,43 @@ void manejar_signal_de_recurso(pcb *pcb_recibido){
 
 	instancia_recurso* un_recurso;
 
+	pthread_mutex_lock(&mutex_lista_recursos);
 	if(list_any_satisfy(lista_recursos,(void *)_buscar_recurso)){
 		
 		un_recurso = list_find(lista_recursos,(void *)_buscar_recurso);
-
 		sem_post(&un_recurso->semaforo_recurso);
 
 	}else{
 		planificar_proceso_exit_en_hilo(pcb_recibido);
 	}
+	pthread_mutex_unlock(&mutex_lista_recursos);
+	quitar_recurso(pcb_recibido, pcb_recibido->pedido_recurso);
+}
 
+
+void quitar_recurso (pcb* un_pcb, char* un_recurso){
+
+	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
+	{
+		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
+	}
+
+	instancia_recurso_pcb* recurso = NULL;
+
+	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
+	{
+		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
+		
+		if(recurso->instancias_recurso > 0){
+
+			recurso->instancias_recurso -= 1;
+
+		}
+		else
+		{
+			list_remove_by_condition(un_pcb->recursos_en_uso,(void *)_buscar_recurso);
+		}
+	}
 }
 
 

@@ -36,7 +36,6 @@ void esperar_cpu_dispatch_kernel(){
 			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);
 			int cantidad_recursos = extraer_int_del_buffer(un_buffer);
 
-
 			pcb* un_pcb = NULL;
 			pthread_mutex_lock(&mutex_lista_exec);
 			un_pcb = list_remove(execute,0);
@@ -91,18 +90,50 @@ void esperar_cpu_dispatch_kernel(){
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 			recurso_solicitado = extraer_string_del_buffer(un_buffer);
 
-			//CONSULTA: Puedo inicializarlo en NULL cuando tengo variables enum dentro?
+			pthread_mutex_lock(&mutex_lista_exec);
 			un_pcb = list_get(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
 
 			un_pcb -> motivo_bloqueo = SIGNAL;
 			un_pcb -> pedido_recurso = recurso_solicitado;
 
 			//CONSULTA: Que pasa si hace signal de un recurso que no tiene?
-			quitar_recurso(un_pcb,recurso_solicitado);
 			manejar_bloqueo_de_proceso(un_pcb);
 
 			destruir_buffer(un_buffer);
 
+		break;
+
+		case QUANTUM_INTERRUPT:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
+
+			obtener_contexto_pcb(un_buffer,un_pcb);
+
+			agregar_a_ready(un_pcb);
+			sem_post(&sem_pcp);
+			sem_post(&sem_cpu_libre);
+
+		break;
+
+		case EXIT_PROCESS:
+
+			un_buffer = recibir_buffer(fd_cpu_dispatch);
+
+			pthread_mutex_lock(&mutex_lista_exec);
+			un_pcb = list_remove(execute,0);
+			pthread_mutex_unlock(&mutex_lista_exec);
+
+			obtener_contexto_pcb(un_buffer,un_pcb);
+
+			list_add_pcb_sync(lista_exit,un_pcb,&mutex_lista_exit,EXIT);
+
+			sem_post(&sem_cpu_libre);
+			
 		break;
 
 		case -1:
@@ -137,31 +168,6 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	destruir_paquete(un_paquete);
 }
 
-void quitar_recurso (pcb* un_pcb, char* un_recurso){
-
-	bool _buscar_recurso(instancia_recurso_pcb* recurso_encontrado)
-	{
-		return strcmp(recurso_encontrado->nombre_recurso,un_recurso)== 1;
-	}
-
-	instancia_recurso_pcb* recurso = NULL;
-
-	if(list_any_satisfy(un_pcb->recursos_en_uso, (void *)_buscar_recurso))
-	{
-		recurso = list_find(un_pcb->recursos_en_uso, (void *)_buscar_recurso);
-		
-		if(recurso->instancias_recurso > 0){
-
-			recurso->instancias_recurso -= 1;
-
-		}
-		else
-		{
-			list_remove_by_condition(un_pcb->recursos_en_uso,(void *)_buscar_recurso);
-		}
-	}
-	
-}
 
 void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada, int cantidad_recursos, pcb* un_pcb){
 
