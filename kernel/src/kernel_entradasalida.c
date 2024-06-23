@@ -50,6 +50,7 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 			nueva_interfaz = _crear_instancia_interfaz(buffer,fd_conexion_entradasalida);
 
 			list_add_sync(interfaces_conectadas,nueva_interfaz,&mutex_lista_interfaces);
+			ejecutar_en_hilo_detach((void*)control_request_de_interfaz,nueva_interfaz);
 			
 			destruir_buffer(buffer);
 
@@ -72,7 +73,7 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 	free(fd_conexion_entradasalida);
 }
 
-// LA IDEA ES CREAR HILO POR PEDIDO
+
 interfaz* _crear_instancia_interfaz(t_buffer* buffer, int* fd_conexion_entradasalida){ // CONSULTAR: Si está bien creada la instancia 
 	
 	interfaz* una_interfaz = malloc(sizeof(interfaz)); 
@@ -100,9 +101,8 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 	t_paquete* paquete = NULL;
 	
 	paquete = crear_paquete_con_buffer(un_pcb->pedido_a_interfaz->instruccion_a_interfaz);
-	cargar_int_a_paquete(paquete,un_pcb->pid);
 	
-	cargar_datos_auxiliares_en_paquete(un_pcb->pedido_a_interfaz->instruccion_a_interfaz,un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,paquete);
+	cargar_datos_auxiliares_en_paquete(un_pcb->pedido_a_interfaz->instruccion_a_interfaz,un_pcb,paquete);
 	
 	enviar_paquete(paquete,*(una_interfaz->fd_conexion));
 	
@@ -112,32 +112,91 @@ int solicitar_instruccion_a_interfaz(pcb* un_pcb, interfaz* una_interfaz){
 	return una_interfaz->resultado_operacion_solicitada;
 }
 
-void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, t_list* datos_auxiliares, t_paquete* un_paquete){
+void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, pcb* un_pcb, t_paquete* un_paquete){
+	
+	t_list* datos_auxiliares = un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz;
 	switch (instruccion)
 	{
 		case IO_GEN_SLEEP:
 
 			int* un_tiempo = list_remove(datos_auxiliares,0);
+			
+			cargar_string_a_paquete(un_paquete,un_pcb->pedido_a_interfaz->nombre_interfaz);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
 			cargar_int_a_paquete(un_paquete,*un_tiempo);
+
 			break;
 		
 		case IO_STDIN_READ:
-		case IO_STDOUT_WRITE:
-		case IO_FS_CREATE:
-		case IO_FS_DELETE:
-		case IO_FS_TRUNCATE:
-		case IO_FS_WRITE:
-		case IO_FS_READ:
+
 			
-			char* una_direccion;
-			while(list_size(datos_auxiliares)>0){
-				una_direccion = list_remove(datos_auxiliares,0);
-				cargar_string_a_paquete(un_paquete,una_direccion);
-			} 
+			cargar_string_a_paquete(un_paquete,un_pcb->pedido_a_interfaz->nombre_interfaz);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			int* parametro = list_remove(datos_auxiliares,0);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,1);
+			cargar_int_a_paquete(un_paquete,*parametro);
+		
+
+		case IO_STDOUT_WRITE:
+
+			cargar_string_a_paquete(un_paquete,un_pcb->pedido_a_interfaz->nombre_interfaz);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			parametro = list_remove(datos_auxiliares,0);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,1);
+			cargar_int_a_paquete(un_paquete,*parametro);
+
+		case IO_FS_CREATE:
+
+			char* nombre_archivo = list_remove(datos_auxiliares,0);
+			cargar_string_a_paquete(un_paquete,nombre_archivo);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+
+		case IO_FS_DELETE:
+
+			nombre_archivo = list_remove(datos_auxiliares,0);
+			cargar_string_a_paquete(un_paquete, nombre_archivo);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+
+		case IO_FS_TRUNCATE:
+
+			nombre_archivo = list_remove(datos_auxiliares,0);
+			cargar_string_a_paquete(un_paquete, nombre_archivo);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			parametro = list_remove(datos_auxiliares,1);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			
+
+		case IO_FS_WRITE:
+
+			nombre_archivo = list_remove(datos_auxiliares,0);
+			cargar_string_a_paquete(un_paquete, nombre_archivo);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			parametro = list_remove(datos_auxiliares,1);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,2);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,3);
+			cargar_int_a_paquete(un_paquete,*parametro);
+
+		case IO_FS_READ:
+
+			nombre_archivo = list_remove(datos_auxiliares,0);
+			cargar_string_a_paquete(un_paquete, nombre_archivo);
+			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			parametro = list_remove(datos_auxiliares,1);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,2);
+			cargar_int_a_paquete(un_paquete,*parametro);
+			parametro = list_remove(datos_auxiliares,3);
+			cargar_int_a_paquete(un_paquete,*parametro);
+
 			break;
 
 		default:
-			log_error(kernel_logger,"Kernel no pudo cargar instruccion para E/S");
+			log_error(kernel_logger,"ERROR: Se recibió instrucción de E/S que no está disponible");
+			exit(EXIT_FAILURE);
 			break;
 	}
 }

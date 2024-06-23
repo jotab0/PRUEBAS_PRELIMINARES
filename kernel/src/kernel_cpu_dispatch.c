@@ -41,7 +41,7 @@ void esperar_cpu_dispatch_kernel(){
 			un_pcb = list_remove(execute,0);
 			pthread_mutex_unlock(&mutex_lista_exec);
 			
-			extraer_datos_auxiliares(un_buffer,instruccion_solicitada,cantidad_recursos,un_pcb);
+			extraer_datos_auxiliares(un_buffer,instruccion_solicitada,un_pcb);
 
 			obtener_contexto_pcb(un_buffer,un_pcb);
 			
@@ -169,35 +169,84 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 }
 
 
-void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada, int cantidad_recursos, pcb* un_pcb){
+void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instruccion_solicitada, pcb* un_pcb){
 
 	switch (instruccion_solicitada)
 	{
+		
 		case IO_GEN_SLEEP:
 
 			// CORRECCION PENDIENTE: Ver si está ok el manejo de puntero para la lista. Está bien el free?
-			int tiempo_extraido;
-
-			tiempo_extraido = extraer_int_del_buffer(un_buffer);
-
+			int tiempo_extraido = extraer_int_del_buffer(un_buffer);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&tiempo_extraido);
 
 			break;
 		
 		case IO_STDIN_READ:
+			
+			// Registro dirección
+			int parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro tamaño 
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+
 		case IO_STDOUT_WRITE:
+
+			// Registro dirección
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro tamaño 
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+
 		case IO_FS_CREATE:
+
+			char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+
 		case IO_FS_DELETE:
+
+			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+		
 		case IO_FS_TRUNCATE:
+
+			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+			// Registro tamaño
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+
+
 		case IO_FS_WRITE:
+
+			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+			// Registro dirección
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro tamaño
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro puntero archivo
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+
 		case IO_FS_READ:
 			
-			char* una_direccion = NULL;
-			while(cantidad_recursos > 0){
-				una_direccion = extraer_string_del_buffer(un_buffer);
-				list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,una_direccion);
-				cantidad_recursos -= 1;
-			} 
+			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+			// Registro dirección
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro tamaño
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			// Registro puntero archivo
+			parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+
 			break;
 
 		default:
