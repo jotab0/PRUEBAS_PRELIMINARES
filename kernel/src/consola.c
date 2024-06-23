@@ -160,7 +160,7 @@ if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){
     printf("Pocesos en BLOCKED \n");
     imprimir_procesos(blocked,&mutex_lista_blocked);
     printf("Pocesos en EXIT \n");
-    imprimir_procesos(lista_exit,&mutex_lista_exit);
+    imprimir_procesos_exit(lista_exit,&mutex_lista_exit);
 
 }else{
     log_error(kernel_logger, "Comando no reconocido"); // Con la validación no debería llegar acá
@@ -172,12 +172,24 @@ if(strcmp(comando_consola[0], "INICIAR_PROCESO") == 0){
 void imprimir_procesos(t_list* una_lista, pthread_mutex_t* un_mutex){
     int tamanio = list_size(una_lista) - 1;
     pcb* un_pcb = NULL;
-
     pthread_mutex_lock(un_mutex);
     while(tamanio >= 0){
         un_pcb = list_get(una_lista,tamanio);
         tamanio --;
         printf("PID: %d \n",un_pcb->pid);
+    }
+    pthread_mutex_unlock(un_mutex);
+}
+
+void imprimir_procesos_exit(t_list* una_lista, pthread_mutex_t* un_mutex){
+    int tamanio = list_size(una_lista) - 1;
+    int* un_pid = NULL;
+
+    pthread_mutex_lock(un_mutex);
+    while(tamanio >= 0){
+        un_pid = list_get(una_lista,tamanio);
+        tamanio --;
+        printf("PID: %d \n",*un_pid);
     }
     pthread_mutex_unlock(un_mutex);
 }

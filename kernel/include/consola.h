@@ -13,6 +13,7 @@ bool validacion_de_instruccion_de_consola(char* leido);
 void atender_instruccion(char* leido);
 void f_iniciar_proceso(t_buffer* un_buffer);
 void imprimir_procesos(t_list* una_lista, pthread_mutex_t* un_mutex);
+void imprimir_procesos_exit(t_list* una_lista, pthread_mutex_t* un_mutex);
 
 t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones);
 t_list* procesar_archivo(const char* path_archivo);

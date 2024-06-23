@@ -50,7 +50,7 @@ void inicializar_configs(){
 
 void establecer_algoritmo_seleccionado(){
     if (strcmp(ALGORITMO_PLANIFICACION, "FIFO") == 0) {
-       ALGORITMO_PCP_SELECCIONADO = FIFO;
+        ALGORITMO_PCP_SELECCIONADO = FIFO;
     } else if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0) {
         ALGORITMO_PCP_SELECCIONADO = RR;
     } else if (strcmp(ALGORITMO_PLANIFICACION, "VRR") == 0) {

@@ -14,7 +14,8 @@ void planificar_proceso_exit(pcb *un_pcb)
 	case NEW:
 
 		if (_eliminar_pcb_de_lista_sync(un_pcb, new, &mutex_lista_new))
-		{
+		{	
+			agregar_int_a_lista(lista_exit,un_pcb->pid);
 			destruir_pcb(un_pcb);
 		}
 
@@ -25,31 +26,22 @@ void planificar_proceso_exit(pcb *un_pcb)
 		switch (ALGORITMO_PCP_SELECCIONADO)
 		{
 		case VRR:
-			if (_eliminar_pcb_de_lista_sync(un_pcb, ready, &mutex_lista_ready))
-			{
-				liberar_recursos_pcb(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
-				break;
-			}
 
-			else if (_eliminar_pcb_de_lista_sync(un_pcb, ready_plus, &mutex_lista_ready_plus))
-			{
-				liberar_recursos_pcb(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
-				break;
-			}
+			if (_eliminar_pcb_de_lista_sync(un_pcb, ready, &mutex_lista_ready)){
+			
+				_gestionar_salida(un_pcb);
 
+			}else if (_eliminar_pcb_de_lista_sync(un_pcb, ready_plus, &mutex_lista_ready_plus)){
+
+				_gestionar_salida(un_pcb);
+				
+			}
 			break;
 
 		default:
 
-			if (_eliminar_pcb_de_lista_sync(un_pcb, ready, &mutex_lista_ready))
-			{
-				liberar_recursos_pcb(un_pcb);
-				destruir_pcb(un_pcb);
-				sem_post(&sem_multiprogramacion);
+			if (_eliminar_pcb_de_lista_sync(un_pcb, ready, &mutex_lista_ready)){
+				_gestionar_salida(un_pcb);
 			}
 			break;
 		}
@@ -58,45 +50,52 @@ void planificar_proceso_exit(pcb *un_pcb)
 
 	case BLOCKED:
 
-		if (_eliminar_pcb_de_lista_sync(un_pcb, blocked, &mutex_lista_blocked))
-		{
-			liberar_recursos_pcb(un_pcb);
-			destruir_pcb(un_pcb);
-			sem_post(&sem_multiprogramacion);
+		if (_eliminar_pcb_de_lista_sync(un_pcb, blocked, &mutex_lista_blocked)){
+			_gestionar_salida(un_pcb);
 		}
 
 		break;
 
-	case EXEC: // Este caso es para cuando consola me pide que haga exit de un proceso
+	case EXEC: 
 
 		_gestionar_interrupcion(un_pcb, EXIT_PROCESS);
-		sem_post(&sem_multiprogramacion);
 
 		break;
 
-	case EXIT: // Este caso lo voy a dejar para cuando CPU me pida hacer exit de un proceso
-			   // El sem_post para el pcp lo hago en el momento que me llega el mensaje de CPU
-			   // Porque antes de llamar a esta función saco el pcb de exec, lo paso a exit y lo mando a esta función
+	case EXIT: 
 
-		if (_eliminar_pcb_de_lista_sync(un_pcb, lista_exit, &mutex_lista_exit))
-		{
-			liberar_recursos_pcb(un_pcb);
-			destruir_pcb(un_pcb);
-			sem_post(&sem_multiprogramacion);
+		if (_eliminar_pcb_de_lista_sync(un_pcb, execute, &mutex_lista_exec)){
+			_gestionar_salida(un_pcb);
 		}
 
 		break;
 
 	default:
+		log_error(kernel_logger_extra,"ERROR: Se ha intentado borrar un proceso con estado indefinido");
+		exit(EXIT_FAILURE);
 		break;
 	}
+}
+
+void _gestionar_salida(pcb* un_pcb){
+
+	agregar_int_a_lista(lista_exit,un_pcb->pid);
+	liberar_recursos_pcb(un_pcb);
+	destruir_pcb(un_pcb);
+	sem_post(&sem_multiprogramacion);
+	decrementar_procesos_en_core();
+
 }
 
 //////////// FUNCIONES MANEJO DE RECURSOS EN EXIT
 
 void liberar_recursos_pcb (pcb* un_pcb){
 	liberar_memoria(un_pcb);
+	// Requisitos:
+	// - Cuando un pcb ya se le asignó recurso debe quedar con *pedido_recurso = NULL (Sino sigue en lista de espera)
 	liberar_recursos(un_pcb);
+	// Requisitos:
+	// - Cuando se completí isntrucción pcb debe quedar con *pedido_a_interfaz->nombre_interfaz = NULL (Sino sigue en lista de espera)
 	liberar_interfaces(un_pcb);
 }
 
@@ -165,7 +164,7 @@ void _signal_recurso_exit(char* nombre_recurso, int cantidad_instanciada){
 /////// INTERFACES
 
 void liberar_interfaces(pcb* un_pcb){
-	if(un_pcb->estado == BLOCKED && un_pcb->pedido_a_interfaz != NULL){
+	if(un_pcb->estado == BLOCKED && un_pcb->pedido_a_interfaz->nombre_interfaz != NULL){
 		eliminar_de_lista_interfaz(un_pcb);
 	}
 }

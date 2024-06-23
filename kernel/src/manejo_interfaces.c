@@ -86,28 +86,28 @@ void control_request_de_interfaz(interfaz* una_interfaz){
 		un_pcb = list_remove(una_interfaz->lista_procesos_en_cola,0);
 		pthread_mutex_unlock(&una_interfaz->mutex_interfaz);
 
-		int resultado_operacion = solicitar_instruccion_a_interfaz(un_pcb,una_interfaz);
-		switch(resultado_operacion){
+		resultado_operacion resultado_de_operacion = solicitar_instruccion_a_interfaz(un_pcb,una_interfaz);
+		switch(resultado_de_operacion){
 
 			case OK:
 			
-				extraer_pcb_de_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
+				if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+					list_clean(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
+					un_pcb->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
+					un_pcb->pedido_a_interfaz->nombre_interfaz = NULL;
+
+					agregar_a_ready(un_pcb);
+					sem_post(&sem_pcp);
+				}
 				
-				list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
-				free(un_pcb->pedido_a_interfaz);
-				un_pcb->pedido_a_interfaz = NULL;
-
-				agregar_a_ready(un_pcb);
-				sem_post(&sem_pcp);
-
 			break;
 
 			case ERROR:
 				
 				// Lo hago de esta manera para la lógica de liberación de recursos, porque ya no está en la lista de la interafaz
-				list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
-				free(un_pcb->pedido_a_interfaz);
-				un_pcb->pedido_a_interfaz = NULL;
+				list_clean(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
+				un_pcb->pedido_a_interfaz->instruccion_a_interfaz = INSTRUCCION_IO_NO_DEFINIDA;
+				un_pcb->pedido_a_interfaz->nombre_interfaz = NULL;
 				
 				planificar_proceso_exit_en_hilo(un_pcb);
 

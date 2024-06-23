@@ -9,6 +9,7 @@
 
 void planificar_proceso_exit(pcb* un_pcb);
 void planificar_proceso_exit_en_hilo(pcb* un_pcb);
+void _gestionar_salida(pcb* un_pcb);
 
 
 // MANEJO DE RECURSOS
