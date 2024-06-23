@@ -124,13 +124,11 @@ void esperar_cpu_dispatch_kernel(){
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 
-			pthread_mutex_lock(&mutex_lista_exec);
-			un_pcb = list_remove(execute,0);
-			pthread_mutex_unlock(&mutex_lista_exec);
-
 			obtener_contexto_pcb(un_buffer,un_pcb);
 
-			list_add_pcb_sync(lista_exit,un_pcb,&mutex_lista_exit,EXIT);
+			cambiar_estado_pcb(un_pcb,EXIT);
+
+			planificar_proceso_exit_en_hilo(un_pcb);
 
 			sem_post(&sem_cpu_libre);
 			
@@ -176,7 +174,6 @@ void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instrucci
 		
 		case IO_GEN_SLEEP:
 
-			// CORRECCION PENDIENTE: Ver si está ok el manejo de puntero para la lista. Está bien el free?
 			int tiempo_extraido = extraer_int_del_buffer(un_buffer);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&tiempo_extraido);
 

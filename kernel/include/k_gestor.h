@@ -173,7 +173,7 @@ extern sem_t sem_RA;
 extern sem_t sem_RC;
 
 
-extern int ALGORITMO_PCP_SELECCIONADO;
+extern algoritmo_de_planificacion ALGORITMO_PCP_SELECCIONADO;
 
 
 extern int identificador_PID;	// mutex: mutex_pid

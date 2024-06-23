@@ -43,12 +43,11 @@ void control_request_de_recursos(instancia_recurso* un_recurso){
 		un_pcb = list_remove(un_recurso->lista_procesos_en_cola,0);
 		pthread_mutex_unlock(&un_recurso->mutex_lista_procesos_en_cola);
 
-		un_pcb = extraer_pcb_de_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
-		un_pcb->pedido_recurso = NULL;
-		agregar_recurso_a_pcb(un_pcb,un_recurso->nombre_recurso);
-		
-
-		agregar_a_ready(un_pcb);
+		if(_eliminar_pcb_de_lista_sync(un_pcb,blocked,&mutex_lista_blocked)){
+			un_pcb->pedido_recurso = NULL;
+			agregar_recurso_a_pcb(un_pcb,un_recurso->nombre_recurso);
+			agregar_a_ready(un_pcb);
+		}
 	}
 }
 

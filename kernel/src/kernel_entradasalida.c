@@ -32,7 +32,7 @@ void esperar_entradasalida_kernel(int* fd_conexion_entradasalida){
 			char* nombre_interfaz = extraer_string_del_buffer(buffer);
 			int resultado_operacion = extraer_int_del_buffer(buffer);
 
-			interfaz* una_interfaz = obtener_interfaz_con_nombre(nombre_interfaz);
+			interfaz* una_interfaz = _obtener_interfaz_con_nombre(nombre_interfaz);
 			una_interfaz->resultado_operacion_solicitada = resultado_operacion;
 
 			sem_post(&una_interfaz->sem_instruccion_interfaz);
@@ -132,8 +132,10 @@ void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, pcb* u
 			
 			cargar_string_a_paquete(un_paquete,un_pcb->pedido_a_interfaz->nombre_interfaz);
 			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			// Registro dirección
 			int* parametro = list_remove(datos_auxiliares,0);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro tamaño
 			parametro = list_remove(datos_auxiliares,1);
 			cargar_int_a_paquete(un_paquete,*parametro);
 		
@@ -142,8 +144,10 @@ void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, pcb* u
 
 			cargar_string_a_paquete(un_paquete,un_pcb->pedido_a_interfaz->nombre_interfaz);
 			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			// Registro dirección
 			parametro = list_remove(datos_auxiliares,0);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro tamaño
 			parametro = list_remove(datos_auxiliares,1);
 			cargar_int_a_paquete(un_paquete,*parametro);
 
@@ -173,10 +177,13 @@ void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, pcb* u
 			nombre_archivo = list_remove(datos_auxiliares,0);
 			cargar_string_a_paquete(un_paquete, nombre_archivo);
 			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			// Registro dirección
 			parametro = list_remove(datos_auxiliares,1);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro tamaño
 			parametro = list_remove(datos_auxiliares,2);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro puntero archivo
 			parametro = list_remove(datos_auxiliares,3);
 			cargar_int_a_paquete(un_paquete,*parametro);
 
@@ -185,10 +192,13 @@ void cargar_datos_auxiliares_en_paquete(instruccion_interfaz instruccion, pcb* u
 			nombre_archivo = list_remove(datos_auxiliares,0);
 			cargar_string_a_paquete(un_paquete, nombre_archivo);
 			cargar_int_a_paquete(un_paquete,un_pcb->pid);
+			// Registro dirección
 			parametro = list_remove(datos_auxiliares,1);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro tamaño
 			parametro = list_remove(datos_auxiliares,2);
 			cargar_int_a_paquete(un_paquete,*parametro);
+			// Registro puntero archivo
 			parametro = list_remove(datos_auxiliares,3);
 			cargar_int_a_paquete(un_paquete,*parametro);
 
@@ -231,5 +241,26 @@ void limpiar_interfaz(int *fd_interfaz){
 		pthread_mutex_unlock(&una_interfaz->mutex_interfaz);
 
 		free(una_interfaz);
+	}
+}
+
+
+interfaz* _obtener_interfaz_con_nombre(char* nombre_interfaz){
+	
+	bool _buscar_interfaz(interfaz* una_interfaz){
+		
+		char* nombre_encontrado = una_interfaz->nombre_interfaz;		
+		return strcmp(nombre_encontrado,nombre_interfaz)==1;
+
+	}
+
+	interfaz* una_interfaz = NULL;
+	if(list_any_satisfy(interfaces_conectadas,(void*)_buscar_interfaz)){
+		return una_interfaz = list_find(interfaces_conectadas,(void*)_buscar_interfaz); // Por qué no me la reconoce?
+	}
+	else{
+		log_error(kernel_logger,"Se solicitó interfaz que ya no se encuentra conectada");
+		// En este caso retorna NULL
+		return NULL;
 	}
 }

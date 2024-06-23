@@ -82,7 +82,7 @@ sem_t sem_RA;
 sem_t sem_RB;
 sem_t sem_RC;
 
-int ALGORITMO_PCP_SELECCIONADO;
+algoritmo_de_planificacion ALGORITMO_PCP_SELECCIONADO;
   
 int identificador_PID = 0;
 int contador_pcbs = 0;
