@@ -157,26 +157,31 @@ void encargarse_cpu(int cliente_socket_cpu){
                 case SOLICITUD_INSTRUCCION:
                     unBuffer = recibir_buffer(fd_cpu);
 					resolver_solicitud_instruccion(unBuffer);
+                    destruir_buffer(unBuffer);
                     break;
 
                 case SOLICITUD_PAGINA:
                     unBuffer = recibir_buffer(fd_cpu);
 					resolver_solicitud_consulta_pagina(unBuffer);
+                    destruir_buffer(unBuffer);
                     break;
 
                 case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
                     unBuffer = recibir_buffer(fd_cpu);
                     resolver_solicitud_escribir_bloque_cpu(unBuffer);
+                    destruir_buffer(unBuffer);
                     break;
 
                 case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
                     unBuffer = recibir_buffer(fd_cpu);
                     resolver_solicitud_leer_bloque_cpu(unBuffer);
+                    destruir_buffer(unBuffer);
                     break;
 
                 case AJUSTAR_TAMANIO:
                     unBuffer = recibir_buffer(fd_cpu);
                     resolver_ajustar_tamanio(unBuffer);
+                    destruir_buffer(unBuffer);
                     break; 
 
 

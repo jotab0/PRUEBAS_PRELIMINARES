@@ -55,11 +55,13 @@ void encargarse_es(int cliente_socket_es){
                 case ENVIO_RECURSOS_STDOUT_ESM: 
                 unBuffer = recibir_buffer(cliente_socket_es);
                 resolver_solicitud_leer_bloque_es(unBuffer);
+                destruir_buffer(unBuffer);
                 break;
 
                 case ENVIO_RECURSOS_STDIN_ESM:
                 unBuffer = recibir_buffer(cliente_socket_es);
                 resolver_solicitud_escribir_bloque_es(unBuffer);
+                destruir_buffer(unBuffer);
                 break; 
 
             }
