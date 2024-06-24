@@ -163,11 +163,13 @@ void encargarse_kernel(int cliente_socket_kernel){
                 case INICIAR_ESTRUCTURA: 
                 unBuffer = recibir_buffer(cliente_socket_kernel);
                 iniciar_estructura_proceso(unBuffer);
+                destruir_buffer(unBuffer);
                 break;
 
                 case LIBERAR_ESTRUCTURAS:
                 unBuffer = recibir_buffer(cliente_socket_kernel);
                 liberar_estructura_proceso(unBuffer);
+                destruir_buffer(unBuffer);
                 break; 
 
             }

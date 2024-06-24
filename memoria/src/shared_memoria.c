@@ -11,10 +11,20 @@ void retardo_respuesta(){
 
 // Lectura // 
 
+bool direccion_valida(uint32_t direc_fisica){
+    uint32_t inicio = (uint32_t)espacio_usuario;
+    uint32_t fin = inicio + TAM_MEMORIA;
+    return (direc_fisica >= inicio && direc_fisica < fin); 
+}
+
 
 char* leer_valor_del_espacio_usuario(int tamanio, uint32_t direc_fisica) {
     int bytes_leidos = 0;  
-    char* dato_leido = malloc(tamanio);  
+    char* dato_leido = malloc(tamanio);
+
+    if(!direccion_valida(direc_fisica)){
+        return "ERROR";
+    }
 
     while (bytes_leidos < tamanio) {
         int pagina_actual = (direc_fisica + bytes_leidos) / TAM_PAGINA;
