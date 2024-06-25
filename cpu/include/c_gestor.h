@@ -16,39 +16,58 @@
 #define OCUPADA 1
 
 // VARIABLES GLOBALES
-extern t_log* cpu_logger;
-extern t_log* cpu_logger_extra;
-extern t_log* cpu_log_obligatorio;
+extern t_log *cpu_logger;
+extern t_log *cpu_logger_extra;
+extern t_log *cpu_log_obligatorio;
 
-extern t_config* cpu_config;
+extern t_config *cpu_config;
 
-extern char* path_config_CPU;
+extern char *path_config_CPU;
 
-typedef struct{
+typedef struct
+{
     int proceso_pid;
     int proceso_pc;
     int proceso_tiempo_ejecutado;
     int proceso_ticket;
     uint32_t AX;
-    uint32_t BX; 
+    uint32_t BX;
     uint32_t CX;
     uint32_t DX;
     uint32_t SI;
     uint32_t DI;
-}t_contexto;
+} t_contexto;
 
-extern t_contexto* contexto;
-//extern t_list* lista;
+extern t_contexto *contexto; // mutex
+
+// SEMAFOROS
 extern pthread_mutex_t mutex_manejo_contexto;
+//extern pthread_mutex_t mutex_instruccion;
+//extern pthread_mutex_t mutex_interrupcion_quantum;
+//extern pthread_mutex_t mutex_interrupcion_exit;
+//extern pthread_mutex_t mutex_tlb;
+extern pthread_mutex_t mutex_ordenCargaGlobal;
+//extern pthread_mutex_t mutex_marco;
+//extern pthread_mutex_t mutex_rta_lectura;
+//extern pthread_mutex_t mutex_rta_escritura;
+//extern pthread_mutex_t mutex_resultado;
+
+extern sem_t sem_pedido_tamanio_pag;
+extern sem_t sem_pedido_instruccion;
+extern sem_t sem_pedido_marco;
+extern sem_t sem_rta_resize;
+extern sem_t sem_solicitud_lectura;
+extern sem_t sem_solicitud_escritura;
+extern sem_t sem_proceso;
 
 // Variables de config
-extern char* IP_MEMORIA;
-extern char* PUERTO_MEMORIA;
-extern char* PUERTO_ESCUCHA_DISPATCH;
-extern char* PUERTO_ESCUCHA_INTERRUPT;
+extern char *IP_MEMORIA;
+extern char *PUERTO_MEMORIA;
+extern char *PUERTO_ESCUCHA_DISPATCH;
+extern char *PUERTO_ESCUCHA_INTERRUPT;
 
 extern int CANTIDAD_ENTRADAS_TLB;
-extern char* ALGORITMO_TLB;
+extern char *ALGORITMO_TLB;
 
 extern int fd_cpu_dispatch;
 extern int fd_cpu_interrupt;
@@ -60,62 +79,42 @@ extern int fd_memoria;
 
 extern void realizarCicloInstruccion();
 
-extern char** instruccion_dividida;
+extern char **instruccion_dividida; // mutex
 
-extern int motivo_interrupcion;
-
-//extern char* motivo_bloqueo;
-
-//extern bool hay_interrupcion;
-extern bool hay_interrupcion_quantum;
-extern bool hay_interrupcion_exit;
+extern bool hay_interrupcion_quantum; // mutex
+extern bool hay_interrupcion_exit; // mutex
 
 // TLB
 
-typedef struct tlbEntrada{
+typedef struct tlbEntrada
+{
     uint32_t pid;
     uint32_t pagina;
     int32_t marco;
     int estado;
 
     int orden_carga;
-    t_temporal* ultimo_uso;
-}t_tlbEntrada;
+    t_temporal *ultimo_uso;
+} t_tlbEntrada;
 
-typedef struct tlb {
-    t_tlbEntrada* entradas;
+typedef struct tlb
+{
+    t_tlbEntrada *entradas;
     int tamanio;
 } t_tlb;
 
-extern t_tlb* tlb;
-extern int algoritmo_tlb;
+extern t_tlb *tlb; // mutex
+extern int algoritmo_tlb; 
 
-
-
-extern int ordenCargaGlobal;
-
-/*
-typedef struct {
-    int pid;
-    int nro_pag;
-    int direc_fisica;
-    bool ult_vez_usado;
-} t_entradaTabla;
-
-extern t_list* tlb;
-*/
+extern int ordenCargaGlobal; // mutex
 
 extern int tamanio_pagina;
 
-extern char* valor_marco;
+extern int marco; // mutex
 
-extern int marco;
+extern int resultado; // mutex
 
-extern int resultado;
-
-extern char* respuesta_marco_lectura;
-extern char* respuesta_marco_escritura;
+extern char *respuesta_marco_lectura; // mutex
+extern char *respuesta_marco_escritura; // mutex
 
 #endif
-
-

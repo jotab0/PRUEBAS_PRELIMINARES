@@ -14,7 +14,25 @@ t_contexto* contexto;
 t_config* cpu_config;
 t_log* cpu_log_obligatorio;
 
+// SEMAFOROS
+pthread_mutex_t mutex_instruccion;
+pthread_mutex_t mutex_interrupcion_quantum;
+pthread_mutex_t mutex_interrupcion_exit;
+pthread_mutex_t mutex_tlb;
+pthread_mutex_t mutex_ordenCargaGlobal;
+pthread_mutex_t mutex_marco;
+pthread_mutex_t mutex_rta_lectura;
+pthread_mutex_t mutex_rta_escritura;
+pthread_mutex_t mutex_resultado;
 pthread_mutex_t mutex_manejo_contexto;
+
+sem_t* sem_pedido_tamanio_pag;
+sem_t* sem_pedido_instruccion;
+sem_t* sem_pedido_marco;
+sem_t* sem_rta_resize;
+sem_t* sem_solicitud_lectura;
+sem_t* sem_solicitud_escritura;
+sem_t* sem_proceso;
 
 char* path_config_CPU = "/home/utnso/Documents/tp-2024-1c-ubuntunel/cpu/CPU.config";
 
@@ -38,7 +56,7 @@ char* respuesta_marco_lectura;
 
 int marco;
 int tamanio_pagina;
-int motivo_interrupcion;
+//int motivo_interrupcion;
 int resultado;
 char** instruccion_dividida;
 int algoritmo_tlb;

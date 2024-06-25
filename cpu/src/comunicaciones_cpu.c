@@ -14,24 +14,11 @@ void esperar_kernel_cpu_interrupt()
 		int cod_op = recibir_operacion(fd_kernel_interrupt);
 		switch (cod_op)
 		{
-		/*
-		case MENSAJE:
-			recibir_mensaje_tp0(fd_kernel_interrupt, cpu_logger);
-			break;
-		case PAQUETE:
-			break;
-		*/
 		case INTERRUPCION:
 			t_buffer *unBuffer = recibir_buffer(fd_kernel_interrupt);
 			atender_interrupcion(unBuffer);
 			destruir_buffer(unBuffer);
 			break;
-		/*case INTERRUPCION_IO:
-			t_buffer* unBuffer = recibir_buffer(fd_kernel_interrupr);
-			atender_interrupcion_IO(unBuffer);
-			destruir_buffer(unBuffer);
-			break;
-		*/
 		case -1:
 			log_error(cpu_logger, "KERNEL se desconecto de cpu interrupt. Terminando servidor");
 			estado_while = 0;
@@ -50,15 +37,13 @@ void esperar_kernel_cpu_dispatch()
 	{
 		log_trace(cpu_logger, "CPU DISPATCH: ESPERANDO MENSAJES DE KERNEL...");
 		int cod_op = recibir_operacion(fd_kernel_dispatch);
-		switch (cod_op)
-		{
-		/*
-		case MENSAJE:
-			recibir_mensaje_tp0(fd_kernel_dispatch,cpu_logger);
+		switch (cod_op){
+		case EJECUTAR_PROCESO_KCPU:
+			t_buffer *unBuffer = recibir_buffer(fd_kernel_dispatch);
+			recibir_pcb_del_kernel(unBuffer);
+			destruir_buffer(unBuffer);
+			sem_post(&sem_proceso);
 			break;
-		case PAQUETE:
-			break;
-		*/
 		case -1:
 			log_error(cpu_logger, "KERNEL se desconecto de cpu dispatch. Terminando servidor");
 			estado_while = 0;
@@ -83,26 +68,25 @@ void esperar_memoria_cpu()
 			t_buffer *buffer1 = recibir_buffer(fd_memoria);
 			recibir_instruccion(buffer1);
 			destruir_buffer(buffer1);
+			sem_post(&sem_pedido_instruccion);
 			break;
 		case SOLICITUD_CONSULTA_PAG:
 			t_buffer *buffer2 = recibir_buffer(fd_memoria);
 			marco = extraer_int_del_buffer(buffer2);
 			destruir_buffer(buffer2);
+			sem_post(&sem_pedido_marco);
 			break;
 		case SOLICITUD_INFO_MEMORIA:
 			t_buffer *buffer3 = recibir_buffer(fd_memoria);
 			tamanio_pagina = extraer_int_del_buffer(buffer3);
 			destruir_buffer(buffer3);
+			sem_post(&sem_pedido_tamanio_pag);
 			break;
-		/*case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
-			t_buffer* buffer4 = recibir_buffer(fd_memoria);
-			valor_marco = extraer_string_del_buffer(buffer4);
-			destruir_buffer(buffer4);
-			break;*/
 		case RTA_AJUSTAR_TAMANIO:
 			t_buffer *buffer5 = recibir_buffer(fd_memoria);
 			resultado = extraer_int_del_buffer(buffer5);
 			destruir_buffer(buffer5);
+			sem_post(&sem_rta_resize);
 			break;
 		case SOLICITUD_LECTURA_MEMORIA_BLOQUE:
 			t_buffer *buffer6 = recibir_buffer(fd_memoria);
@@ -110,6 +94,7 @@ void esperar_memoria_cpu()
 			literal = extraer_string_del_buffer(buffer6);
 			atender_lectura(literal);
 			destruir_buffer(buffer6);
+			sem_post(&sem_solicitud_lectura);
 			break;
 		case SOLICITUD_ESCRITURA_MEMORIA_BLOQUE:
 			t_buffer *buffer7 = recibir_buffer(fd_memoria);
@@ -117,6 +102,7 @@ void esperar_memoria_cpu()
 			literal2 = extraer_string_del_buffer(buffer7);
 			atender_escritura(literal2);
 			destruir_buffer(buffer7);
+			sem_post(&sem_solicitud_escritura);
 			break;
 		case -1:
 			log_error(cpu_logger, "MEMORIA se desconecto. Terminando servidor");
@@ -167,17 +153,6 @@ void recibir_instruccion(t_buffer *unBuffer)
 	// semaforo signal pata indicarle a el ciclo de instruccion que ya recibio la instruccion
 }
 
-// atender kernel
-/*void solicitar_instruccion_de_memoria(){
-	log_info(cpu_log_obligatorio, "PID: <%d> - Program Counter: <%d>", contexto->proceso_pid, contexto->proceso_pc);
-	t_paquete* un_paquete = crear_paquete_con_buffer(SOLICITUD_INSTRUCCION);
-	cargar_int_a_paquete(un_paquete, contexto->proceso_pid);
-	cargar_int_a_paquete(un_paquete, contexto->proceso_pc);
-	enviar_paquete(un_paquete, fd_memoria);
-	eliminar_paquete(un_paquete);
-}
-*/
-
 void mostrar_pcb()
 {
 	log_warning(cpu_logger, "[PID: %d] [PC: %d] [TIEMPO EJECUTADO: %u] [REGISTROS: %u|%u|%u|%u|%u|%u]",
@@ -210,7 +185,6 @@ void iniciar_estructuras_para_recibir_pcb(t_buffer *unBuffer)
 	contexto->proceso_pid = extraer_int_del_buffer(unBuffer);
 	contexto->proceso_pc = extraer_int_del_buffer(unBuffer);
 	contexto->proceso_tiempo_ejecutado = extraer_int_del_buffer(unBuffer);
-	// contexto->proceso_ticket=extraer_int_del_buffer(unBuffer);
 
 	contexto->AX = extraer_uint32_del_buffer(unBuffer);
 	contexto->BX = extraer_uint32_del_buffer(unBuffer);
@@ -227,32 +201,20 @@ void atender_interrupcion(t_buffer *unBuffer)
 
 	// verifico que el pid del proceso interrumpido sea el mismo que el del proceso actual, si lo es lo interrumpo y sino no hago nada
 	int pid_interrumpido = extraer_int_del_buffer(unBuffer);
-	motivo_interrupcion = extraer_int_del_buffer(unBuffer);
+	int motivo_interrupcion = extraer_int_del_buffer(unBuffer);
 
-	if (pid_interrumpido == contexto->proceso_pid)
-	{
-
-		// hay_interrupcion = true;
-	}
-	if (motivo_interrupcion == 1)
-	{ // QUANTUM_INTERRUPT
+	if (pid_interrumpido == contexto->proceso_pid){
+		if (motivo_interrupcion == 1){ // QUANTUM_INTERRUPT
 		// mutex
 		hay_interrupcion_quantum = true;
 	}
-	else if (motivo_interrupcion == 2)
-	{ // EXIT_PROCESS
+	else if (motivo_interrupcion == 2){ // EXIT_PROCESS
 		// mutex
 		hay_interrupcion_exit = true;
 	}
+	}
+	
 }
-
-// que cada tipo de interrupcion sea un case y tenga una flag distinta?
-
-/*
-void atender_interrupcion_IO(t_buffer* unBuffer){
-	hay_interrupcion_IO = true;
-}
-*/
 
 char **string_split(char *instruccion, char *delimitador)
 {

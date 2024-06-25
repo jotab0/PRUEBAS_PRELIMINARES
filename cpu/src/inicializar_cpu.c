@@ -4,9 +4,10 @@
 void inicializar_cpu() {
     iniciar_logs();
     iniciar_config();
-    tlb = crear_TLB();
     imprimir_config();
     inicializar_mutexs();
+    inicializar_semaforos();
+    tlb = crear_TLB();
     pedir_tamanio_pagina();
     inicializar_variables();
 }
@@ -15,8 +16,6 @@ void inicializar_variables(){
     char* respuesta_marco_escritura = NULL;
     char* respuesta_marco_lectura = NULL;
 }
-
-
 
 void iniciar_logs(){
     cpu_logger = log_create("CPU.log", "CPU_log", true, LOG_LEVEL_TRACE);
@@ -56,6 +55,25 @@ void imprimir_config(){
 
 void inicializar_mutexs(){
 	pthread_mutex_init(&mutex_manejo_contexto, NULL);
+    pthread_mutex_init(&mutex_instruccion, NULL);
+    pthread_mutex_init(&mutex_interrupcion_quantum, NULL);
+    pthread_mutex_init(&mutex_interrupcion_exit, NULL);
+    pthread_mutex_init(&mutex_tlb, NULL);
+    pthread_mutex_init(&mutex_ordenCargaGlobal, NULL);
+    pthread_mutex_init(&mutex_marco, NULL);
+    pthread_mutex_init(&mutex_rta_lectura, NULL);
+    pthread_mutex_init(&mutex_rta_escritura, NULL);
+    pthread_mutex_init(&mutex_resultado, NULL);
+}
+
+void inicializar_semaforos(){
+    sem_init(&sem_pedido_tamanio_pag, 0, 0);
+    sem_init(&sem_pedido_instruccion, 0, 0);
+    sem_init(&sem_pedido_marco, 0, 0);
+    sem_init(&sem_rta_resize, 0, 0);
+    sem_init(&sem_solicitud_lectura, 0, 0);
+    sem_init(&sem_solicitud_escritura, 0, 0);
+    sem_init(&sem_proceso, 0, 0);
 }
 
 t_tlb* crear_TLB(){

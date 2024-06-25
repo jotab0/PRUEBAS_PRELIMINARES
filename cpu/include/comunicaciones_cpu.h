@@ -26,8 +26,6 @@ void atender_interrupcion(t_buffer*);
 
 //pthread_mutex_t mutex_manejo_contexto;
 
-
-
 //t_log* cpu_logger;
 //t_log* cpu_log_obligatorio;
 
