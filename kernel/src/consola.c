@@ -2,6 +2,8 @@
 
 void iniciar_consola(){
     char* leido;
+
+    imprimir_comandos();
     leido = readline("> ");
     bool validacion_leido;
 
@@ -227,4 +229,15 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
         return NULL;
     }
     return instrucciones;
+}
+
+void imprimir_comandos(){
+    printf("Ingrese alguno de los siguientes comandos disponibles: \n");
+    printf("EJECUTAR_SCRIPT         + [PATH] \n");
+    printf("INICIAR_PROCESO         + [PATH] \n");
+    printf("FINALIZAR_PROCESO       + [PID] \n");
+    printf("DETENER_PLANIFICACIÓN \n");
+    printf("INICIAR_PLANIFICACIÓN \n");
+    printf("MULTIPROGRAMACIÓN       + [VALOR] \n");
+    printf("PROCESO_ESTADO \n");
 }
