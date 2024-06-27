@@ -89,7 +89,7 @@ void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int* cantidad,t_proce
 //---------------------------------------------------------------
 
 t_proceso* inicializar_proceso_simulador(){
-    t_proceso* proceso_simulacion;
+    t_proceso* proceso_simulacion = malloc(sizeof(t_proceso));
     proceso_simulacion->pid_proceso = 0;
     proceso_simulacion->pathInstrucciones = NULL;
     proceso_simulacion->lista_de_instrucciones = list_create();
