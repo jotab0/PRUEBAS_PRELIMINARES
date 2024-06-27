@@ -1,5 +1,8 @@
 #include "../include/realizarop_es.h"
 
+
+t_dictionary *listaFcbs;
+
 void atender_es_kernel(){
 
     while(1){
@@ -23,6 +26,31 @@ void atender_es_kernel(){
             atender_peticion_de_stdout(unBuffer);
             break;        
 
+        case IO_FS_CREATE:
+            unBuffer = recibir_un_paquete(fd_kernel);
+            //atender_peticion_de_fs_create(unBuffer);
+			break; 
+
+        case IO_FS_READ:
+            unBuffer = recibir_un_paquete(fd_kernel);
+            //atender_peticion_de_fs_read(unBuffer);
+			break; 
+
+        case IO_FS_WRITE:
+            unBuffer = recibir_un_paquete(fd_kernel);
+            //atender_peticion_de_fs_write(unBuffer);
+			break; 
+
+        case IO_FS_TRUNCATE:
+            unBuffer = recibir_un_paquete(fd_kernel);
+            //atender_peticion_de_fs_truncate(unBuffer);
+			break; 
+
+        case IO_FS_DELETE:
+            unBuffer = recibir_un_paquete(fd_kernel);
+            //atender_peticion_de_fs_delete(unBuffer);
+			break; 
+
         default:
 			log_warning(es_logger, "Operacion desconocida");
 			free(unBuffer);
@@ -31,21 +59,23 @@ void atender_es_kernel(){
     }
 }
 
-//------EJECUTAR PETICIONES -------------------------------------------------------
+//------GEN-------------------------------------------------------
 
 void atender_peticion_de_gen(t_buffer* un_buffer){
 
     char* nombre_interfaz = extraer_string_del_buffer(un_buffer);
     int pid = extraer_int_del_buffer(un_buffer);
     int un_tiempo = extraer_int_del_buffer(un_buffer);
-    int resultado;
+
 
     usleep(un_tiempo*1000);
 
-    respuesta_de_operacion_gen_a_kernel(nombre_interfaz, pid, resultado);
+    respuesta_de_operacion_gen_a_kernel(nombre_interfaz, pid);
 
     free(un_buffer);
 }
+
+//--------------STDIN--------------------------------------------------
 
 void atender_peticion_de_stdin(t_buffer* un_buffer){
 
@@ -54,7 +84,6 @@ void atender_peticion_de_stdin(t_buffer* un_buffer){
     int una_direccion = extraer_int_del_buffer(un_buffer);
     int tamanio_direcc = extraer_int_del_buffer(un_buffer);
     
-    int resultado;
     char contenido_ingresado[256];
 
     log_info(es_logger, "Ingrese el texto:  <%s>", contenido_ingresado);
@@ -80,65 +109,148 @@ void atender_peticion_de_stdin(t_buffer* un_buffer){
         return;
     }
 
-    enviar_contenido_a_memoria_stdin(pid, una_direccion, contenido_ingresado);
+    enviar_contenido_a_memoria_stdin(pid, una_direccion, tamanio_direcc, contenido_ingresado);
 
-    respuesta_de_operacion_stdin_a_kernel(nombre_interfaz, pid, resultado);
+    respuesta_de_operacion_stdin_a_kernel(nombre_interfaz, pid);
 }
 
-void atender_peticion_de_stdout(t_buffer* un_buffer, char* datos_leidos){
+//----STDOUT------------------------------------------------------------
+void atender_peticion_de_stdout(t_buffer* un_buffer) {
 
     char* nombre_interfaz = extraer_string_del_buffer(un_buffer);
     int pid = extraer_int_del_buffer(un_buffer);
     int una_direccion = extraer_int_del_buffer(un_buffer);
     int tamanio_direcc = extraer_int_del_buffer(un_buffer);
 
-    int resultado;
-
     enviar_contenido_a_memoria_stdout(pid, una_direccion, tamanio_direcc);
-    recibir_datos_a_escribir_de_memoria(un_buffer);
+
+    char* datos_leidos = recibir_datos_a_escribir_de_memoria(un_buffer);
 
     mostrar_datos_leidos(datos_leidos, tamanio_direcc);
 
-    respuesta_de_operacion_stdout_a_kernel(nombre_interfaz, pid, resultado);
-    
-} 
+    respuesta_de_operacion_stdout_a_kernel(nombre_interfaz, pid);
+}
+
+
+
+//-------------DIALFS---------------------------------------------------
+
+/* void atender_peticion_de_fs_create(t_buffer* un_buffer){
+	char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+    int pid = extraer_int_del_buffer(un_buffer);
+	//char* operacion = recibir_string_del_buffer(un_buffer);
+
+    crear_archivo(nombre_archivo);
+	
+}
+
+
+void verificar_existencia_archivo(char *nombreArchivo) // para abrir archivo
+{   
+    log_abrir_archivo(nombreArchivo);
+    //Si existe devolver OK
+    if (dictionary_has_key(listaFcbs, nombreArchivo))
+    {
+        enviar_confirmacion_existencia_archivo();
+        log_existe_archivo(nombreArchivo);
+    }
+    // Si no existe
+    else
+    {
+        enviar_confirmacion_no_existencia_archivo();
+        log_no_existe_archivo(nombreArchivo);
+    }
+    return;
+}
+
+t_fcb *crear_archivo(char *nombreArchivo)
+{   
+    bool archivoCreado;
+    // Crear un archivo FCB(metadata) correspondiente al nuevo archivo, con tamaño 0 y sin bloques asociados.
+    t_fcb* nuevoFcb = crear_nuevo_fcb(nombreArchivo);
+    archivoCreado = crear_archivo_nuevo_fcb(nuevoFcb);
+    if (archivoCreado)
+    {   
+        enviar_confirmacion_archivo_creado();
+        log_crear_archivo(nombreArchivo);
+    }
+    return nuevoFcb;
+}
+
+void atender_peticion_de_fs_read(t_buffer* un_buffer){
+
+	char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+	int pid = extraer_int_del_buffer(un_buffer);
+	int una_direccion = extraer_int_del_buffer(un_buffer);
+    int tamanio = extraer_int_del_buffer(un_buffer);
+	int puntero = extraer_int_del_buffer(un_buffer);
+
+	
+}
+
+void atender_peticion_de_fs_write(t_buffer* un_buffer){
+
+	char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+	int pid = extraer_int_del_buffer(un_buffer);
+	int una_direccion = extraer_int_del_buffer(un_buffer);
+    int tamanio = extraer_int_del_buffer(un_buffer);
+	int puntero = extraer_int_del_buffer(un_buffer);
+
+}
+
+void atender_peticion_de_fs_truncate(t_buffer* un_buffer){
+	char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+	int pid = extraer_int_del_buffer(un_buffer);
+	int tamanio_nuevo = extraer_int_del_buffer(un_buffer);
+
+	
+}
+
+void atender_peticion_de_fs_delete(t_buffer* un_buffer){
+	char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+    int pid = extraer_int_del_buffer(un_buffer);
+
+} */
+
+
 
 //-----RESPUESTAS DE OPERACIONES PARA KERNEL ------------------------------------
 
-void  respuesta_de_operacion_gen_a_kernel(char* nombre_interfaz, int pid, int resultado){
+void  respuesta_de_operacion_gen_a_kernel(char* nombre_interfaz, int pid){
     t_paquete* un_paquete = crear_paquete_con_buffer(RESPUESTA_ES_GEN_ESK);
 
     cargar_string_a_paquete(un_paquete, nombre_interfaz);
     cargar_int_a_paquete(un_paquete, pid);
-    cargar_int_a_paquete(un_paquete, resultado);
+    //cargar_int_a_paquete(un_paquete, resultado);
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
 }
 
- void respuesta_de_operacion_stdin_a_kernel(char* nombre_interfaz, int pid, int resultado){
+ void respuesta_de_operacion_stdin_a_kernel(char* nombre_interfaz, int pid){
     t_paquete* un_paquete = crear_paquete_con_buffer(RESPUESTA_ES_STDIN_ESK);
 
     cargar_string_a_paquete(un_paquete, nombre_interfaz);
-    cargar_int_a_paquete(un_paquete, resultado);
+    //cargar_int_a_paquete(un_paquete, resultado);
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
  }
 
- void respuesta_de_operacion_stdout_a_kernel(char* nombre_interfaz, int pid, int resultado){
+ void respuesta_de_operacion_stdout_a_kernel(char* nombre_interfaz, int pid){
     t_paquete* un_paquete = crear_paquete_con_buffer(RESPUESTA_ES_STDOUT_ESK);
 
     cargar_string_a_paquete(un_paquete, nombre_interfaz);
-    cargar_int_a_paquete(un_paquete, resultado);
+    //cargar_int_a_paquete(un_paquete, resultado);
     enviar_paquete(un_paquete, fd_kernel);
     eliminar_paquete(un_paquete);
  }
 
 //----- ENVIAR A MEMORIA -----------------------------------
 
-void enviar_contenido_a_memoria_stdin(int pid, int una_direccion, char* contenido_ingresado){
+void enviar_contenido_a_memoria_stdin(int pid, int una_direccion,int tamanio_direcc, char* contenido_ingresado){
     t_paquete* un_paquete = crear_paquete_con_buffer(ENVIO_RECURSOS_STDIN_ESM);
 	cargar_int_a_paquete(un_paquete,pid);
 	cargar_int_a_paquete(un_paquete,una_direccion);
+    cargar_int_a_paquete(un_paquete, tamanio_direcc);
 	cargar_string_a_paquete(un_paquete, contenido_ingresado);
 	enviar_paquete(un_paquete, fd_memoria);
 	eliminar_paquete(un_paquete);
@@ -154,10 +266,14 @@ void enviar_contenido_a_memoria_stdout(int pid, int una_direccion, int tamanio_d
 }
 
 //----- RECIBIR DE MEMORIA -----------------------------------
-void recibir_datos_a_escribir_de_memoria(t_buffer* un_buffer){
 
-    char* datos_leidos = extraer_string_del_buffer(un_buffer);
+char* recibir_datos_a_escribir_de_memoria(t_buffer* un_buffer) {
+    return extraer_string_del_buffer(un_buffer);
 }
+
+
+
+//---------------------------------------------------------------------
 
 
 void mostrar_datos_leidos(char* datos_leidos, int tamanio_direcc) {

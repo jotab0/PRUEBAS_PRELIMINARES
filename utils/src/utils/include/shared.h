@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//las agregue 16/04 17:15hs
 #include <signal.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -13,6 +12,7 @@
 #include <string.h>
 #include <semaphore.h>
 
+#include <commons/bitarray.h>
 #include <commons/log.h> 
 #include <commons/config.h>  // de esta manera agregamos librerías de las commons
 
