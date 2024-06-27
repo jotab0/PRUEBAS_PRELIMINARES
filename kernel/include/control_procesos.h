@@ -5,11 +5,15 @@
 #include "kernel_cpu_dispatch.h"
 #include "kernel_cpu_interrupt.h"
 #include "kernel_entradasalida.h"
+#include "manejo_interfaces.h"
+#include "manejo_recursos.h"
+#include "exit_process.h"
+#include "manejo_interfaces.h"
 #include "kernel_memoria.h"
 #include "shared_kernel.h"
 
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
-pcb* crear_pcb(char* path, int size_path);
+pcb* crear_pcb(char* path);
 void agregar_a_ready(pcb* un_pcb);
 
 void planificar_corto_plazo();
@@ -23,14 +27,6 @@ void planificador_largo_plazo();
 void _check_interrupt_plp();
 
 void manejar_bloqueo_de_proceso(pcb* un_pcb);
-void manejar_pedido_a_interfaz (pcb* un_pcb);
-bool _evaluar_diponibilidad_pedido (pcb* un_pcb);
-interfaz* _traer_interfaz_solicitada(pcb* un_pcb);
 
-
-void planificar_proceso_exit(pcb* un_pcb);
-void planificar_proceso_exit_en_hilo(pcb* un_pcb);
-void manejar_pedido_de_recurso(pcb *pcb_recibido);
-void manejar_signal_de_recurso(pcb *pcb_recibido);
 
 #endif

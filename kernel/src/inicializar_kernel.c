@@ -9,6 +9,7 @@ void inicializar_kernel(){
     establecer_algoritmo_seleccionado();
     inicializar_planificadores();
     establecer_recursos();
+    inicializar_asistentes_de_recurso();
 }
 
 void inicializar_logs(){
@@ -49,7 +50,7 @@ void inicializar_configs(){
 
 void establecer_algoritmo_seleccionado(){
     if (strcmp(ALGORITMO_PLANIFICACION, "FIFO") == 0) {
-       ALGORITMO_PCP_SELECCIONADO = FIFO;
+        ALGORITMO_PCP_SELECCIONADO = FIFO;
     } else if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0) {
         ALGORITMO_PCP_SELECCIONADO = RR;
     } else if (strcmp(ALGORITMO_PLANIFICACION, "VRR") == 0) {
@@ -94,6 +95,7 @@ void inicializar_mutexes(){
     pthread_mutex_init(&mutex_lista_exit, NULL);
     pthread_mutex_init(&mutex_procesos_en_core, NULL);
     pthread_mutex_init(&mutex_lista_interfaces, NULL);
+    pthread_mutex_init(&mutex_lista_recursos, NULL);
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
@@ -107,15 +109,17 @@ void inicializar_mutexes(){
         instancia_recurso* un_recurso = malloc(sizeof(instancia_recurso));
 
         un_recurso->nombre_recurso = RECURSOS[contador];
-        sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
-
-        list_add(lista_recursos,un_recurso);
         
-        free(un_recurso);
+        sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
+        sem_init(&un_recurso->semaforo_request_recurso,0,0);
+        pthread_mutex_init(&un_recurso->mutex_lista_procesos_en_cola, NULL);
+
+        un_recurso->lista_procesos_en_cola = list_create();
+        
+        list_add(lista_recursos,un_recurso);
         
         contador += 1;
     }
-    
  }
 
 void inicializar_planificadores(){
@@ -123,4 +127,19 @@ void inicializar_planificadores(){
     ejecutar_en_hilo_detach((void*)planificador_largo_plazo,NULL);
     ejecutar_en_hilo_detach((void*)planificador_corto_plazo,NULL);
 
+}
+
+void inicializar_asistentes_de_recurso(){
+
+    int tamanio_lista_recursos = list_size(lista_recursos) - 1;
+    
+    pthread_mutex_lock(&mutex_lista_recursos);
+    while(tamanio_lista_recursos >= 0){
+
+        instancia_recurso* un_recurso = list_get(lista_recursos,tamanio_lista_recursos);
+        ejecutar_en_hilo_detach((void*)control_request_de_recursos,un_recurso);
+        tamanio_lista_recursos--;
+
+    }
+    pthread_mutex_unlock(&mutex_lista_recursos);
 }

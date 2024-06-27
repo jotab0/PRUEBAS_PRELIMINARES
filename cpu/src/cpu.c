@@ -71,7 +71,10 @@ int main(void){
 
     // CICLO DE INSTRUCCION
 
-    //realizarCicloInstruccion();
+    // semaforo para esperar a que me llegue un proceso?
+    sem_wait(&sem_proceso);
+    sem_wait(&sem_pedido_tamanio_pag);
+    realizarCicloInstruccion();
 
     
 	return EXIT_SUCCESS;

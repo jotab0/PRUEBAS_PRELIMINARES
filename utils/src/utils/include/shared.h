@@ -37,11 +37,12 @@ typedef enum {
     ATENDER_INTERRUPCION,
     WAIT_KCPU,
     SIGNAL_KCPU,
+    INTERRUPCION_QUANTUM,
+   
 
     //**KERNEL-ES**
     HANDSHAKE_K_ES,
     RESPUESTA_INSTRUCCION_KES,
-
 
 
     //**ES-KERNEL**
@@ -71,7 +72,6 @@ typedef struct {
 }t_buffer;
 
 typedef enum {
-    CONSOLA_INTERRUPT,
     QUANTUM_INTERRUPT,
     EXIT_PROCESS
 }interrupcion;

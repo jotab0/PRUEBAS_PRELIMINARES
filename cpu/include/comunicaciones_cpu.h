@@ -11,6 +11,8 @@ void esperar_kernel_cpu_interrupt();
 void esperar_memoria_cpu();
 //void solicitar_instruccion_de_memoria();
 
+void atender_escritura(char*);
+void atender_lectura();
 
 void recibir_instruccion(t_buffer*);
 char** string_split(char*, char*);
@@ -23,8 +25,6 @@ void mostrar_pcb();
 void atender_interrupcion(t_buffer*);
 
 //pthread_mutex_t mutex_manejo_contexto;
-
-
 
 //t_log* cpu_logger;
 //t_log* cpu_log_obligatorio;
