@@ -42,7 +42,8 @@ typedef enum {
     HANDSHAKE_K_ES,
     RESPUESTA_INSTRUCCION_KES,
 
-=======
+
+
     //**ES-KERNEL**
     RESPUESTA_ES_GEN_ESK,
     RESPUESTA_ES_STDIN_ESK,
