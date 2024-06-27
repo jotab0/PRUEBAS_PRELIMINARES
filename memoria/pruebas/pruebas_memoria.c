@@ -1,73 +1,122 @@
-#include <stdio.h>
+#include <commons/log.h>
+#include <commons/config.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include "../include/paginacion.h"
-#include "../include/inicializar_memoria.h"
-#include "../include/operaciones_proceso.h"
-#include "../include/memoria.h"
-#include "../include/shared_memoria.h"
-#include "../include/m_gestor.h"
+#include <stdio.h>
+#include <string.h>
+#include </usr/include/commons/collections/list.h>
 
-void simulate_kernel_requests() {
-    // Simulate kernel requests
-    printf("\nSimulating KERNEL requests...\n");
 
-    // Example: Request to initialize memory
-    printf("1. Initializing memory...\n");
-    inicializar_memoria();
 
-    // Example: Request to allocate memory for a process
-    printf("2. Allocating memory for process...\n");
-    t_proceso *new_process = malloc(sizeof(t_proceso));
-    new_process->pid_proceso = 1;
-    new_process->size = 1024; // Example size
-    new_process->pathInstrucciones = "example_path";
-    new_process->tabla_paginas = list_create();
-    pthread_mutex_init(&(new_process->mutex_tabla_paginas), NULL);
 
-    inicializar_tabla_de_paginas(new_process);
-    asignar_marco_disponible_a_proceso_vacio(new_process);
+//-------------------------------------------------------------------------------------
 
-    free(new_process);
+typedef struct{
+	char* pseudo_codigo;
+    char* primer_parametro;
+    char* segundo_parametro;
+}t_instruccion_codigo;
+
+//-------------------------------------------------------------------------------------
+
+char** dividir_cadena(const char* cadena, const char* delimitador) {
+    char** resultado = NULL;
+    size_t contador = 0;
+    char* token = strtok((char*)cadena, delimitador);
+
+    while (token) {
+        resultado = realloc(resultado, sizeof(char*) * ++contador);
+        if (!resultado) {
+            fprintf(stderr, "Error al asignar memoria para dividir_cadena\n");
+            exit(EXIT_FAILURE);
+        }
+        resultado[contador - 1] = strdup(token);
+        token = strtok(NULL, delimitador);
+    }
+    resultado = realloc(resultado, sizeof(char*) * (contador + 1));
+    resultado[contador] = NULL;
+    return resultado;
 }
 
-void simulate_cpu_requests() {
-    // Simulate CPU requests
-    printf("\nSimulating CPU requests...\n");
+void free_string_array(char** array) {
+    if (!array)
+        return;
 
-    // Example: Request to read from user space
-    printf("1. Reading from user space...\n");
-    uint32_t physical_address = 0;
-    char *read_data = leer_valor_del_espacio_usuario(10, physical_address);
-    if (read_data) {
-        printf("Data read: %s\n", read_data);
-        free(read_data);
-    } else {
-        printf("Failed to read data from user space.\n");
+    for (int i = 0; array[i]; ++i)
+        free(array[i]);
+    free(array);
+}
+
+
+//-------------------------------------------------------------------------------------
+
+
+t_list* procesar_archivo(char* path_archivo){
+    FILE* archivo = fopen(path_archivo, "rt");
+    if (!archivo) {
+        perror("Error al abrir el archivo");
+        return NULL;
     }
 
-    // Example: Request to write to user space
-    printf("2. Writing to user space...\n");
-    char data_to_write[] = "Hello, world!";
-    escribir_valor_en_espacio_usuario(data_to_write, sizeof(data_to_write), physical_address, NULL);
+    t_list* instrucciones = list_create();
+    char linea_instruccion[256];
+    while (fgets(linea_instruccion, sizeof(linea_instruccion), archivo)) {
+        int size_linea_actual = strlen(linea_instruccion);
+        if (size_linea_actual > 0 && linea_instruccion[size_linea_actual - 1] == '\n') {
+            linea_instruccion[size_linea_actual - 1] = '\0'; // Eliminar el salto de línea
+        }
+
+        char** l_instrucciones = dividir_cadena(linea_instruccion, " ");
+        if (!l_instrucciones) {
+            fprintf(stderr, "Error al dividir la línea de instrucción: %s\n", linea_instruccion);
+            continue;
+        }
+
+        t_instruccion_codigo* instruccion = malloc(sizeof(t_instruccion_codigo));
+        if (!instruccion) {
+            perror("Error al asignar memoria para la instrucción");
+            free_string_array(l_instrucciones);
+            continue;
+        }
+
+        instruccion->pseudo_codigo = strdup(l_instrucciones[0]);
+        instruccion->primer_parametro = (l_instrucciones[1]) ? strdup(l_instrucciones[1]) : NULL;
+        instruccion->segundo_parametro = (l_instrucciones[2]) ? strdup(l_instrucciones[2]) : NULL;
+
+        list_add(instrucciones, instruccion);
+
+        free_string_array(l_instrucciones);
+        fclose(archivo); 
+  }
+  return instrucciones;
 }
 
-void simulate_io_requests() {
-    // Simulate I/O requests
-    printf("\nSimulating ENTRADA-SALIDA requests...\n");
+//-------------------------------------------------------------------------------------
 
-    // Example: Request to delay response
-    printf("1. Delaying response...\n");
-    retardo_respuesta();
+t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
+    t_list* instrucciones = list_create();
+    instrucciones = procesar_archivo(path_archivo_instrucciones);
+    if (!instrucciones) {
+        fprintf(stderr, "No se pudo procesar el archivo de instrucciones.\n");
+        return NULL;
+    }
+    return instrucciones;
 }
 
-int main() {
-    // Simulate requests from different modules
-    simulate_kernel_requests();
-    simulate_cpu_requests();
-    simulate_io_requests();
+//------------------------------------
 
-    return 0;
+
+
+
+
+int main(){
+
+    char* archivo = "/home/utnso/Documents/Pruebas/archivo_instrucciones";
+    t_list* lista_instrucciones = obtener_instrucciones_del_archivo(archivo);
+
+    for(int i=0; i<18; i++){
+        t_instruccion_codigo* una_instruccion;
+        una_instruccion = list_get(lista_instrucciones, i);
+
+        printf("INSTRUCCION <%d> - Pseudo Codigo: <%s> - Primer parametro <%s> - Segundo parametro <%s>\n",i, una_instruccion->pseudo_codigo, una_instruccion->primer_parametro, una_instruccion->segundo_parametro);
+    }
 }
