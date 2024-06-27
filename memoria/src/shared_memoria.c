@@ -1,9 +1,91 @@
 #include "../include/shared_memoria.h"
+#include <stdint.h>
 
 
 
 void retardo_respuesta(){
     usleep(RETARDO_RESPUESTA*1000);
+}
+//---------------------------------------------------------------------------------------------------------
+bool puede_escribir_leer_en_la_direccion(uint32_t direc_fisica, int pid, int tam){
+    t_proceso* proceso = obtener_proceso_por_pid(pid);
+    int num_marco = direc_fisica / TAM_PAGINA;
+    int offset = direc_fisica % TAM_PAGINA;
+
+    bool marco_encontrado = false;
+    t_marco* marco;
+
+    for(int i=0; i< list_size(proceso->tabla_paginas); i++){
+        t_tabla_de_pagina * entrada = list_get(proceso->tabla_paginas, i);
+        if(entrada->num_marco == num_marco){
+            marco_encontrado = true;
+            break;
+        }
+    }
+    if(!marco_encontrado){
+        return false;
+    }
+
+
+    pthread_mutex_lock(&mutex_lista_marcos);
+    pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
+
+    for(int j=0; j < list_size(proceso->tabla_paginas); j++){
+        t_tabla_de_pagina * entrada = list_get(proceso->tabla_paginas, j);
+        if(entrada->num_marco == num_marco){
+    
+            marco = list_get(lista_marcos,num_marco);
+            if(marco->proceso->pid_proceso == proceso->pid_proceso){
+                pthread_mutex_unlock(&mutex_lista_marcos);
+                pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+                return true;
+            }else{
+                pthread_mutex_unlock(&mutex_lista_marcos);
+                pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+                return false;
+            }
+        }
+    
+    }
+
+    pthread_mutex_unlock(&mutex_lista_marcos);
+    pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+
+    int num_pagina_inicial = 898989;
+    pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
+
+    for(int i=0; i< list_size(proceso->tabla_paginas); i++){
+        t_tabla_de_pagina * entrada = list_get(proceso->tabla_paginas, i);
+        if(entrada->num_marco== num_marco){
+            num_pagina_inicial = entrada->num_pagina;
+            break;
+        }
+    
+    }
+
+    if(num_pagina_inicial == 898989){
+        pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+        return false;
+    }
+
+    int memoria_usada =0;
+    for(int i= 0; i < num_pagina_inicial; i++){
+        t_tabla_de_pagina * entrada = list_get(proceso->tabla_paginas, i);
+        memoria_usada+= TAM_PAGINA;
+    }
+    memoria_usada +=offset;
+    int tam_disponible = (proceso->size) - memoria_usada;
+
+
+    if(tam > tam_disponible){
+        pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+        return false;
+    }
+
+
+    pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
+    return true;
+
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -12,8 +94,8 @@ void retardo_respuesta(){
 // Lectura // 
 
 bool direccion_valida(uint32_t direc_fisica){
-    uint32_t inicio = (uint32_t)espacio_usuario;
-    uint32_t fin = inicio + TAM_MEMORIA;
+    uintptr_t inicio = (uintptr_t)espacio_usuario;
+    uintptr_t fin = inicio + TAM_MEMORIA;
     return (direc_fisica >= inicio && direc_fisica < fin); 
 }
 
@@ -50,6 +132,11 @@ char* resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
     uint32_t direc_fisica = extraer_uint32_del_buffer(unBuffer);
     int tamanio = extraer_int_del_buffer(unBuffer);
 
+    if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid, tamanio)){
+       log_error(memoria_logger, "Error: No tiene permitido leer en la direccion <%d>", direc_fisica);
+       return "ERROR";
+    }
+
     char* datos_leidos = leer_valor_del_espacio_usuario(tamanio, direc_fisica);
     datos_leidos[tamanio] = '\0';
     free(datos_leidos);
@@ -59,7 +146,6 @@ char* resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
     return datos_leidos;
 
 }
-
 
 
 //---------------------------------------------------------------------------------------------------------
@@ -140,6 +226,12 @@ char* resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
         free(datos_a_escribir);
         log_error(memoria_logger, "Error: Proceso no encontrado\n");
         return "ERROR";
+    }
+
+    if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid, tamanio)){
+       free(datos_a_escribir);
+       log_error(memoria_logger, "Error: No tiene permitido escribir en la direccion <%d>", direc_fisica);
+       return "ERROR";
     }
 
     escribir_valor_en_espacio_usuario(datos_a_escribir, tamanio, direc_fisica, proceso);
