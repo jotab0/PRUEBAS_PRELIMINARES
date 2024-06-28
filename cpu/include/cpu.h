@@ -26,13 +26,13 @@ pthread_mutex_t mutex_rta_escritura;
 pthread_mutex_t mutex_resultado;
 pthread_mutex_t mutex_manejo_contexto;
 
-sem_t* sem_pedido_tamanio_pag;
-sem_t* sem_pedido_instruccion;
-sem_t* sem_pedido_marco;
-sem_t* sem_rta_resize;
-sem_t* sem_solicitud_lectura;
-sem_t* sem_solicitud_escritura;
-sem_t* sem_proceso;
+sem_t sem_pedido_tamanio_pag;
+sem_t sem_pedido_instruccion;
+sem_t sem_pedido_marco;
+sem_t sem_rta_resize;
+sem_t sem_solicitud_lectura;
+sem_t sem_solicitud_escritura;
+sem_t sem_proceso;
 
 char* path_config_CPU = "/home/utnso/Documents/tp-2024-1c-ubuntunel/cpu/CPU.config";
 

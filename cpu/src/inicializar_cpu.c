@@ -14,7 +14,9 @@ void inicializar_cpu() {
 
 void inicializar_variables(){
     char* respuesta_marco_escritura = NULL;
+    (void)respuesta_marco_escritura;
     char* respuesta_marco_lectura = NULL;
+    (void)respuesta_marco_lectura;
 }
 
 void iniciar_logs(){
@@ -55,15 +57,15 @@ void imprimir_config(){
 
 void inicializar_mutexs(){
 	pthread_mutex_init(&mutex_manejo_contexto, NULL);
-    pthread_mutex_init(&mutex_instruccion, NULL);
-    pthread_mutex_init(&mutex_interrupcion_quantum, NULL);
-    pthread_mutex_init(&mutex_interrupcion_exit, NULL);
-    pthread_mutex_init(&mutex_tlb, NULL);
+    //pthread_mutex_init(&mutex_instruccion, NULL);
+    //pthread_mutex_init(&mutex_interrupcion_quantum, NULL);
+    //pthread_mutex_init(&mutex_interrupcion_exit, NULL);
+    //pthread_mutex_init(&mutex_tlb, NULL);
     pthread_mutex_init(&mutex_ordenCargaGlobal, NULL);
-    pthread_mutex_init(&mutex_marco, NULL);
-    pthread_mutex_init(&mutex_rta_lectura, NULL);
-    pthread_mutex_init(&mutex_rta_escritura, NULL);
-    pthread_mutex_init(&mutex_resultado, NULL);
+    //pthread_mutex_init(&mutex_marco, NULL);
+    //pthread_mutex_init(&mutex_rta_lectura, NULL);
+    //pthread_mutex_init(&mutex_rta_escritura, NULL);
+    //pthread_mutex_init(&mutex_resultado, NULL);
 }
 
 void inicializar_semaforos(){
