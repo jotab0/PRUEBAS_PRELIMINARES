@@ -110,6 +110,9 @@ typedef struct{
 	char* pseudo_codigo;
     char* primer_parametro;
     char* segundo_parametro;
+    char* tercer_parametro;
+    char* cuarto_parametro;
+    char* quinto_parametro;
 }t_instruccion_codigo;
 
 
