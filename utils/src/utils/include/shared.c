@@ -371,6 +371,13 @@ uint32_t extraer_uint32_del_buffer(t_buffer* buffer){
 	return valor_del_uint32_t; 
 }
 
+int32_t extraer_int32_del_buffer(t_buffer* buffer){
+	int32_t* un_entero = extraer_mensaje_de_buffer(buffer);
+	int32_t valor_del_int32_t = *un_entero;
+	free(un_entero);
+	return valor_del_int32_t; 
+}
+
 // DESTRUIR BUFFER
 
 void destruir_buffer(t_buffer* buffer) { // DESTRUYE BUFFER PARA QUE NO HAYA !!!!MEMORY LEAKS!!!!

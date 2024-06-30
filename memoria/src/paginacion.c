@@ -1,6 +1,13 @@
 #include "../include/paginacion.h"
 
-
+double ceil(double x) {
+    int int_part = (int)x;
+    if (x > (double)int_part) {
+        return (double)(int_part + 1);
+    } else {
+        return (double)int_part;
+    }
+}
 
 t_marco* buscar_marco_segun_numero(int num_marco){
     t_marco* un_marco;

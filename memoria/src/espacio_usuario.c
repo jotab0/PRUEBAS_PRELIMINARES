@@ -209,7 +209,8 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
            proceso->size = (proceso->size) - (tamanio_a_reducir + (un_marco->cantidad_usado));
            tamanio_a_reducir = abs(un_marco->cantidad_usado);
            poner_en_disponible_frame(un_marco);
-           bool resultado = list_remove_element(proceso->tabla_paginas,una_fila);
+           bool unused_resultado = list_remove_element(proceso->tabla_paginas,una_fila);
+           (void)unused_resultado; 
         }
         else{
             proceso->size = (proceso->size) - tamanio_a_reducir;

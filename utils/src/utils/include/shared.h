@@ -126,6 +126,7 @@ void cargar_uint32_a_buffer(t_buffer* buffer, uint32_t valor);
 void cargar_string_a_buffer(t_buffer* buffer, char* string);
 void* extraer_mensaje_de_buffer(t_buffer* buffer);
 int extraer_int_del_buffer(t_buffer* buffer);
+int32_t extraer_int32_del_buffer(t_buffer* unBuffer);
 char* extraer_string_del_buffer(t_buffer* buffer);
 uint32_t extraer_uint32_del_buffer(t_buffer* buffer);
 void destruir_paquete(t_paquete* paquete);
