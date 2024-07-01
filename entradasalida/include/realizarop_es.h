@@ -19,7 +19,7 @@ void respuesta_de_operacion_stdout_a_kernel(char* nombre_interfaz, int pid);
 
 // =========== ENVIAR A MEMORIA ===============
 
-void enviar_contenido_a_memoria_stdin(int pid, int una_direccion,int tamanio_direcc, char* contenido_ingresado);
+void enviar_contenido_a_memoria_stdin(int pid, int una_direccion,int tam_contenido_ingresado, char* contenido_ingresado);
 void enviar_contenido_a_memoria_stdout(int pid, int una_direccion, int tamanio_direcc);
 
 // =========== REC MEMORIA ===============

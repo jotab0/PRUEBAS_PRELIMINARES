@@ -81,7 +81,7 @@ void atender_peticion_de_stdin(t_buffer* un_buffer){
 
     char* nombre_interfaz = extraer_string_del_buffer(un_buffer);
     int pid = extraer_int_del_buffer(un_buffer);
-    int una_direccion = extraer_int_del_buffer(un_buffer);
+    int32_t una_direccion = extraer_int_del_buffer(un_buffer);
     int tamanio_direcc = extraer_int_del_buffer(un_buffer);
     
     char contenido_ingresado[256];
@@ -119,7 +119,7 @@ void atender_peticion_de_stdout(t_buffer* un_buffer) {
 
     char* nombre_interfaz = extraer_string_del_buffer(un_buffer);
     int pid = extraer_int_del_buffer(un_buffer);
-    int una_direccion = extraer_int_del_buffer(un_buffer);
+    int32_t una_direccion = extraer_int_del_buffer(un_buffer);
     int tamanio_direcc = extraer_int_del_buffer(un_buffer);
 
     enviar_contenido_a_memoria_stdout(pid, una_direccion, tamanio_direcc);
@@ -246,11 +246,11 @@ void  respuesta_de_operacion_gen_a_kernel(char* nombre_interfaz, int pid){
 
 //----- ENVIAR A MEMORIA -----------------------------------
 
-void enviar_contenido_a_memoria_stdin(int pid, int una_direccion,int tamanio_direcc, char* contenido_ingresado){
+void enviar_contenido_a_memoria_stdin(int pid, int una_direccion,int tam_contenido_ingresado, char* contenido_ingresado){
     t_paquete* un_paquete = crear_paquete_con_buffer(ENVIO_RECURSOS_STDIN_ESM);
 	cargar_int_a_paquete(un_paquete,pid);
 	cargar_int_a_paquete(un_paquete,una_direccion);
-    cargar_int_a_paquete(un_paquete, tamanio_direcc);
+    cargar_int_a_paquete(un_paquete, tam_contenido_ingresado);
 	cargar_string_a_paquete(un_paquete, contenido_ingresado);
 	enviar_paquete(un_paquete, fd_memoria);
 	eliminar_paquete(un_paquete);
