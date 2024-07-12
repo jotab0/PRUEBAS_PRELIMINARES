@@ -20,12 +20,6 @@ int generar_ticket(){
 	return valor_ticket;
 }
 
-void decrementar_procesos_en_core(){
-	pthread_mutex_lock(&mutex_procesos_en_core);
-	procesos_en_core --;
-	pthread_mutex_unlock(&mutex_procesos_en_core);
-}
-
 void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex){
 
     pthread_mutex_lock(mutex);
@@ -68,14 +62,20 @@ void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo){
 
 void destruir_pcb(pcb* un_pcb){
 	free(un_pcb->registros_CPU);
-	list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz);
+	// Debería liberar memoria usada en las listas
 	list_destroy(un_pcb->recursos_en_uso);
+	list_destroy(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz); 
+	if(un_pcb->pedido_a_interfaz->nombre_interfaz != NULL){
+		free(un_pcb->pedido_a_interfaz->nombre_interfaz);
+	}
 	free(un_pcb->pedido_a_interfaz);
 	free(un_pcb);
 }
 
 // Elimina pcb de lista y devuelve true si pudo hacerlo
-bool _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex){
+pcb* _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex){
+
+	pcb* pcb_lista = NULL;
 
 	bool coincide_pid (pcb* posible_pcb){
 		return un_pcb->pid == posible_pcb->pid;
@@ -84,14 +84,14 @@ bool _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t
 	pthread_mutex_lock(mutex);
 	if(list_any_satisfy(una_lista,(void*)coincide_pid)){
         
-		list_remove_by_condition(una_lista,(void*)coincide_pid);
+		pcb_lista = list_remove_by_condition(una_lista,(void*)coincide_pid);
 		pthread_mutex_unlock(mutex);
-		return true;
+		return pcb_lista;
 
 	}
 	pthread_mutex_unlock(mutex);
 
-	return false;
+	return pcb_lista;
 }
 
 void agregar_a_ready(pcb* un_pcb){
@@ -124,7 +124,6 @@ void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb){
 
 	if(un_pcb->pid == pid_recibido){
 
-		un_pcb -> pid = pid_recibido;
 		un_pcb -> program_counter = extraer_int_del_buffer(un_buffer);
 
 		un_pcb -> registros_CPU -> AX = extraer_uint32_del_buffer(un_buffer);
@@ -137,26 +136,30 @@ void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb){
 		un_pcb -> tiempo_ejecutado = extraer_int_del_buffer(un_buffer);
 
 	}else{
-		log_error(kernel_logger_extra,"ERROR: Se intentó actualizar procesos con distinto PID");
+		log_error(kernel_logger_extra,"MÓDULO - shared_kernel: ERROR - Se intentó actualizar procesos con distinto PID");
+		log_error(kernel_logger_extra,"MÓDULO - shared_kernel: PID recibido: %d",pid_recibido);
+		log_error(kernel_logger_extra,"MÓDULO - shared_kernel: PID en EXECUTE: %d",un_pcb->pid);
 		exit(EXIT_FAILURE);
 	}	
 }
 
 pcb* buscar_pcb_en_sistema_(int pid){
 
+		log_info(kernel_logger, "Buscando proceso en sistema con PID: %d", pid);
 		pcb* un_pcb = NULL;
-		un_pcb = _buscar_pcb_en_lista(un_pcb->pid,ready,&mutex_lista_ready);
+		
+		un_pcb = _buscar_pcb_en_lista(pid,ready,&mutex_lista_ready);
 		if(un_pcb == NULL){
-			un_pcb = _buscar_pcb_en_lista(un_pcb->pid,ready_plus,&mutex_lista_ready_plus);
+			un_pcb = _buscar_pcb_en_lista(pid,ready_plus,&mutex_lista_ready_plus);
 		}
-		else if (un_pcb == NULL){
-			un_pcb = _buscar_pcb_en_lista(un_pcb->pid,blocked,&mutex_lista_blocked);
+		if (un_pcb == NULL){
+			un_pcb = _buscar_pcb_en_lista(pid,blocked,&mutex_lista_blocked);
 		}
-		else if (un_pcb == NULL){
-			un_pcb = _buscar_pcb_en_lista(un_pcb->pid,new,&mutex_lista_new);
+		if (un_pcb == NULL){
+			un_pcb = _buscar_pcb_en_lista(pid,new,&mutex_lista_new);
 		}
-		else if (un_pcb == NULL){
-			un_pcb = _buscar_pcb_en_lista(un_pcb->pid,execute,&mutex_lista_exec);
+		if (un_pcb == NULL){
+			un_pcb = _buscar_pcb_en_lista(pid,execute,&mutex_lista_exec);
 		}
 
 	return un_pcb;
@@ -203,9 +206,30 @@ void agregar_string_a_lista(t_list* una_lista, const char* un_string){
 
 }
 
+// FUNCIONES GENÉRICAS
 
+void decrementar_procesos_en_core(){
+	pthread_mutex_lock(&mutex_procesos_en_core);
+	procesos_en_core --;
+	pthread_mutex_unlock(&mutex_procesos_en_core);
+}
 
+void mostrar_contexto(pcb* un_pcb){
 
+	log_info(kernel_logger,"MOSTRANDO CONTEXTO DE PROCESO CON PID: %d", un_pcb->pid);
+
+	log_info(kernel_logger,"PC: %d", un_pcb->program_counter);
+
+	log_info(kernel_logger,"AX: %d", un_pcb->registros_CPU->AX);
+	log_info(kernel_logger,"BX: %d", un_pcb->registros_CPU->BX);
+	log_info(kernel_logger,"CX: %d", un_pcb->registros_CPU->CX);
+	log_info(kernel_logger,"DX: %d", un_pcb->registros_CPU->DX);
+	log_info(kernel_logger,"SI: %d", un_pcb->registros_CPU->SI);
+	log_info(kernel_logger,"DI: %d", un_pcb->registros_CPU->DI);
+
+	log_info(kernel_logger,"Tiempo ejecutado: %d", un_pcb->tiempo_ejecutado);
+
+}
 
 
 
@@ -303,7 +327,6 @@ pcb* _extraer_pcb_de_lista_sistema(pcb* un_pcb){
 		pthread_mutex_lock(&mutex_lista_exec);
 		list_remove(execute,0);
 		pthread_mutex_unlock(&mutex_lista_exec);
-		sem_post(&sem_pcp);
 
 		break;
 
