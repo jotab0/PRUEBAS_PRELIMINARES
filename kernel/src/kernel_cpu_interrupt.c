@@ -17,7 +17,7 @@ void esperar_conexiones_cpu_interrupt(){
 void esperar_cpu_interrupt_kernel(){
     int estado_while = 1;
     while (estado_while) {
-		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE CPU INTERRUPT...");
+		
         int cod_op = recibir_operacion(fd_cpu_interrupt);
 		switch (cod_op) {
 		case MENSAJE:
@@ -42,9 +42,8 @@ void _gestionar_interrupcion(pcb* un_pcb, interrupcion motivo_interrupcion){
 		
 		t_paquete* paquete = NULL;
 		
-		paquete = crear_paquete_con_buffer(QUANTUM_INTERRUPT);
+		paquete = crear_paquete_con_buffer(motivo_interrupcion);
 		cargar_int_a_paquete(paquete,un_pcb->pid);
-		cargar_int_a_paquete(paquete,motivo_interrupcion);
 
 		enviar_paquete(paquete,fd_cpu_interrupt);
     	destruir_paquete(paquete);

@@ -117,6 +117,7 @@ typedef struct{ //
 
 typedef struct{
 	char* nombre_interfaz;
+	int estado_conexion;
 	// Lista de instruccion_interfaz
 	t_list* instrucciones_disponibles;
 	// Lista de PCBs
@@ -124,6 +125,7 @@ typedef struct{
 	int* fd_conexion; // Consultar si tiene que ser puntero o debe ser int
 	resultado_operacion resultado_operacion_solicitada;
 	pthread_mutex_t mutex_interfaz;
+	
 	sem_t sem_interfaz;
 	sem_t sem_request_interfaz;
 	sem_t sem_instruccion_interfaz;

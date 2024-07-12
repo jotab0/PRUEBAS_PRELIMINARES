@@ -17,16 +17,24 @@ void esperar_conexiones_memoria(){
 void esperar_memoria_kernel(){
     bool control_key = 1;
     while(control_key){
-        log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE MEMORIA...");
+        
         int cod_op = recibir_operacion(fd_memoria);
         switch (cod_op){
+
+            case MENSAJE:
+		 	recibir_mensaje_tp0(fd_memoria,kernel_logger);
+			break;
             
             case RTA_INICIAR_ESTRUCTURA:
-
+                
                 t_buffer* un_buffer = recibir_buffer(fd_memoria);
                 // Si me devuelve el flag con valor igual a 0, no pudo crearse
                 flag_respuesta_creacion_proceso = extraer_int_del_buffer(un_buffer);
+                
+                log_info(kernel_logger,"Me llegó respuesta de memoria con FLAG: %d", flag_respuesta_creacion_proceso);
                 sem_post(&sem_estructura_iniciada_en_memoria);
+
+                destruir_buffer(un_buffer);
                 
 			break;
 
@@ -53,11 +61,15 @@ void iniciar_estructura_en_memoria(pcb* un_pcb){
     cargar_int_a_paquete(paquete,un_pcb->pid);
  
     log_info(kernel_logger, "Solicitud de creación de proceso con PID: %d enviada a memoria",un_pcb->pid);
+    log_info(kernel_logger, "Solicitud de creación de proceso con PATH: %s enviada a memoria",un_pcb->path);
+    log_info(kernel_logger,"Tamaño paquete: %d",paquete->buffer->size);
     
     enviar_paquete(paquete,fd_memoria);
     destruir_paquete(paquete);
+
     // Espero a la respuesta de memoria
     sem_wait(&sem_estructura_iniciada_en_memoria);
+    log_info(kernel_logger,"Sigo con la ejecución del PLP");
     
 }
 
@@ -66,8 +78,9 @@ void liberar_memoria(pcb* un_pcb){
     t_paquete* paquete = NULL;
     paquete = crear_paquete_con_buffer(LIBERAR_ESTRUCTURAS);
     
-    //Debería mandarle el path de los archivos que tiene que cerrar o memoria ya debería saberlo?
+    log_info(kernel_logger,"Liberando memoria de proceso con PID: %d",un_pcb->pid);
     cargar_int_a_paquete(paquete,un_pcb->pid);
+    
     enviar_paquete(paquete,fd_memoria);
 
     destruir_paquete(paquete);

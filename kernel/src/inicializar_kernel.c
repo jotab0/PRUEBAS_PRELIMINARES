@@ -25,11 +25,12 @@ void inicializar_logs(){
         perror ("No se pudo crear log extra para el Kernel");
         exit(EXIT_FAILURE);
     }
+    log_trace(kernel_logger,"Logs iniciados");
 }
 
 void inicializar_configs(){
     
-    kernel_config = config_create("/home/utnso/Documents/tp-2024-1c-ubuntunel/kernel/Kernel.config");
+    kernel_config = config_create("/home/utnso/Documents/BACKUPS_TP/tpPruebas/kernel/Kernel.config");
 
 	if (kernel_config == NULL) {
         perror ("No se pudo crear el config para el módulo kernel");
@@ -43,18 +44,27 @@ void inicializar_configs(){
         PUERTO_CPU_INTERRUPT = config_get_string_value(kernel_config,"PUERTO_CPU_INTERRUPT");
         ALGORITMO_PLANIFICACION = config_get_string_value(kernel_config,"ALGORITMO_PLANIFICACION");
         QUANTUM = config_get_int_value(kernel_config,"QUANTUM") * 1000; 
+        log_info(kernel_logger, "QUANTUM: %d", QUANTUM);
         RECURSOS = config_get_array_value(kernel_config,"RECURSOS");
         INSTANCIAS_RECURSOS = config_get_array_value(kernel_config,"INSTANCIAS_RECURSOS");
         GRADO_MULTIPROGRAMACION = config_get_int_value(kernel_config,"GRADO_MULTIPROGRAMACION");
+    
+     log_trace(kernel_logger,"Config iniciada");
 }
 
 void establecer_algoritmo_seleccionado(){
     if (strcmp(ALGORITMO_PLANIFICACION, "FIFO") == 0) {
         ALGORITMO_PCP_SELECCIONADO = FIFO;
+        const char* algoritmo_seleccionado= "FIFO";
+        log_trace(kernel_logger,"El algoritmo seleccionado fue: %s",algoritmo_seleccionado);
     } else if (strcmp(ALGORITMO_PLANIFICACION, "RR") == 0) {
         ALGORITMO_PCP_SELECCIONADO = RR;
+        const char* algoritmo_seleccionado = "RR";
+        log_trace(kernel_logger,"El algoritmo seleccionado fue: %s",algoritmo_seleccionado);
     } else if (strcmp(ALGORITMO_PLANIFICACION, "VRR") == 0) {
         ALGORITMO_PCP_SELECCIONADO = VRR;
+        const char* algoritmo_seleccionado = "VRR";
+        log_trace(kernel_logger,"El algoritmo seleccionado fue: %s",algoritmo_seleccionado);
     } else {
         log_error(kernel_logger_extra,"ERROR: El algoritmo seleccionado en la configuración no es válido");
     }
@@ -70,6 +80,7 @@ void crear_listas(){
 	lista_exit = list_create();
     interfaces_conectadas = list_create();
     lista_recursos = list_create();
+    log_trace(kernel_logger,"Listas creadas");
 }
 
 void inicializar_semaforos(){
@@ -84,6 +95,7 @@ void inicializar_semaforos(){
     sem_init(&sem_solicitud_interfaz,0,0);
     sem_init(&sem_pcp,0,0);
     sem_init(&sem_cpu_libre,0,1);
+    log_trace(kernel_logger,"Semáforos inicializados");
 }
 
 void inicializar_mutexes(){
@@ -99,6 +111,7 @@ void inicializar_mutexes(){
 
 	pthread_mutex_init(&mutex_ticket, NULL);
     pthread_mutex_init(&mutex_pid, NULL);
+    log_trace(kernel_logger,"Mutexes inicializados");
 }
 
  void establecer_recursos(){
@@ -107,9 +120,12 @@ void inicializar_mutexes(){
     while(INSTANCIAS_RECURSOS[contador] != NULL){
         
         instancia_recurso* un_recurso = malloc(sizeof(instancia_recurso));
-
-        un_recurso->nombre_recurso = RECURSOS[contador];
         
+
+        char* nombre = RECURSOS[contador];
+        un_recurso->nombre_recurso = malloc(strlen(nombre)+1);
+        
+        strcpy(un_recurso->nombre_recurso,nombre);
         sem_init(&un_recurso->semaforo_recurso,0,atoi(INSTANCIAS_RECURSOS[contador]));
         sem_init(&un_recurso->semaforo_request_recurso,0,0);
         pthread_mutex_init(&un_recurso->mutex_lista_procesos_en_cola, NULL);
@@ -117,9 +133,14 @@ void inicializar_mutexes(){
         un_recurso->lista_procesos_en_cola = list_create();
         
         list_add(lista_recursos,un_recurso);
+
+        instancia_recurso* recurso = list_get(lista_recursos,contador);
+        log_info(kernel_logger,"MÓDULO - inicializar_kernel: Se agregó recurso %s con %d instancias",recurso->nombre_recurso,atoi(INSTANCIAS_RECURSOS[contador]));
         
         contador += 1;
     }
+    int tamanio = list_size(lista_recursos);
+    log_trace(kernel_logger,"Recursos establecidos: %d", tamanio);
  }
 
 void inicializar_planificadores(){

@@ -12,7 +12,7 @@ int generar_ticket();
 void list_add_pcb_sync(t_list* lista, pcb* un_pcb, pthread_mutex_t* mutex, estado_pcb nuevo_estado);
 void actualizar_pcb(pcb* pcb_desactualizado,pcb* pcb_nuevo);
 void destruir_pcb(pcb* un_pcb);
-bool _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex);
+pcb* _eliminar_pcb_de_lista_sync(pcb* un_pcb, t_list* una_lista, pthread_mutex_t* mutex);
 void agregar_a_ready(pcb* un_pcb);
 void cambiar_estado_pcb(pcb* un_pcb, estado_pcb nuevo_estado);
 void obtener_contexto_pcb(t_buffer* un_buffer, pcb* un_pcb);
@@ -28,6 +28,7 @@ void list_add_sync(t_list* lista, void* un_elemento, pthread_mutex_t* mutex);
 // FUNCIONES GENÉRICAS
 
 void decrementar_procesos_en_core();
+void mostrar_contexto(pcb* un_pcb);
 
 // FUNCIONES QUE QUEDARON Y NO SE UTILIZAN
 

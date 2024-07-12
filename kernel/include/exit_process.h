@@ -15,7 +15,7 @@ void _gestionar_salida(pcb* un_pcb);
 // MANEJO DE RECURSOS
 void liberar_recursos_pcb (pcb* un_pcb);
 void liberar_recursos(pcb* un_pcb);
-void _signal_recurso_exit(char* nombre_recurso, int cantidad_instanciada);
+void _signal_recurso_exit(instancia_recurso_pcb* recurso_pcb);
 void eliminar_de_lista_recurso(pcb* un_pcb);
 
 // MANEJO DE EXIT INTERFACES

@@ -17,5 +17,8 @@ void imprimir_procesos_exit(t_list* una_lista, pthread_mutex_t* un_mutex);
 
 t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones);
 t_list* procesar_archivo(const char* path_archivo);
+void imprimir_comandos();
+void imprimir_recursos_procesos(t_list* una_lista, pthread_mutex_t* un_mutex);
+void modificar_grado_multiprogramacion(int* valor_solicitado);
 
 #endif

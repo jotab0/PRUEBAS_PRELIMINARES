@@ -21,8 +21,7 @@ void esperar_cpu_dispatch_kernel(){
     int estado_while = 1;
 
     while (estado_while) {
-		log_trace(kernel_logger,"KERNEL: ESPERANDO MENSAJES DE CPU DISPATCH...");
-        // COD_OP + TAM + STREAM
+		
 		
 		int cod_op = recibir_operacion(fd_cpu_dispatch);
 		switch (cod_op) {
@@ -30,6 +29,7 @@ void esperar_cpu_dispatch_kernel(){
 		
 		case ATENDER_INSTRUCCION_CPU:
 		 	
+			log_trace(kernel_logger,"Solicitud de instrucción a interfaz recibida");
 			t_buffer* un_buffer = recibir_buffer(fd_cpu_dispatch);
 			
 			instruccion_interfaz instruccion_solicitada = extraer_int_del_buffer(un_buffer);
@@ -45,12 +45,13 @@ void esperar_cpu_dispatch_kernel(){
 
 			obtener_contexto_pcb(un_buffer,un_pcb);
 			
-			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
-			
 			un_pcb -> motivo_bloqueo = PEDIDO_A_INTERFAZ;
 
-			un_pcb -> pedido_a_interfaz -> nombre_interfaz = interfaz_solicitada;
+			un_pcb -> pedido_a_interfaz -> nombre_interfaz = malloc(sizeof(strlen(interfaz_solicitada)+1));
+			strcpy(un_pcb->pedido_a_interfaz->nombre_interfaz, interfaz_solicitada);
 			un_pcb -> pedido_a_interfaz -> instruccion_a_interfaz = instruccion_solicitada;
+
+			list_add_pcb_sync(blocked,un_pcb,&mutex_lista_blocked,BLOCKED);
 
 			manejar_bloqueo_de_proceso(un_pcb);
 
@@ -112,9 +113,14 @@ void esperar_cpu_dispatch_kernel(){
 			un_pcb = list_remove(execute,0);
 			pthread_mutex_unlock(&mutex_lista_exec);
 
+			log_info(kernel_logger,"Contexto antes de actualización");
+			mostrar_contexto(un_pcb);
 			obtener_contexto_pcb(un_buffer,un_pcb);
+			log_info(kernel_logger,"Contexto luego de actualización");
+			mostrar_contexto(un_pcb);
 
 			agregar_a_ready(un_pcb);
+			
 			sem_post(&sem_pcp);
 			sem_post(&sem_cpu_libre);
 
@@ -124,13 +130,15 @@ void esperar_cpu_dispatch_kernel(){
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 
+			un_pcb = list_get(execute,0);
+
+			log_info(kernel_logger,"Solicitud proceso con PID: %d - EXIT",un_pcb->pid);
 			obtener_contexto_pcb(un_buffer,un_pcb);
 
 			cambiar_estado_pcb(un_pcb,EXIT);
 
+			log_info(kernel_logger,"Planificando proceso con PID: %d - EXIT",un_pcb->pid);
 			planificar_proceso_exit_en_hilo(un_pcb);
-
-			sem_post(&sem_cpu_libre);
 			
 		break;
 
@@ -161,8 +169,23 @@ void enviar_pcb_CPU_dispatch(pcb* un_pcb){
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->BX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->CX);
 	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->DX);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->SI);
+	cargar_uint32_a_paquete(un_paquete, un_pcb->registros_CPU->DI);
+	
+
+	log_info(kernel_logger,"PID: %d", un_pcb->pid);
+	log_info(kernel_logger,"PC: %d", un_pcb->program_counter);
+	log_info(kernel_logger,"TIEMPO EJECUTADO: %d", un_pcb->tiempo_ejecutado);
+	log_info(kernel_logger,"TICKET: %d", un_pcb->ticket);
+	log_info(kernel_logger,"DX: %d", un_pcb->registros_CPU->DX);
+    log_info(kernel_logger,"AX: %d", un_pcb->registros_CPU->AX);
+	log_info(kernel_logger,"CX: %d", un_pcb->registros_CPU->CX);
+	log_info(kernel_logger,"BX: %d", un_pcb->registros_CPU->BX);
+	log_info(kernel_logger,"SI: %d", un_pcb->registros_CPU->SI);
+	log_info(kernel_logger,"DI: %d", un_pcb->registros_CPU->DI);
 
 	enviar_paquete(un_paquete, fd_cpu_dispatch); 
+	log_info(kernel_logger,"Proceso enviado");
 	destruir_paquete(un_paquete);
 }
 
@@ -173,76 +196,109 @@ void extraer_datos_auxiliares(t_buffer* un_buffer,instruccion_interfaz instrucci
 	{
 		
 		case IO_GEN_SLEEP:
-
-			int tiempo_extraido = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&tiempo_extraido);
+			
+			int* tiempo_extraido = malloc(sizeof(int));
+			*tiempo_extraido = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,tiempo_extraido);
 
 			break;
 		
 		case IO_STDIN_READ:
 			
 			// Registro dirección
-			int parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			int* parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro tamaño 
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			int* tamanio_parametro = malloc(sizeof(int));
+			*tamanio_parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,tamanio_parametro);
+
+			break;
 
 		case IO_STDOUT_WRITE:
 
 			// Registro dirección
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro tamaño 
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			tamanio_parametro = malloc(sizeof(int));
+			*tamanio_parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
+
+			break;
 
 		case IO_FS_CREATE:
 
-			char* nombre_archivo = extraer_string_del_buffer(un_buffer);
+			char* un_nombre = extraer_string_del_buffer(un_buffer);
+			char* nombre_archivo = malloc(sizeof(strlen(un_nombre) + 1));
+			strcpy(nombre_archivo,un_nombre);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
+
+			break;
 
 		case IO_FS_DELETE:
 
-			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			un_nombre = extraer_string_del_buffer(un_buffer);
+			nombre_archivo = malloc(sizeof(strlen(un_nombre) + 1));
+			strcpy(nombre_archivo,un_nombre);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
-		
+
+			break;
+
 		case IO_FS_TRUNCATE:
 
-			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			un_nombre = extraer_string_del_buffer(un_buffer);
+			nombre_archivo = malloc(sizeof(strlen(un_nombre) + 1));
+			strcpy(nombre_archivo,un_nombre);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
 			// Registro tamaño
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 
+			break;
 
 		case IO_FS_WRITE:
 
-			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			un_nombre = extraer_string_del_buffer(un_buffer);
+			nombre_archivo = malloc(sizeof(strlen(un_nombre) + 1));
+			strcpy(nombre_archivo,un_nombre);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
 			// Registro dirección
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro tamaño
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro puntero archivo
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
-
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
+			
+			break;
+			
 		case IO_FS_READ:
 			
-			nombre_archivo = extraer_string_del_buffer(un_buffer);
+			un_nombre = extraer_string_del_buffer(un_buffer);
+			nombre_archivo = malloc(sizeof(strlen(un_nombre) + 1));
+			strcpy(nombre_archivo,un_nombre);
 			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,nombre_archivo);
 			// Registro dirección
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro tamaño
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 			// Registro puntero archivo
-			parametro = extraer_int_del_buffer(un_buffer);
-			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,&parametro);
+			parametro = malloc(sizeof(int));
+			*parametro = extraer_int_del_buffer(un_buffer);
+			list_add(un_pcb->pedido_a_interfaz->datos_auxiliares_interfaz,parametro);
 
 			break;
 
