@@ -146,7 +146,7 @@ void resolver_solicitud_escribir_bloque_cpu(t_buffer* unBuffer){
 
 void encargarse_cpu(int cliente_socket_cpu){
         
-        enviar_tamanio_pagina(cliente_socket_cpu);
+        enviar_tamanio_pagina(fd_cpu);
         int numero =1;
 
         while(numero){

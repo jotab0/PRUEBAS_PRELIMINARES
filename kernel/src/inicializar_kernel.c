@@ -30,7 +30,7 @@ void inicializar_logs(){
 
 void inicializar_configs(){
     
-    kernel_config = config_create("/home/utnso/Documents/BACKUPS_TP/tpPruebas/kernel/Kernel.config");
+    kernel_config = config_create("/home/utnso/Documents/tp-2024-1c-ubuntunel/kernel/Kernel.config");
 
 	if (kernel_config == NULL) {
         perror ("No se pudo crear el config para el módulo kernel");

@@ -45,7 +45,7 @@ void esperar_memoria_kernel(){
             break;
 
             default:
-                log_warning(kernel_logger, "Operacion desconocida de MEMORIA");
+                log_warning(kernel_logger, "Operacion desconocida de MEMORIA - Cod. op: %d",cod_op);
             break;
             
         }

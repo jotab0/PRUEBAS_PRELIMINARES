@@ -35,26 +35,32 @@ void esperar_cpu_memoria(){
 
 void esperar_kernel_memoria(){
     int estado_while = 1;
-	t_list* lista;
     while (estado_while) {
 		log_trace(memoria_logger,"MEMORIA: ESPERANDO MENSAJES DE KERNEL...");
         int cod_op = recibir_operacion(fd_kernel);
+		
 		switch (cod_op) {
-		case MENSAJE:
-		 	recibir_mensaje_tp0(fd_kernel,memoria_logger);
-			break;
-		case PAQUETE:
-			lista = recibir_paquete(fd_kernel);
-			log_info(memoria_logger,"Me llegaron los siguientes mensajes:\n");
-			list_iterate(lista,(void*)iterator);
-			break;
-		case -1:
+			case INICIAR_ESTRUCTURA: 
+                t_buffer* unBuffer = recibir_buffer(fd_kernel);
+                iniciar_estructura_proceso(unBuffer);
+                destruir_buffer(unBuffer);
+                log_info(memoria_logger,"Se solicitó crear proceso");
+                break;
+
+			case LIBERAR_ESTRUCTURAS:
+                unBuffer = recibir_buffer(fd_kernel);
+                liberar_estructura_proceso(unBuffer);
+                destruir_buffer(unBuffer);
+                break; 
+
+			case -1:
 			log_error(memoria_logger, "KERNEL se desconecto. Terminando servidor");
 			estado_while = 0;
             break;
-		default:
-			log_warning(memoria_logger,"Operacion desconocida");
-			break;
+
+			default:
+				log_warning(memoria_logger,"Operacion desconocida");
+				break;
 		}
 	}
 }

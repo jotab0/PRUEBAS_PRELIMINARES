@@ -23,20 +23,20 @@ int main(int argc, char* argv[]) {
     inicializar_memoria();
 	
     fd_memoria = iniciar_servidor(PUERTO_ESCUCHA,memoria_logger,"Iniciado servidor: Memoria");  
-    fd_kernel  = esperar_cliente(fd_memoria, memoria_logger,"Cliente: Kernel");
     fd_cpu     = esperar_cliente(fd_memoria, memoria_logger,"Cliente: CPU");
+    fd_kernel  = esperar_cliente(fd_memoria, memoria_logger,"Cliente: Kernel");
     fd_es      = esperar_cliente(fd_memoria, memoria_logger,"Cliente: E/S");
 
 //-------------------------------------------------------------------------------------------------------
 // Procesos
 
-    t_list* lista_procesos = list_create();
+    lista_procesos = list_create();
 
 //-------------------------------------------------------------------------------------------------------
 // Hilos 
 
     pthread_t hilo_cpu;
-    int err = pthread_create(&hilo_cpu,NULL,(void*)esperar_cpu_memoria,NULL);
+    int err = pthread_create(&hilo_cpu,NULL,(void*)encargarse_cpu,NULL);
     if (err!=0){
         perror("Fallo de creación de hilo_cpu(memoria))\n");
         return -3;
@@ -50,15 +50,6 @@ int main(int argc, char* argv[]) {
         return -3;
     }
     pthread_detach(hilo_es);
-
-    pthread_t hilo_mensaje_a_cpu;
-    err = pthread_create(&hilo_mensaje_a_cpu,NULL,(void*)mandar_mensajes,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_mensaje_a_cpu(memoria)\n");
-        return -3;
-    }
-    pthread_detach(hilo_mensaje_a_cpu);
-
 
     pthread_t hilo_kernel;
     err = pthread_create(&hilo_kernel,NULL,(void*)esperar_kernel_memoria,NULL);

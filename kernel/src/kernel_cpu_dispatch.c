@@ -34,7 +34,6 @@ void esperar_cpu_dispatch_kernel(){
 			
 			instruccion_interfaz instruccion_solicitada = extraer_int_del_buffer(un_buffer);
 			char* interfaz_solicitada = extraer_string_del_buffer(un_buffer);
-			int cantidad_recursos = extraer_int_del_buffer(un_buffer);
 
 			pcb* un_pcb = NULL;
 			pthread_mutex_lock(&mutex_lista_exec);
@@ -105,7 +104,7 @@ void esperar_cpu_dispatch_kernel(){
 
 		break;
 
-		case QUANTUM_INTERRUPT:
+		case INTERRUPCION_QUANTUM:
 
 			un_buffer = recibir_buffer(fd_cpu_dispatch);
 

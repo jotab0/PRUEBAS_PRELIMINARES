@@ -190,21 +190,23 @@ t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
 void encargarse_kernel(int cliente_socket_kernel){
 
         int numero = 1; 
+        log_info(memoria_logger, "Esperando KERNEL");
         
         while(numero){
             t_buffer* unBuffer;
-            int codigo_operacion = recibir_operacion(cliente_socket_kernel);
+            int codigo_operacion = recibir_operacion(fd_kernel);
 
             switch(codigo_operacion){
 
                 case INICIAR_ESTRUCTURA: 
-                unBuffer = recibir_buffer(cliente_socket_kernel);
+                unBuffer = recibir_buffer(fd_kernel);
                 iniciar_estructura_proceso(unBuffer);
                 destruir_buffer(unBuffer);
+                log_info(memoria_logger,"Se solicitó crear proceso");
                 break;
 
                 case LIBERAR_ESTRUCTURAS:
-                unBuffer = recibir_buffer(cliente_socket_kernel);
+                unBuffer = recibir_buffer(fd_kernel);
                 liberar_estructura_proceso(unBuffer);
                 destruir_buffer(unBuffer);
                 break; 
@@ -213,6 +215,4 @@ void encargarse_kernel(int cliente_socket_kernel){
 
             free(unBuffer);
         }
-
-
     }

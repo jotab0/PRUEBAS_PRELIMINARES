@@ -52,14 +52,6 @@ int main(void){
         return -3;
     }
     pthread_detach(hilo_k_interrupt);
-   
-    pthread_t hilo_mensajes;
-    err = pthread_create(&hilo_mensajes,NULL,(void*)mandar_mesajes,NULL);
-    if (err!=0){
-        perror("Fallo de creación de hilo_k_interrupt(cpu)\n");
-        return -3;
-    }
-    pthread_detach(hilo_mensajes);
 
     pthread_t hilo_memoria;
     err = pthread_create(&hilo_memoria,NULL,(void*)esperar_memoria_cpu,NULL);
