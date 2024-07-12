@@ -5,12 +5,16 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
+#include <unistd.h>
+
 
 
 #include <utils/include/shared.h> 
 
 #include <commons/log.h>
 #include <commons/config.h>
+
+
 
 //-------------------------------------------------------------
 // VARIABLES GLOBALES 

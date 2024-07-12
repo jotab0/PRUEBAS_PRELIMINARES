@@ -1,6 +1,6 @@
 #include "../include/shared_memoria.h"
 #include <stdint.h>
-
+#include <inttypes.h>
 
 
 void retardo_respuesta(){
@@ -51,7 +51,7 @@ bool puede_escribir_leer_en_la_direccion(uint32_t direc_fisica, int pid, int tam
     pthread_mutex_unlock(&mutex_lista_marcos);
     pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
 
-    int num_pagina_inicial = 898989;
+    int num_pagina_inicial = -1;
     pthread_mutex_lock(&(proceso->mutex_tabla_paginas));
 
     for(int i=0; i< list_size(proceso->tabla_paginas); i++){
@@ -63,14 +63,15 @@ bool puede_escribir_leer_en_la_direccion(uint32_t direc_fisica, int pid, int tam
     
     }
 
-    if(num_pagina_inicial == 898989){
+    if(num_pagina_inicial == -1){
         pthread_mutex_unlock(&(proceso->mutex_tabla_paginas));
         return false;
     }
 
     int memoria_usada =0;
     for(int i= 0; i < num_pagina_inicial; i++){
-        t_tabla_de_pagina * entrada = list_get(proceso->tabla_paginas, i);
+        t_tabla_de_pagina * unused_entrada = list_get(proceso->tabla_paginas, i);
+        (void)unused_entrada;
         memoria_usada+= TAM_PAGINA;
     }
     memoria_usada +=offset;
@@ -100,61 +101,187 @@ bool direccion_valida(uint32_t direc_fisica){
 }
 
 
-char* leer_valor_del_espacio_usuario(int tamanio, uint32_t direc_fisica) {
-    int bytes_leidos = 0;  
-    char* dato_leido = malloc(tamanio);
 
-    if(!direccion_valida(direc_fisica)){
-        return "ERROR";
-    }
 
-    while (bytes_leidos < tamanio) {
-        int pagina_actual = (direc_fisica + bytes_leidos) / TAM_PAGINA;
-        int desplazamiento_en_pagina = (direc_fisica + bytes_leidos) % TAM_PAGINA;
-        int espacio_en_pagina = TAM_PAGINA - desplazamiento_en_pagina;
 
-        char* puntero_a_datos = (char*)espacio_usuario + direc_fisica + bytes_leidos;
+//---------------------------------------------------------------------------------------------------------
+//-------------------------------------- NUEVO ------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
 
-        int bytes_a_leer = (tamanio - bytes_leidos > espacio_en_pagina) ? espacio_en_pagina : (tamanio - bytes_leidos);
-        
-        pthread_mutex_lock(&mutex_espacio_usuario);
-        memcpy(dato_leido + bytes_leidos, puntero_a_datos, bytes_a_leer);
-        pthread_mutex_unlock(&mutex_espacio_usuario);
-      
-        bytes_leidos += bytes_a_leer;
-    }
-
-    return dato_leido;
+char* leer_espacio_usuario(int32_t direccion_fisica, int tamanio){
+   char* puntero = espacio_usuario + direccion_fisica;
+   char* datos_leidos = malloc(tamanio * sizeof(char*));
+   pthread_mutex_lock(&mutex_espacio_usuario);
+   memcpy(datos_leidos, puntero, tamanio * sizeof(char*));     
+   pthread_mutex_unlock(&mutex_espacio_usuario);
+  
+   return datos_leidos;
+ 
 }
 
-char* resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
-    int pid = extraer_int_del_buffer(unBuffer);
-    uint32_t direc_fisica = extraer_uint32_del_buffer(unBuffer);
-    int tamanio = extraer_int_del_buffer(unBuffer);
+char* escribir_espacio_usuario(char* datos_para_escribir, int32_t direccion_fisica, int tamanio){
+    char* puntero = espacio_usuario + direccion_fisica;
+    pthread_mutex_lock(&mutex_espacio_usuario);
+    memcpy(puntero,datos_para_escribir, tamanio);    
+    pthread_mutex_unlock(&mutex_espacio_usuario);
+    
+    return"OK";
+}
 
-    if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid, tamanio)){
-       log_error(memoria_logger, "Error: No tiene permitido leer en la direccion <%d>", direc_fisica);
-       return "ERROR";
+
+
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+
+char* leer_en_mas_de_una_pagina(int32_t direc_fisica, int tamanio, int pid) {
+    int bytes_por_leer = tamanio;
+    int desplazamiento = direc_fisica % TAM_PAGINA;
+    char* datos_leidos = malloc(tamanio);
+    int bytes_leidos = 0;
+
+	int marco_num = direc_fisica / TAM_PAGINA;
+    t_marco* marco_actual = buscar_marco_segun_numero(marco_num);
+    char* puntero = espacio_usuario + (marco_actual->base + desplazamiento);
+
+    while (bytes_por_leer > 0) {
+        int tam_disponible = TAM_PAGINA - desplazamiento;
+        int tam_a_leer = (bytes_por_leer < tam_disponible) ? bytes_por_leer : tam_disponible;
+        pthread_mutex_lock(&mutex_espacio_usuario);
+        memcpy(datos_leidos + bytes_leidos, puntero, tam_a_leer);
+        pthread_mutex_unlock(&mutex_espacio_usuario);
+
+        bytes_leidos += tam_a_leer;
+        bytes_por_leer -= tam_a_leer;
+		marco_num = marco_num +1;
+
+        if (bytes_por_leer > 0) {
+			marco_actual = buscar_marco_segun_numero(marco_num);
+            direc_fisica = marco_actual->base;
+            desplazamiento = 0;
+			puntero = espacio_usuario + direc_fisica;
+        }
     }
 
-    char* datos_leidos = leer_valor_del_espacio_usuario(tamanio, direc_fisica);
-    datos_leidos[tamanio] = '\0';
-    free(datos_leidos);
-
-    log_info(memoria_logger, "PID: <%d> - Accion: <LEER> - Direccion FIsica: <%d> - Tamaño: <%d>", pid, direc_fisica, tamanio);
-
     return datos_leidos;
+}
 
+char* escribir_en_mas_de_una_pagina(char* datos_para_escribir, int32_t direc_fisica, int tamanio, int pid) {
+    int bytes_por_escribir = tamanio;
+    int desplazamiento = direc_fisica % TAM_PAGINA;
+    int bytes_escritos = 0;
+
+	int marco_num = direc_fisica / TAM_PAGINA;
+    t_marco* marco_actual = buscar_marco_segun_numero(marco_num);
+    char* puntero = espacio_usuario + (marco_actual->base + desplazamiento);
+
+    while (bytes_por_escribir > 0) {
+        int tam_disponible = TAM_PAGINA - desplazamiento;
+        int tam_a_escribir = (bytes_por_escribir < tam_disponible) ? bytes_por_escribir : tam_disponible;
+        pthread_mutex_lock(&mutex_espacio_usuario);
+        memcpy(puntero, datos_para_escribir + bytes_escritos, tam_a_escribir);
+        pthread_mutex_unlock(&mutex_espacio_usuario);
+
+        bytes_escritos += tam_a_escribir;
+        bytes_por_escribir -= tam_a_escribir;
+		marco_num++;
+
+        if (bytes_por_escribir > 0) {
+            marco_actual = buscar_marco_segun_numero(marco_num);
+            direc_fisica = marco_actual->base;
+            desplazamiento = 0;
+			puntero = espacio_usuario + direc_fisica;
+        }
+    }
+
+    return "OK";
 }
 
 
 //---------------------------------------------------------------------------------------------------------
-// Escritura // 
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
 
+char*  leer_datos_a_partir_de_direc_fisica(int tamanio, int32_t direc_fisica, int pid){
+	int desplazamiento = direc_fisica % TAM_PAGINA;
+	int tam_disponible = TAM_PAGINA - desplazamiento;
+
+	if(tam_disponible >= tamanio){
+		return leer_espacio_usuario(direc_fisica, tamanio);
+	}else{
+        return leer_en_mas_de_una_pagina(direc_fisica, tamanio ,pid);
+		}
+}
+
+
+char*  escribir_datos_a_partir_de_direc_fisica(char* datos_a_escribir, int tamanio, int32_t direc_fisica,int pid){
+	int desplazamiento = direc_fisica % TAM_PAGINA;
+    int tam_disponible = TAM_PAGINA - desplazamiento;
+
+    if (tam_disponible >= tamanio) {
+        return escribir_espacio_usuario(datos_a_escribir, direc_fisica, tamanio);
+    } else {
+        return escribir_en_mas_de_una_pagina(datos_a_escribir, direc_fisica, tamanio, pid);
+    }
+}
+
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+
+char* resolver_solicitud_leer_bloque(t_buffer* unBuffer){
+	int pid = extraer_int_del_buffer(unBuffer);
+	int32_t direc_fisica = extraer_int32_del_buffer(unBuffer);
+	int tamanio = extraer_int_del_buffer(unBuffer);
+
+	if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid,tamanio)){
+		//log_error(memoria_logger, "ERROR: No tiene permitido leer en la direccion: <%d>", direc_fisica);
+		return "ERROR";
+	}
+
+	char* datos_leidos = leer_datos_a_partir_de_direc_fisica(tamanio, direc_fisica, pid);
+	datos_leidos[tamanio]= '\0';
+	log_info(memoria_logger, "PID: <%d> - Accion <LEER> - Direccion Fisica: <%d" PRId32 ">- Tamaño: <%d>", pid, direc_fisica, (tamanio * sizeof(char)));
+    return datos_leidos;
+}
+
+
+char* resolver_solicitud_escribir_bloque(t_buffer* unBuffer){
+	int pid = extraer_int_del_buffer(unBuffer);
+	int32_t direc_fisica = extraer_int32_del_buffer(unBuffer);
+	int tamanio = extraer_int_del_buffer(unBuffer);
+
+	char* datos_a_escribir = malloc(tamanio);
+	memcpy(datos_a_escribir, unBuffer, tamanio);
+
+
+	if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid,tamanio)){
+		free(datos_a_escribir);
+		log_error(memoria_logger, "ERROR: No tiene permitido leer en la direccion: <%d>", direc_fisica);
+		return "ERROR";
+	}
+
+	char* resultado = escribir_datos_a_partir_de_direc_fisica(datos_a_escribir, tamanio, direc_fisica, pid);
+	
+	log_info(memoria_logger, "PID: <%d> - Accion <ESCRIBIR> - Direccion Fisica: <%d" PRId32 ">- Tamaño: <%d>", pid, direc_fisica, (tamanio * sizeof(char)));
+	free(datos_a_escribir);
+	return resultado;
+}
+
+
+//--------------------------------------------------------------------------------------
+//----------------------------------- VIEJO --------------------------------------------
+//--------------------------------------------------------------------------------------
+
+
+/*
 
 char* traducir_direccion_fisica(uint32_t direc_fisica, t_proceso* proceso) {
-    int pagina = direc_fisica / TAM_PAGINA;
-    int desplazamiento = direc_fisica % TAM_PAGINA;
+    int nro_marco = direc_fisica / TAM_PAGINA;
+    t_marco* marco= buscar_marco_segun_numero(nro_marco);
+    int pagina = marco->num_pagina;
+    int unused_desplazamiento = direc_fisica % TAM_PAGINA;
+    (void)unused_desplazamiento;
 
     // Busca la entrada de la tabla de páginas correspondiente
     t_tabla_de_pagina* entrada_pagina = NULL;
@@ -170,7 +297,7 @@ char* traducir_direccion_fisica(uint32_t direc_fisica, t_proceso* proceso) {
         return NULL;
     }
 
-    t_marco* marco = NULL;
+   
     marco = buscar_marco_segun_numero(entrada_pagina->num_marco);
 
     if (!marco) {
@@ -180,8 +307,12 @@ char* traducir_direccion_fisica(uint32_t direc_fisica, t_proceso* proceso) {
 
     // Calcula la dirección física base del marco
     char* direccion_fisica_base = (char*)espacio_usuario + (marco->nro_marco * TAM_PAGINA);
-    return direccion_fisica_base + desplazamiento;
+    return (char*)marco->base;
 }
+
+
+
+
 
 // Estructuras y funciones preexistentes
 
@@ -197,7 +328,7 @@ void escribir_valor_en_espacio_usuario(const char* datos, int tamanio, uint32_t 
 
         int bytes_a_escribir = (bytes_restantes > espacio_en_pagina) ? espacio_en_pagina : bytes_restantes;
 
-        char* puntero_a_espacio_usuario = traducir_direccion_fisica(offset, proceso);
+        int* puntero_a_espacio_usuario = traducir_direccion_fisica(offset, proceso);
         if (!puntero_a_espacio_usuario) {
             log_error(memoria_logger, "Error: Dirección física no válida\n");
             return;
@@ -242,5 +373,51 @@ char* resolver_solicitud_escribir_bloque(t_buffer *unBuffer) {
     return "OK";
 }
 
+char* leer_valor_del_espacio_usuario(int tamanio, uint32_t direc_fisica) {
+    int bytes_leidos = 0;  
+    char* dato_leido = malloc(tamanio);
 
-//---------------------------------------------------------------------------------------------------------
+    if(!direccion_valida(direc_fisica)){
+        return "ERROR";
+    }
+
+    while (bytes_leidos < tamanio) {
+        int pagina_actual = (direc_fisica + bytes_leidos) / TAM_PAGINA;
+        int desplazamiento_en_pagina = (direc_fisica + bytes_leidos) % TAM_PAGINA;
+        int espacio_en_pagina = TAM_PAGINA - desplazamiento_en_pagina;
+
+        char* puntero_a_datos = (char*)espacio_usuario + direc_fisica + bytes_leidos;
+
+        int bytes_a_leer = (tamanio - bytes_leidos > espacio_en_pagina) ? espacio_en_pagina : (tamanio - bytes_leidos);
+        
+        pthread_mutex_lock(&mutex_espacio_usuario);
+        memcpy(dato_leido + bytes_leidos, puntero_a_datos, bytes_a_leer);
+        pthread_mutex_unlock(&mutex_espacio_usuario);
+      
+        bytes_leidos += bytes_a_leer;
+    }
+
+    return dato_leido;
+}
+
+char* resolver_solicitud_leer_bloque(t_buffer *unBuffer) {
+    int pid = extraer_int_del_buffer(unBuffer);
+    uint32_t direc_fisica = extraer_uint32_del_buffer(unBuffer);
+    int tamanio = extraer_int_del_buffer(unBuffer);
+
+    if(!puede_escribir_leer_en_la_direccion(direc_fisica, pid, tamanio)){
+       log_error(memoria_logger, "Error: No tiene permitido leer en la direccion <%d>", direc_fisica);
+       return "ERROR";
+    }
+
+    char* datos_leidos = leer_valor_del_espacio_usuario(tamanio, direc_fisica);
+    datos_leidos[tamanio] = '\0';
+
+    log_info(memoria_logger, "PID: <%d> - Accion: <LEER> - Direccion FIsica: <%d> - Tamaño: <%d>", pid, direc_fisica, tamanio);
+
+    return datos_leidos;
+
+}
+
+
+*/

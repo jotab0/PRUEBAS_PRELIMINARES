@@ -15,7 +15,7 @@ t_proceso* obtener_proceso_por_pid(int pid){
 
 	if(un_proceso == NULL){
 		log_error(memoria_logger, "PID<%d> No encontrado en la lista de procesos", pid);
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	return un_proceso;
 }

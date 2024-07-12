@@ -58,22 +58,83 @@ void  respuesta_kernel_de_solicitud_iniciar_proceso(){
     eliminar_paquete(un_paquete);
 }
 
-
-
 //-------------------------------------------------------------------------------------
 
-
-t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
+t_list* procesar_archivo(const char* path_archivo) {
+    FILE* archivo = fopen(path_archivo, "rt");
     t_list* instrucciones = list_create();
-    instrucciones = procesar_archivo(path_archivo_instrucciones);
-    if (!instrucciones) {
-        fprintf(stderr, "No se pudo procesar el archivo de instrucciones.\n");
-        return NULL;
+
+    if (archivo == NULL) {
+        perror("No se encontró el archivo");
+        return instrucciones;
     }
+
+    char* linea_instruccion = malloc(512 * sizeof(char)); // Tamaño suficiente para líneas largas
+    while (fgets(linea_instruccion, 512, archivo)) {
+        int size_linea_actual = strlen(linea_instruccion);
+        if (size_linea_actual > 0 && linea_instruccion[size_linea_actual - 1] == '\n') {
+            linea_instruccion[size_linea_actual - 1] = '\0'; // Eliminar el salto de línea
+        }
+
+        char** l_instrucciones = string_split(linea_instruccion, " ");
+        int cantidad_parametros = 0;
+        while (l_instrucciones[cantidad_parametros]) {
+            cantidad_parametros++;
+        }
+
+        t_instruccion_codigo* pseudo_cod = malloc(sizeof(t_instruccion_codigo));
+        pseudo_cod->pseudo_codigo = strdup(l_instrucciones[0]);
+        pseudo_cod->primer_parametro = (cantidad_parametros > 1) ? strdup(l_instrucciones[1]) : NULL;
+        pseudo_cod->segundo_parametro = (cantidad_parametros > 2) ? strdup(l_instrucciones[2]) : NULL;
+
+        // Verificar y asignar hasta cinco parámetros
+        if (cantidad_parametros > 3) {
+            pseudo_cod->tercer_parametro = strdup(l_instrucciones[3]);
+        } else {
+            pseudo_cod->tercer_parametro = NULL;
+        }
+
+        if (cantidad_parametros > 4) {
+            pseudo_cod->cuarto_parametro = strdup(l_instrucciones[4]);
+        } else {
+            pseudo_cod->cuarto_parametro = NULL;
+        }
+
+        if (cantidad_parametros > 5) {
+            pseudo_cod->quinto_parametro = strdup(l_instrucciones[5]);
+        } else {
+            pseudo_cod->quinto_parametro = NULL;
+        }
+
+        // Concatenar todos los parámetros en una sola cadena
+        char* instruccion_definitiva = string_new();
+        for (int i = 0; i < cantidad_parametros; i++) {
+            string_append_with_format(&instruccion_definitiva, "%s%s", l_instrucciones[i], (i < cantidad_parametros - 1) ? " " : "");
+        }
+
+        list_add(instrucciones, instruccion_definitiva);
+
+        // Liberar memoria
+        for (int i = 0; i < cantidad_parametros; i++) {
+            free(l_instrucciones[i]);
+        }
+        free(l_instrucciones);
+        free(pseudo_cod->pseudo_codigo);
+        if (pseudo_cod->primer_parametro) free(pseudo_cod->primer_parametro);
+        if (pseudo_cod->segundo_parametro) free(pseudo_cod->segundo_parametro);
+        if (pseudo_cod->tercer_parametro) free(pseudo_cod->tercer_parametro);
+        if (pseudo_cod->cuarto_parametro) free(pseudo_cod->cuarto_parametro);
+        if (pseudo_cod->quinto_parametro) free(pseudo_cod->quinto_parametro);
+        free(pseudo_cod);
+    }
+
+    fclose(archivo);
+    free(linea_instruccion);
     return instrucciones;
 }
 
-//------------------------------------
+
+//------------------------------------------------------------------------------------
 
 char** dividir_cadena(const char* cadena, const char* delimitador) {
     char** resultado = NULL;
@@ -102,47 +163,23 @@ void free_string_array(char** array) {
         free(array[i]);
     free(array);
 }
+
 //-------------------------------------------------------------------------------------
 
-t_list* procesar_archivo(const char* path_archivo){
-    FILE* archivo = fopen(path_archivo, "rt");
-    if (!archivo) {
-        perror("Error al abrir el archivo");
+
+t_list* obtener_instrucciones_del_archivo(char* path_archivo_instrucciones){
+    t_list* instrucciones = list_create();
+    instrucciones = procesar_archivo(path_archivo_instrucciones);
+    if (!instrucciones) {
+        fprintf(stderr, "No se pudo procesar el archivo de instrucciones.\n");
         return NULL;
     }
-
-    t_list* instrucciones = list_create();
-    char linea_instruccion[256];
-    while (fgets(linea_instruccion, sizeof(linea_instruccion), archivo)) {
-        int size_linea_actual = strlen(linea_instruccion);
-        if (size_linea_actual > 0 && linea_instruccion[size_linea_actual - 1] == '\n') {
-            linea_instruccion[size_linea_actual - 1] = '\0'; // Eliminar el salto de línea
-        }
-
-        char** l_instrucciones = dividir_cadena(linea_instruccion, " ");
-        if (!l_instrucciones) {
-            fprintf(stderr, "Error al dividir la línea de instrucción: %s\n", linea_instruccion);
-            continue;
-        }
-
-        t_instruccion_codigo* instruccion = malloc(sizeof(t_instruccion_codigo));
-        if (!instruccion) {
-            perror("Error al asignar memoria para la instrucción");
-            free_string_array(l_instrucciones);
-            continue;
-        }
-
-        instruccion->pseudo_codigo = strdup(l_instrucciones[0]);
-        instruccion->primer_parametro = (l_instrucciones[1]) ? strdup(l_instrucciones[1]) : NULL;
-        instruccion->segundo_parametro = (l_instrucciones[2]) ? strdup(l_instrucciones[2]) : NULL;
-
-        list_add(instrucciones, instruccion);
-
-        free_string_array(l_instrucciones);
-        fclose(archivo); 
-  }
-  return instrucciones;
+    return instrucciones;
 }
+
+//-------------------------------------------------------------------------------------
+
+
 
 //------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------

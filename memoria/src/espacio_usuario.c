@@ -89,7 +89,7 @@ void encontrar_todos_los_marcos_del_simulador_y_liberarlos(int* cantidad,t_proce
 //---------------------------------------------------------------
 
 t_proceso* inicializar_proceso_simulador(){
-    t_proceso* proceso_simulacion;
+    t_proceso* proceso_simulacion = malloc(sizeof(t_proceso));
     proceso_simulacion->pid_proceso = 0;
     proceso_simulacion->pathInstrucciones = NULL;
     proceso_simulacion->lista_de_instrucciones = list_create();
@@ -97,7 +97,13 @@ t_proceso* inicializar_proceso_simulador(){
     pthread_mutex_init(&(proceso_simulacion->mutex_tabla_paginas), NULL);
     return proceso_simulacion;
 }
-
+//-------------------------------------------------------------
+void destruir_proceso_simulacion(t_proceso* proceso){
+    pthread_mutex_destroy(&(proceso->mutex_tabla_paginas));
+    list_destroy(proceso->lista_de_instrucciones);
+    list_destroy_and_destroy_elements(proceso->tabla_paginas, free);
+    free(proceso);
+}
 //---------------------------------------------------------------
 
 bool tengo_espacio_suficiente(int tamanio_necesario,t_proceso* proceso){
@@ -119,13 +125,15 @@ bool tengo_espacio_suficiente(int tamanio_necesario,t_proceso* proceso){
                 cantidad_marcos_necesarios --;
             }else{
                 encontrar_todos_los_marcos_del_simulador_y_liberarlos(&cantidad_a_liberar,proceso_simulacion);
+                destruir_proceso_simulacion(proceso_simulacion);
                 return false;
             }
         }
         encontrar_todos_los_marcos_del_simulador_y_liberarlos(&cantidad_a_liberar, proceso_simulacion);
+        destruir_proceso_simulacion(proceso_simulacion);
 
     }
-
+  
    return true;
 }
 
@@ -201,7 +209,8 @@ int reducir_tamanio_proceso(int nuevo_tamanio,t_proceso* proceso){
            proceso->size = (proceso->size) - (tamanio_a_reducir + (un_marco->cantidad_usado));
            tamanio_a_reducir = abs(un_marco->cantidad_usado);
            poner_en_disponible_frame(un_marco);
-           bool resultado = list_remove_element(proceso->tabla_paginas,una_fila);
+           bool unused_resultado = list_remove_element(proceso->tabla_paginas,una_fila);
+           (void)unused_resultado; 
         }
         else{
             proceso->size = (proceso->size) - tamanio_a_reducir;

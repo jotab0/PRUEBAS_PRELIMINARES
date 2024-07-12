@@ -5,6 +5,7 @@
 #include "paginacion.h"
 #include "operaciones_proceso.h"
 #include "../include/shared_memoria.h"
+#include <commons/string.h>
 
 void encargarse_kernel(int cliente_socket_cpu);
 void  respuesta_kernel_de_solicitud_iniciar_proceso();
